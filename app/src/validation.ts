@@ -36,6 +36,9 @@ export const profileSchema = z
   })
   .strict();
 
+/** Admin: a member's new display name. */
+export const renameSchema = z.object({ name: text(40).pipe(z.string().min(1)) }).strict();
+
 export const roleParam = z.enum(["runner", "driver"]);
 export type ApplyRole = z.infer<typeof roleParam>;
 

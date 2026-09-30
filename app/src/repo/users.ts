@@ -83,10 +83,13 @@ export async function getMe(userId: string) {
       bio: string;
       whatsapp: string | null;
       joined: Date;
+      usernameChangeableAt: Date | null;
     }[]
   >`
     select name, username::text as username, email::text as email, college, bio,
-           phone_wa as whatsapp, created_at as joined
+           phone_wa as whatsapp, created_at as joined,
+           case when username_changed_at > now() - make_interval(days => ${USERNAME_COOLDOWN_DAYS})
+                then username_changed_at + make_interval(days => ${USERNAME_COOLDOWN_DAYS}) end as "usernameChangeableAt"
     from users where id = ${userId}
   `;
   if (!u) return null;
@@ -95,21 +98,59 @@ export async function getMe(userId: string) {
 
 export type ProfileUpdate = { name: string; username: string; whatsapp: string | null; college: string; bio: string };
 
-/** Returns "taken" when the username belongs to someone else. */
-export async function updateProfile(userId: string, p: ProfileUpdate): Promise<"ok" | "taken"> {
+export const USERNAME_COOLDOWN_DAYS = 30;
+
+export type UpdateResult =
+  | { ok: true }
+  | { ok: false; error: "username_taken" | "phone_taken" | "name_locked" }
+  | { ok: false; error: "username_cooldown"; until: Date };
+
+/**
+ * Update my profile. Guard rails that keep people recognisable:
+ *   - a WhatsApp number belongs to one account only;
+ *   - the username can change once every 30 days (the first change is free);
+ *   - an approved runner's name is locked (requesters know them by name and
+ *     face); an admin changes it on request.
+ */
+export async function updateProfile(userId: string, p: ProfileUpdate): Promise<UpdateResult> {
+  const [cur] = await sql<{ name: string; username: string; changedAt: Date | null; runner: boolean }[]>`
+    select name, username::text as username, username_changed_at as "changedAt",
+           exists (select 1 from user_roles r where r.user_id = u.id and r.role = 'runner' and r.status = 'active') as runner
+    from users u where id = ${userId}
+  `;
+  if (!cur) throw new Error("profile update matched no row");
+  const usernameChanged = cur.username.toLowerCase() !== p.username.toLowerCase();
+  if (usernameChanged && cur.changedAt) {
+    const until = new Date(cur.changedAt.getTime() + USERNAME_COOLDOWN_DAYS * 86_400_000);
+    if (until > new Date()) return { ok: false, error: "username_cooldown", until };
+  }
+  if (cur.runner && cur.name !== p.name) return { ok: false, error: "name_locked" };
   try {
-    const rows = await sql`
+    await sql`
       update users
       set name = ${p.name}, username = ${p.username}, phone_wa = ${p.whatsapp},
-          college = ${p.college}, bio = ${p.bio}
+          college = ${p.college}, bio = ${p.bio},
+          username_changed_at = ${usernameChanged ? sql`now()` : sql`username_changed_at`}
       where id = ${userId}
     `;
-    if (rows.count !== 1) throw new Error("profile update matched no row");
-    return "ok";
+    return { ok: true };
   } catch (err) {
-    if ((err as { code?: string }).code === "23505") return "taken";
+    const e = err as { code?: string; constraint_name?: string };
+    if (e.code === "23505") {
+      return { ok: false, error: e.constraint_name === "users_phone_unique" ? "phone_taken" : "username_taken" };
+    }
     throw err;
   }
+}
+
+/** Admin: rename a member (runners ask for this, since they can't rename themselves). */
+export async function adminRename(adminId: string, userId: string, name: string): Promise<boolean> {
+  return sql.begin(async (tx) => {
+    const rows = await tx`update users set name = ${name} where id = ${userId}`;
+    if (rows.count !== 1) return false;
+    await tx`insert into audit_log (actor_id, action, target) values (${adminId}, 'user.rename', ${userId})`;
+    return true;
+  });
 }
 
 /** Anyone's public profile. Never includes email or WhatsApp. */

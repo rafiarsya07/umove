@@ -27,5 +27,15 @@
   "keep_vars": true,
   // PROXY_SECRET is a secret, set in the Cloudflare dashboard (Worker →
   // Settings → Variables and Secrets) or with: npx wrangler secret put PROXY_SECRET
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  // The demo copy for testing before release: branch "demo", deployed with
+  //   npx wrangler deploy --env demo
+  // as its own Worker (umove-demo) with its own API, database and secret.
+  "env": {
+    "demo": {
+      "name": "umove-demo",
+      "routes": [{ "pattern": "umove-demo.rafiarsya.com", "custom_domain": true }],
+      "vars": { "API_ORIGIN": "https://umove-demo-api.rafiarsya.com" }
+    }
+  }
 }

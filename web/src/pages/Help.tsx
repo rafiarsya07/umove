@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { ChatThread, type ChatMessage } from "../components/ChatThread";
 import { ChatIcon } from "../components/Icon";
 import { Badge, btn } from "../components/ui";
@@ -30,7 +30,9 @@ export default function Help() {
   const { t, locale } = useI18n();
   const h = t.help;
   const [data, setData] = useState<State | null>(null);
-  const [starting, setStarting] = useState(false);
+  // "Report a problem" on an order opens this page with ?topic=report&order=UM-…
+  const [params] = useSearchParams();
+  const [starting, setStarting] = useState(params.has("topic"));
 
   const load = useCallback(() => {
     api<State>("/me/support")
@@ -178,8 +180,15 @@ function ThreadHeader({ thread }: { thread: Thread }) {
 function StartForm({ onSent }: { onSent: () => void }) {
   const { t } = useI18n();
   const h = t.help;
-  const [topic, setTopic] = useState<Topic>("order");
-  const [orderCode, setOrderCode] = useState("");
+  const [params] = useSearchParams();
+  const [topic, setTopic] = useState<Topic>(() => {
+    const q = params.get("topic");
+    return TOPICS.includes(q as Topic) ? (q as Topic) : "order";
+  });
+  const [orderCode, setOrderCode] = useState(() => {
+    const q = (params.get("order") ?? "").toUpperCase();
+    return /^UM-[2-9A-HJ-NP-Z]{6}$/.test(q) ? q : "";
+  });
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<{ body?: string; orderCode?: string; form?: string }>({});
@@ -195,7 +204,7 @@ function StartForm({ onSent }: { onSent: () => void }) {
     try {
       await api("/me/support/threads", {
         method: "POST",
-        body: { topic, orderCode: topic === "order" ? orderCode.trim() : "", body },
+        body: { topic, orderCode: topic === "order" || topic === "report" ? orderCode.trim() : "", body },
       });
       onSent();
     } catch (err) {
@@ -238,7 +247,7 @@ function StartForm({ onSent }: { onSent: () => void }) {
         ))}
       </div>
 
-      {topic === "order" ? (
+      {topic === "order" || topic === "report" ? (
         <label className="mt-4 block max-w-[14rem]">
           <span className="t-label">{h.orderCode}</span>
           <input

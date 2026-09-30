@@ -58,8 +58,10 @@ export const faq: FaqCategory[] = [
     title: "Keselamatan dan privasi",
     items: [
       { id: "who-coming", q: "Adakah saya tahu siapa yang menghantar?", a: "Ya. Selepas runner mengambil permintaan anda, anda boleh melihat gambar wajah, nama, cara dia bergerak, serta jumlah penghantaran dan penarafannya di halaman permintaan. Pastikan orangnya sama apabila dia tiba. Gambar disemak oleh admin dan hanya ditunjukkan kepada anda selepas padanan." },
+      { id: "other-runner", q: "Bolehkah saya minta runner lain?", a: "Boleh. Selagi runner belum menekan Saya dalam perjalanan, anda boleh menekan Cari runner lain di halaman permintaan. Permintaan anda kembali ke papan dan runner itu tidak boleh mengambilnya lagi." },
       { id: "verified", q: "Bagaimana runner disemak?", a: "Setiap runner disemak admin dalam 24 jam, termasuk gambar wajahnya. Runner yang disahkan ada tanda biru, dan anda boleh melihat siapa yang datang selepas permintaan anda diambil." },
       { id: "whatsapp", q: "Siapa boleh lihat nombor WhatsApp saya?", a: "Hanya seorang yang dipadankan dengan anda, selepas runner mengambil permintaan anda. Nombor anda tidak pernah muncul di halaman awam." },
+      { id: "one-number", q: "Bolehkah satu nombor WhatsApp digunakan untuk dua akaun?", a: "Tidak. Setiap nombor WhatsApp hanya untuk satu akaun UMOVE, supaya orang tidak boleh bersembunyi di sebalik akaun kedua. Tukar nombor? Kemas kini dalam Tetapan." },
       { id: "meet", q: "Di mana kita berjumpa?", a: "Di tempat awam seperti lobi kolej, pondok pengawal atau pintu masuk fakulti. Runner tidak masuk ke bilik." },
       { id: "report", q: "Bagaimana melaporkan seseorang?", a: "Hantar permintaan Bantuan, pilih Melaporkan seseorang, dan sertakan kod pesanan. Setiap laporan disemak dan akaun boleh digantung." },
       { id: "ratings", q: "Bagaimana rating berfungsi?", a: "Selepas penghantaran, pelanggan dan runner memberi rating antara satu sama lain dari 1 hingga 5 bintang. Rating dipaparkan di profil awam." },

@@ -23,13 +23,14 @@ import NotFound from "./NotFound";
 
 const STEPS: RequestStatus[] = ["open", "accepted", "on_the_way", "delivered"];
 
-type Action = "take" | "onTheWay" | "delivered" | "release" | "cancel";
+type Action = "take" | "onTheWay" | "delivered" | "release" | "cancel" | "replace";
 const ACTIONS: Record<Action, [string, unknown?]> = {
   take: ["accept"],
   onTheWay: ["status", { status: "on_the_way" }],
   delivered: ["status", { status: "delivered" }],
   release: ["release"],
   cancel: ["cancel"],
+  replace: ["replace-runner"],
 };
 
 /** One request: its route, progress, the WhatsApp hand-off, and actions for whoever is looking. */
@@ -208,6 +209,10 @@ export default function RequestDetail() {
             <Link to={`/login?next=/requests/${data.code}`} className={btn.primary}>
               {r.signInToTake}
             </Link>
+          ) : data.skipped ? (
+            <p className="t-meta w-full rounded-(--radius-control) bg-muted px-3 py-2.5 text-[0.875rem]">
+              {r.skippedNote}
+            </p>
           ) : data.canAccept && data.needsPhoto ? (
             <div className="w-full rounded-(--radius-surface) border border-warning/30 bg-warning-soft p-4">
               <p className="text-[0.9375rem] font-semibold">{r.needPhotoTitle}</p>
@@ -241,6 +246,20 @@ export default function RequestDetail() {
           >
             {r.cancel}
           </button>
+        ) : null}
+
+        {data.viewerRole === "customer" && data.status === "accepted" ? (
+          <div className="w-full">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => ask("replace")}
+              className={`${btn.outline} disabled:opacity-60`}
+            >
+              {r.replaceRunner}
+            </button>
+            <p className="t-meta mt-1.5 text-[0.75rem]">{r.replaceHint}</p>
+          </div>
         ) : null}
 
         {data.viewerRole === "runner" && data.status === "accepted" ? (
@@ -285,6 +304,18 @@ export default function RequestDetail() {
 
       {data.canRate ? <RateForm code={data.code} role={data.viewerRole} onDone={load} /> : null}
 
+      {/* Anything wrong: straight to the admin, with the order code filled in. */}
+      {data.viewerRole && data.status !== "open" ? (
+        <p className="mt-6 text-center">
+          <Link
+            to={`/help?topic=report&order=${encodeURIComponent(data.code)}`}
+            className="t-meta text-[0.8125rem] font-medium underline-offset-2 hover:text-danger hover:underline"
+          >
+            {r.report}
+          </Link>
+        </p>
+      ) : null}
+
       {asking ? (
         <ConfirmDialog
           open
@@ -297,7 +328,7 @@ export default function RequestDetail() {
           }
           confirm={busy ? r.working : r.confirm[asking].ok}
           cancel={r.confirm.back}
-          tone={asking === "cancel" || asking === "release" ? "danger" : "primary"}
+          tone={asking === "cancel" || asking === "release" || asking === "replace" ? "danger" : "primary"}
           busy={busy}
           onConfirm={() => act(asking)}
           onClose={() => !busy && setAsking(null)}

@@ -16,14 +16,14 @@ const call = async (path, sid, method = "GET", body) => {
   const r = await fetch(`${BASE}/api${path}`, { method, headers: { cookie: sid ?? "", origin: BASE, "content-type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
   return { status: r.status, body: await r.json().catch(() => null), headers: r.headers };
 };
-const profile = (sid, username) => call("/me", sid, "PATCH", { name: username + " T", username, whatsapp: "0123456789", college: "KK8", bio: "" });
+const profile = (sid, username, whatsapp = "0123456789") => call("/me", sid, "PATCH", { name: username + " T", username, whatsapp, college: "KK8", bio: "" });
 const day = (n) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
 const db = postgres(process.env.DATABASE_URL_ADMIN);
 
 const A = await signIn("a", "admin@x.com", "Ali Admin");
 const R = await signIn("r", "r@x.com", "Rina");
 const D = await signIn("d", "d@x.com", "Dian");
-await profile(R, "rina"); await profile(D, "dian");
+await profile(R, "rina", "0199999999"); await profile(D, "dian");
 
 // --- validation
 check("visitor cannot apply", (await apply(null, "runner")).status === 401);

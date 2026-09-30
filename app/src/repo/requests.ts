@@ -116,13 +116,16 @@ export async function requestForViewer(code: string, viewerId: string | null) {
   const matched = role !== null && ["accepted", "on_the_way", "delivered"].includes(o.status);
   let canAccept = false;
   let needsPhoto = false;
+  let skipped = false;
   if (viewerId && o.status === "open" && role === null) {
-    const [r] = await sql<{ ok: boolean; photo: boolean }[]>`
-      select exists (select 1 from user_roles where user_id = ${viewerId} and role = 'runner' and status = 'active') as ok,
+    const [r] = await sql<{ runner: boolean; skipped: boolean; photo: boolean }[]>`
+      select exists (select 1 from user_roles where user_id = ${viewerId} and role = 'runner' and status = 'active') as runner,
+             exists (select 1 from orders where id = ${o.id} and ${viewerId}::uuid = any(skipped_runners)) as skipped,
              exists (select 1 from profile_photos where user_id = ${viewerId} and data is not null) as photo
     `;
-    canAccept = r.ok;
-    needsPhoto = r.ok && !r.photo;
+    skipped = r.runner && r.skipped;
+    canAccept = r.runner && !r.skipped;
+    needsPhoto = canAccept && !r.photo;
   }
   let rated = false;
   if (role && o.status === "delivered") {
@@ -156,6 +159,8 @@ export async function requestForViewer(code: string, viewerId: string | null) {
     canAccept,
     /** A runner who can take this request but has no approved face photo yet. */
     needsPhoto,
+    /** This runner was sent away by the requester and can't take it again. */
+    skipped,
     canRate: role !== null && o.status === "delivered" && !rated,
     contact: matched ? (role === "customer" ? o.rPhone : o.cPhone) : null,
   };
@@ -177,6 +182,7 @@ export async function acceptRequest(
   const rows = await sql`
     update orders set runner_id = ${runnerId}, status = 'accepted', accepted_at = now()
     where code = ${code} and status = 'open' and customer_id <> ${runnerId}
+      and not (${runnerId}::uuid = any(skipped_runners))
   `;
   return rows.count === 1 ? "ok" : "gone";
 }
@@ -190,6 +196,20 @@ export async function advanceRequest(code: string, runnerId: string, to: "on_the
       : await sql`
           update orders set status = 'delivered', delivered_at = now()
           where code = ${code} and runner_id = ${runnerId} and status in ('accepted', 'on_the_way')`;
+  return rows.count === 1;
+}
+
+/**
+ * The requester sends the runner away (before they set off) and the request
+ * goes back to the board. That runner can't take this request again.
+ */
+export async function sendAwayRunner(code: string, customerId: string): Promise<boolean> {
+  const rows = await sql`
+    update orders
+    set skipped_runners = array_append(skipped_runners, runner_id),
+        runner_id = null, status = 'open', accepted_at = null
+    where code = ${code} and customer_id = ${customerId} and status = 'accepted'
+  `;
   return rows.count === 1;
 }
 

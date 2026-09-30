@@ -29,9 +29,7 @@ export default function Requests() {
         {items === null ? (
           error ? (
             <div className="rounded-(--radius-surface) border border-border px-6 py-10 text-center">
-              <p className="t-body text-muted-foreground">
-                {error === "offline" ? t.common.offline : t.common.error}
-              </p>
+              <p className="t-body text-muted-foreground">{error === "offline" ? t.common.offline : t.common.error}</p>
               <button type="button" onClick={reload} className={`${btn.outline} mt-4`}>
                 {t.common.retry}
               </button>

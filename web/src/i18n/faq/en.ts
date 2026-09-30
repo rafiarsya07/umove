@@ -58,8 +58,10 @@ export const faq: FaqCategory[] = [
     title: "Safety and privacy",
     items: [
       { id: "who-coming", q: "Will I know who's delivering?", a: "Yes. Once a runner takes your request, you'll see their face photo, name, how they travel, and their deliveries and rating on the request page. Check it's the same person when they arrive. Photos are checked by an admin and only shown to you after the match." },
+      { id: "other-runner", q: "Can I ask for a different runner?", a: "Yes. Until your runner taps I'm on my way, you can tap Find another runner on the request page. Your request goes back on the board and that runner can't take it again." },
       { id: "verified", q: "How are runners checked?", a: "Every runner is reviewed by an admin within 24 hours, including their face photo. Verified runners have a blue check, and you see who's coming once your request is taken." },
       { id: "whatsapp", q: "Who sees my WhatsApp number?", a: "Only the one person you're matched with, after a runner takes your request. It never appears on public pages." },
+      { id: "one-number", q: "Can I use one WhatsApp number on two accounts?", a: "No. Each WhatsApp number belongs to one UMOVE account, so people can't hide behind a second account. Changed your number? Update it in Settings." },
       { id: "meet", q: "Where should we meet?", a: "At a public spot such as a college lobby, guard house or faculty entrance. Runners don't go into rooms." },
       { id: "report", q: "How do I report someone?", a: "Send a Help request, choose Report someone, and include the order code. We review every report and can suspend accounts." },
       { id: "ratings", q: "How do ratings work?", a: "After a delivery, the customer and the runner rate each other from 1 to 5 stars. Ratings show on public profiles." },

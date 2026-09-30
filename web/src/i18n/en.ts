@@ -246,6 +246,11 @@ export const en = {
     saved: "Saved",
     roles: "Roles",
     rolesLead: "Runners are checked by an admin before they can take requests.",
+    errPhoneTaken: "This WhatsApp number is already on another UMOVE account. Use your own number, or contact admin through Help if it's yours.",
+    errNameLocked: "Approved runners can't change their name. Ask admin through Help.",
+    errUsernameCooldown: "You can change your username again from {time}.",
+    nameLockedHint: "Requesters know you by this name. Ask admin through Help to change it.",
+    usernameWaitHint: "You can change it again from {time}.",
     photo: "Runner photo",
     photoLead: "Requesters see this after you take their request, so they know who's coming.",
     photoApproved: "In use",
@@ -349,6 +354,11 @@ export const en = {
     handover: "Meet at a public spot (lobby, guard house, faculty entrance).",
     confirm: {
       back: "Not now",
+      replace: {
+        title: "Find another runner?",
+        body: "Your request goes back on the board and this runner can't take it again. If you've already chatted, let them know on WhatsApp.",
+        ok: "Yes, find another",
+      },
       take: {
         title: "Take this request?",
         body: "You'll buy or collect it and deliver it. The customer is told right away, and you get their WhatsApp.",
@@ -387,6 +397,10 @@ export const en = {
     errGone: "Someone else took it first.",
     errBusy: "You already have 3 active runs.",
     errNotRunner: "Only approved runners can take requests.",
+    replaceRunner: "Find another runner",
+    replaceHint: "Not comfortable? You can ask for another runner until they set off.",
+    skippedNote: "The requester chose another runner for this request.",
+    report: "Report a problem",
     yourRunner: "Your runner",
     runnerCheck: "When they arrive, check it's the same person.",
     runnerRuns: "{n} deliveries",
@@ -540,6 +554,7 @@ export const en = {
     nav: "Help",
   },
   site: {
+    demo: "DEMO: for testing only. Requests and accounts here are not real.",
     dismiss: "Dismiss",
     learnMore: "Learn more",
     maintTitle: "UMOVE is under maintenance",

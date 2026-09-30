@@ -9,6 +9,7 @@ import {
   openBoard,
   rateRequest,
   releaseRequest,
+  sendAwayRunner,
   requestForViewer,
 } from "../../repo/requests.js";
 import type { AppEnv } from "../../types.js";
@@ -74,6 +75,14 @@ async function change(ok: boolean | string) {
   }
   return { status: 409 as const, body: { error: typeof ok === "string" ? ok : "not_allowed" } };
 }
+
+/** The requester asks for a different runner (only before the runner sets off). */
+requests.post("/:code/replace-runner", requireUser, async (c) => {
+  const id = codeParam.safeParse(c.req.param("code"));
+  if (!id.success) return c.json({ error: "not_found" }, 404);
+  const r = await change(await sendAwayRunner(id.data, c.get("user")!.id));
+  return c.json(r.body, r.status);
+});
 
 requests.post("/:code/accept", requireUser, async (c) => {
   const id = codeParam.safeParse(c.req.param("code"));

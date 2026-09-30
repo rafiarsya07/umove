@@ -31,6 +31,8 @@ export type RequestDetail = BoardItem & {
   canAccept: boolean;
   /** A runner who could take this but has no approved face photo yet. */
   needsPhoto: boolean;
+  /** This runner was sent away by the requester and cannot take it again. */
+  skipped: boolean;
   canRate: boolean;
   /** The other side's WhatsApp number, only after a match. */
   contact: string | null;

@@ -244,6 +244,11 @@ export const id: Dict = {
     saved: "Tersimpan",
     roles: "Peran",
     rolesLead: "Runner dicek admin dulu sebelum bisa mengambil permintaan.",
+    errPhoneTaken: "Nomor WhatsApp ini sudah dipakai akun UMOVE lain. Pakai nomormu sendiri, atau hubungi admin lewat Bantuan kalau itu memang nomormu.",
+    errNameLocked: "Runner yang sudah disetujui tidak bisa mengganti nama. Minta ke admin lewat Bantuan.",
+    errUsernameCooldown: "Kamu bisa mengganti username lagi mulai {time}.",
+    nameLockedHint: "Pemesan mengenalmu dengan nama ini. Minta ke admin lewat Bantuan untuk menggantinya.",
+    usernameWaitHint: "Bisa diganti lagi mulai {time}.",
     photo: "Foto runner",
     photoLead: "Pemesan melihat foto ini setelah kamu mengambil permintaannya, supaya tahu siapa yang datang.",
     photoApproved: "Dipakai",
@@ -347,6 +352,11 @@ export const id: Dict = {
     handover: "Bertemu di tempat umum (lobi, pos satpam, pintu fakultas).",
     confirm: {
       back: "Nanti dulu",
+      replace: {
+        title: "Cari runner lain?",
+        body: "Permintaanmu kembali ke papan dan runner ini tidak bisa mengambilnya lagi. Kalau sudah sempat chat, kabari dia di WhatsApp.",
+        ok: "Ya, cari yang lain",
+      },
       take: {
         title: "Ambil permintaan ini?",
         body: "Kamu yang membeli atau mengambil barangnya lalu mengantar. Pemesan langsung diberi tahu, dan kamu dapat WhatsApp-nya.",
@@ -385,6 +395,10 @@ export const id: Dict = {
     errGone: "Sudah diambil orang lain duluan.",
     errBusy: "Kamu sudah punya 3 antaran aktif.",
     errNotRunner: "Hanya runner yang disetujui yang bisa mengambil permintaan.",
+    replaceRunner: "Cari runner lain",
+    replaceHint: "Kurang nyaman? Kamu bisa minta runner lain selama dia belum berangkat.",
+    skippedNote: "Pemesan memilih runner lain untuk permintaan ini.",
+    report: "Laporkan masalah",
     yourRunner: "Runner kamu",
     runnerCheck: "Saat dia datang, pastikan orangnya sama.",
     runnerRuns: "{n} antaran",
@@ -538,6 +552,7 @@ export const id: Dict = {
     nav: "Bantuan",
   },
   site: {
+    demo: "DEMO: hanya untuk uji coba. Permintaan dan akun di sini tidak asli.",
     dismiss: "Tutup",
     learnMore: "Selengkapnya",
     maintTitle: "UMOVE sedang dalam pemeliharaan",

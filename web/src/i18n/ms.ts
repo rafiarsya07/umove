@@ -244,6 +244,11 @@ export const ms: Dict = {
     saved: "Disimpan",
     roles: "Peranan",
     rolesLead: "Runner disemak oleh admin sebelum boleh mengambil permintaan.",
+    errPhoneTaken: "Nombor WhatsApp ini sudah digunakan akaun UMOVE lain. Guna nombor anda sendiri, atau hubungi admin melalui Bantuan jika itu nombor anda.",
+    errNameLocked: "Runner yang diluluskan tidak boleh menukar nama. Minta admin melalui Bantuan.",
+    errUsernameCooldown: "Anda boleh menukar username semula mulai {time}.",
+    nameLockedHint: "Pemesan mengenali anda dengan nama ini. Minta admin melalui Bantuan untuk menukarnya.",
+    usernameWaitHint: "Boleh ditukar semula mulai {time}.",
     photo: "Gambar runner",
     photoLead: "Pemesan melihat gambar ini selepas anda mengambil permintaannya, supaya tahu siapa yang datang.",
     photoApproved: "Digunakan",
@@ -348,6 +353,11 @@ export const ms: Dict = {
     handover: "Berjumpa di tempat awam (lobi, pondok pengawal, pintu fakulti).",
     confirm: {
       back: "Nanti dulu",
+      replace: {
+        title: "Cari runner lain?",
+        body: "Permintaan anda kembali ke papan dan runner ini tidak boleh mengambilnya lagi. Jika sudah berbual, maklumkan dia di WhatsApp.",
+        ok: "Ya, cari yang lain",
+      },
       take: {
         title: "Ambil permintaan ini?",
         body: "Anda akan beli atau ambil barang dan hantar. Pelanggan terus dimaklumkan, dan anda dapat WhatsApp mereka.",
@@ -386,6 +396,10 @@ export const ms: Dict = {
     errGone: "Orang lain sudah ambil dulu.",
     errBusy: "Kau sudah ada 3 hantaran aktif.",
     errNotRunner: "Hanya runner yang diluluskan boleh ambil permintaan.",
+    replaceRunner: "Cari runner lain",
+    replaceHint: "Kurang selesa? Anda boleh minta runner lain selagi dia belum bertolak.",
+    skippedNote: "Pemesan memilih runner lain untuk permintaan ini.",
+    report: "Laporkan masalah",
     yourRunner: "Runner anda",
     runnerCheck: "Apabila dia tiba, pastikan orangnya sama.",
     runnerRuns: "{n} penghantaran",
@@ -539,6 +553,7 @@ export const ms: Dict = {
     nav: "Bantuan",
   },
   site: {
+    demo: "DEMO: untuk ujian sahaja. Permintaan dan akaun di sini bukan sebenar.",
     dismiss: "Tutup",
     learnMore: "Ketahui lanjut",
     maintTitle: "UMOVE sedang diselenggara",

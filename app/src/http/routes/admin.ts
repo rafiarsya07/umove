@@ -5,6 +5,7 @@ import { announceChange } from "../../live.js";
 import { adminCancelRequest, adminStats, auditLog, listRequests, listUsers, setUserStatus } from "../../repo/admin.js";
 import { announceSite, announceSupport } from "../../live.js";
 import { allPlaces, savePlace } from "../../repo/places.js";
+import { adminRename } from "../../repo/users.js";
 import { adminPhoto, decidePhoto, pendingPhotos } from "../../repo/photos.js";
 import { allBroadcasts, createBroadcast, endBroadcast, maintenance, setMaintenance } from "../../repo/site.js";
 import { mailDecision, mailSupportDecision, mailSupportReply } from "../../mail.js";
@@ -18,6 +19,7 @@ import {
   idParam,
   maintenanceSchema,
   placeSchema,
+  renameSchema,
   supportDecisionSchema,
   supportSchema,
 } from "../../validation.js";
@@ -193,6 +195,16 @@ admin.post("/broadcasts/:id/end", async (c) => {
   if (!ok) return c.json({ error: "not_live" }, 409);
   announceSite();
   return c.json({ ok: true });
+});
+
+/** Rename a member (approved runners can't rename themselves). */
+admin.post("/users/:id/name", async (c) => {
+  const id = z.uuid().safeParse(c.req.param("id"));
+  const body = renameSchema.safeParse(await c.req.json().catch(() => null));
+  if (!id.success) return c.json({ error: "not_found" }, 404);
+  if (!body.success) return c.json({ error: "invalid", fields: ["name"] }, 400);
+  const ok = await adminRename(c.get("user")!.id, id.data, body.data.name);
+  return ok ? c.json({ ok: true }) : c.json({ error: "not_found" }, 404);
 });
 
 /* ---- Runner face photos ------------------------------------------------------ */

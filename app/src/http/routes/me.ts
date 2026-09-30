@@ -40,7 +40,13 @@ me.patch("/", async (c) => {
   if (whatsapp === "invalid") return c.json({ error: "invalid", fields: ["whatsapp"] }, 400);
 
   const result = await updateProfile(user.id, { ...parsed.data, whatsapp });
-  if (result === "taken") return c.json({ error: "username_taken", fields: ["username"] }, 409);
+  if (!result.ok) {
+    const field = result.error === "phone_taken" ? "whatsapp" : result.error === "name_locked" ? "name" : "username";
+    return c.json(
+      { error: result.error, fields: [field], until: result.error === "username_cooldown" ? result.until : null },
+      409,
+    );
+  }
   return c.json(await getMe(user.id));
 });
 

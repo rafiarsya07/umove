@@ -17,6 +17,8 @@ export type Me = {
   college: string;
   bio: string;
   whatsapp: string | null;
+  /** Set while the 30-day wait after a username change runs. */
+  usernameChangeableAt?: string | null;
   joined: string;
   isAdmin: boolean;
   roles: Roles;

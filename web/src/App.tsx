@@ -3,7 +3,7 @@ import { Route, Routes, useLocation } from "react-router";
 import { BottomNav } from "./components/BottomNav";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
-import { AdminMaintenanceNotice, BroadcastBar, MaintenanceScreen } from "./components/SiteNotices";
+import { AdminMaintenanceNotice, BroadcastBar, DemoBanner, MaintenanceScreen } from "./components/SiteNotices";
 import { useSession } from "./lib/session";
 import { useStatus } from "./lib/status";
 import Home from "./pages/Home";
@@ -57,6 +57,7 @@ export default function App() {
     return (
       <>
         <ScrollManager />
+        <DemoBanner />
         <Suspense fallback={<PageLoading />}>
           <Routes>
             <Route path="/admin" element={<AdminLayout />}>
@@ -88,6 +89,7 @@ export default function App() {
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <ScrollManager />
+      <DemoBanner />
       <AdminMaintenanceNotice />
       <Header />
       <BroadcastBar />

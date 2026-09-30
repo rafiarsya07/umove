@@ -8,11 +8,7 @@ import { fmt, useI18n } from "../i18n";
 import { useFaq } from "../i18n/faq";
 
 /** Lower-case, accent-free text for forgiving search. */
-const norm = (s: string) =>
-  s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "");
+const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
 /**
  * All questions: search, jump to a category, and deep links (/faq#q-cost opens

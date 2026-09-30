@@ -423,6 +423,7 @@ function ApplyFor({ role }: { role: ApplyRole }) {
                   // A runner's "selfie" is a plain face photo that requesters see later.
                   label={role === "runner" && k === "selfie" ? a.photo_face : a[`photo_${k}`]}
                   hint={role === "runner" && k === "selfie" ? a.photo_faceHint : undefined}
+                  camera={k === "selfie"}
                   blob={photos[k]}
                   error={errors[k]}
                   onPick={(b) => {
@@ -575,6 +576,8 @@ function Check(p: { checked: boolean; onChange: (v: boolean) => void; error?: st
 function PhotoPicker(p: {
   label: string;
   hint?: string;
+  /** Face photos: on a phone, open the front camera instead of the gallery. */
+  camera?: boolean;
   blob?: Blob;
   error?: string;
   onPick: (b: Blob) => void;
@@ -609,6 +612,7 @@ function PhotoPicker(p: {
       <input
         type="file"
         accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+        capture={p.camera ? "user" : undefined}
         className="sr-only"
         onChange={async (e) => {
           const file = e.target.files?.[0];

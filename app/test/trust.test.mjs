@@ -1,0 +1,78 @@
+// Trust rules: one WhatsApp per account, username cooldown, runner name lock, requester sends a runner away.
+// Fresh database with ADMIN_EMAILS=admin@x.com, and DATABASE_URL_ADMIN (superuser) set.
+import postgres from "postgres";
+import { apply } from "./apply-helper.mjs";
+const BASE = "http://localhost:3222";
+let pass = 0, fail = 0;
+const check = (n, c, x = "") => { c ? pass++ : fail++; console.log(`${c ? "PASS" : "FAIL"}  ${n} ${c ? "" : x}`); };
+const cookieOf = (res, name) => (res.headers.getSetCookie().find((c) => c.startsWith(`__Host-${name}=`)) ?? "").split(";")[0];
+async function signIn(sub, email, name) {
+  const r1 = await fetch(`${BASE}/api/auth/google`, { redirect: "manual" });
+  const q = new URL(r1.headers.get("location")).searchParams;
+  const code = Buffer.from(JSON.stringify({ nonce: q.get("nonce"), challenge: q.get("code_challenge"), sub, email, name })).toString("base64url");
+  const r2 = await fetch(`${BASE}/api/auth/google/callback?code=${code}&state=${q.get("state")}`, { redirect: "manual", headers: { cookie: cookieOf(r1, "umove_oauth") } });
+  return cookieOf(r2, "umove_sid");
+}
+const call = async (path, sid, method = "GET", body) => {
+  const r = await fetch(`${BASE}/api${path}`, { method, headers: { cookie: sid ?? "", origin: BASE, "content-type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+  return { status: r.status, body: await r.json().catch(() => null) };
+};
+const profile = (sid, username, whatsapp) => call("/me", sid, "PATCH", { name: username.toUpperCase() + " Tester", username, whatsapp, college: "KK8", bio: "" });
+const db = postgres(process.env.DATABASE_URL_ADMIN);
+const patch = (sid, o) => call("/me", sid, "PATCH", { name: "Test User", username: "x", whatsapp: "", college: "", bio: "", ...o });
+
+const A = await signIn("a", "admin@x.com", "Ali Admin");
+const P = await signIn("p", "p@x.com", "Putri");
+const Q = await signIn("q", "q@x.com", "Qila");
+
+// --- one WhatsApp number per account
+check("first account takes the number", (await patch(P, { name: "Putri", username: "putri", whatsapp: "012-345 6789" })).status === 200);
+let r = await patch(Q, { name: "Qila", username: "qila", whatsapp: "+60 12 345 6789" });
+check("same number in another format is taken", r.status === 409 && r.body.error === "phone_taken" && r.body.fields.includes("whatsapp"), JSON.stringify(r.body));
+check("owner can save again with the same number", (await patch(P, { name: "Putri", username: "putri", whatsapp: "0123456789" })).status === 200);
+check("other number is fine", (await patch(Q, { name: "Qila", username: "qila", whatsapp: "0198765432" })).status === 200);
+check("owner frees the number", (await patch(P, { name: "Putri", username: "putri", whatsapp: "0111111111" })).status === 200);
+check("freed number can be taken", (await patch(Q, { name: "Qila", username: "qila", whatsapp: "0123456789" })).status === 200);
+
+// --- username: first change free, then 30 days
+r = await patch(P, { name: "Putri", username: "putri2", whatsapp: "0111111111" });
+check("second username change within 30 days blocked", r.status === 409 && r.body.error === "username_cooldown" && new Date(r.body.until) > new Date(Date.now() + 29 * 86400e3), JSON.stringify(r.body));
+check("me shows when username can change", new Date((await call("/me", P)).body.usernameChangeableAt) > new Date());
+check("other fields still save", (await patch(P, { name: "Putri A", username: "putri", whatsapp: "0111111111", bio: "hai" })).status === 200);
+await db`update users set username_changed_at = now() - interval '31 days' where username = 'putri'`;
+check("after 30 days it can change", (await patch(P, { name: "Putri A", username: "putri2", whatsapp: "0111111111" })).status === 200);
+
+// --- approved runner: name locked, admin renames
+const R = await signIn("r", "r@x.com", "Rudi");
+const S = await signIn("s", "s@x.com", "Sari");
+await patch(R, { name: "Rudi", username: "rudi", whatsapp: "0133333333" });
+await patch(S, { name: "Sari", username: "sari", whatsapp: "0144444444" });
+await apply(R, "runner"); await apply(S, "runner");
+for (const a of (await call("/admin/applications", A)).body) await call(`/admin/applications/${a.id}/decision`, A, "POST", { decision: "approve" });
+r = await patch(R, { name: "Someone Else", username: "rudi", whatsapp: "0133333333" });
+check("runner cannot rename themselves", r.status === 409 && r.body.error === "name_locked");
+check("runner can still edit other fields", (await patch(R, { name: "Rudi", username: "rudi", whatsapp: "0133333333", bio: "KK12" })).status === 200);
+const rudi = (await call("/admin/users?q=rudi", A)).body[0].id;
+check("member cannot rename others", (await call(`/admin/users/${rudi}/name`, R, "POST", { name: "X" })).status === 403);
+check("admin renames runner", (await call(`/admin/users/${rudi}/name`, A, "POST", { name: "Rudi Hartono" })).status === 200);
+check("new name applied", (await call("/me", R)).body.name === "Rudi Hartono");
+check("rename audited", JSON.stringify((await call("/admin/audit", A)).body).includes("user.rename"));
+
+// --- requester sends a runner away
+r = await call("/requests", Q, "POST", { details: "Nasi lemak 1", pickup: "Kafe KK12", dropoff: "KK8 C 2-14", tip: 3 });
+const code = r.body.code;
+check("runner takes it", (await call(`/requests/${code}/accept`, R, "POST")).status === 200);
+check("runner cannot send themselves away", (await call(`/requests/${code}/replace-runner`, R, "POST")).status === 409);
+check("stranger cannot send runner away", (await call(`/requests/${code}/replace-runner`, P, "POST")).status === 409);
+check("requester sends runner away", (await call(`/requests/${code}/replace-runner`, Q, "POST")).status === 200);
+let d = (await call(`/requests/${code}`, Q)).body;
+check("back on the board", d.status === "open" && d.runner === null && d.contact === null);
+d = (await call(`/requests/${code}`, R)).body;
+check("sent-away runner sees it but can't take it", d.skipped === true && d.canAccept === false && d.contact === null);
+check("sent-away runner accept refused", (await call(`/requests/${code}/accept`, R, "POST")).status === 409);
+check("another runner can take it", (await call(`/requests/${code}/accept`, S, "POST")).status === 200);
+check("cannot send away after setting off", (await call(`/requests/${code}/status`, S, "POST", { status: "on_the_way" })).status === 200 && (await call(`/requests/${code}/replace-runner`, Q, "POST")).status === 409);
+
+await db.end();
+console.log(`\n${pass} passed, ${fail} failed`);
+process.exit(fail ? 1 : 0);

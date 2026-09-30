@@ -51,6 +51,19 @@ export default function Users() {
     }
   };
 
+  /** Runners can't rename themselves; they ask in Help chat and an admin does it here. */
+  const rename = async (u: Row) => {
+    const name = window.prompt(`New name for @${u.username}`, u.name)?.trim();
+    if (!name || name === u.name) return;
+    setError(null);
+    try {
+      await api(`/admin/users/${u.id}/name`, { method: "POST", body: { name } });
+      load(q);
+    } catch {
+      setError("Couldn't rename. Names are 1 to 40 characters.");
+    }
+  };
+
   return (
     <div>
       <PageTitle title="Users" lead="Search by name, username or email. Suspending signs the person out everywhere." />
@@ -110,7 +123,10 @@ export default function Users() {
                   <td className="px-4 py-3">
                     <Badge tone={u.status === "active" ? "muted" : "danger"}>{u.status}</Badge>
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <button type="button" className={`${btn.small} mr-1.5`} onClick={() => rename(u)}>
+                      Rename
+                    </button>
                     {u.status === "active" ? (
                       <button type="button" className={btn.small} onClick={() => setStatus(u, "suspended")}>
                         Suspend

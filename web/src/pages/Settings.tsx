@@ -130,7 +130,11 @@ const field =
 type Field = "name" | "username" | "whatsapp" | "college" | "bio";
 
 function ProfileForm({ user }: { user: Me }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  // Approved runners are known by name and face, so only an admin renames them.
+  const nameLocked = user.roles.runner === "active";
+  const usernameWait =
+    user.usernameChangeableAt && new Date(user.usernameChangeableAt) > new Date() ? user.usernameChangeableAt : null;
   const { setUser } = useSession();
   const s = t.settings;
   const [form, setForm] = useState({
@@ -168,6 +172,10 @@ function ProfileForm({ user }: { user: Me }) {
     } catch (err) {
       setState("idle");
       if (err instanceof ApiError && err.code === "username_taken") setErrors({ username: s.errUsernameTaken });
+      else if (err instanceof ApiError && err.code === "phone_taken") setErrors({ whatsapp: s.errPhoneTaken });
+      else if (err instanceof ApiError && err.code === "name_locked") setErrors({ name: s.errNameLocked });
+      else if (err instanceof ApiError && err.code === "username_cooldown")
+        setErrors({ username: fmt(s.errUsernameCooldown, { time: formatWhen(err.until ?? "", locale) }) });
       else if (err instanceof ApiError && err.fields.length > 0)
         setErrors(Object.fromEntries(err.fields.map((f) => [f, messageFor[f as Field] ?? s.errGeneric])));
       else setErrors({ form: s.errGeneric });
@@ -180,14 +188,15 @@ function ProfileForm({ user }: { user: Me }) {
         <label className="block">
           <span className="t-label">{s.name}</span>
           <input
-            className={`${field} mt-1.5`}
+            className={`${field} mt-1.5 read-only:cursor-not-allowed read-only:bg-muted read-only:text-foreground-secondary`}
             value={form.name}
             onChange={set("name")}
             maxLength={40}
             autoComplete="name"
+            readOnly={nameLocked}
             aria-invalid={Boolean(errors.name)}
           />
-          <FieldError text={errors.name} />
+          {errors.name ? <FieldError text={errors.name} /> : nameLocked ? <Hint text={s.nameLockedHint} /> : null}
         </label>
         <label className="block">
           <span className="t-label">{s.username}</span>
@@ -205,7 +214,13 @@ function ProfileForm({ user }: { user: Me }) {
               aria-invalid={Boolean(errors.username)}
             />
           </span>
-          {errors.username ? <FieldError text={errors.username} /> : <Hint text={s.usernameHint} />}
+          {errors.username ? (
+            <FieldError text={errors.username} />
+          ) : (
+            <Hint
+              text={usernameWait ? fmt(s.usernameWaitHint, { time: formatWhen(usernameWait, locale) }) : s.usernameHint}
+            />
+          )}
         </label>
       </div>
 

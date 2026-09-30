@@ -32,7 +32,9 @@ function current(): InstallState {
     (navigator as Navigator & { standalone?: boolean }).standalone === true;
   if (standalone) return "installed";
   if (deferred) return "prompt";
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const ios =
+    /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   return ios ? "ios" : "manual";
 }
 

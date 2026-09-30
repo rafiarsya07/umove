@@ -69,6 +69,8 @@ export function RunnerPhotoPanel() {
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+            // On a phone this opens the front camera: a fresh photo, not an edited one.
+            capture="user"
             className="sr-only"
             disabled={busy}
             onChange={(e) => {
