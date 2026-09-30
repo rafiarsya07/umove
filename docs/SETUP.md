@@ -145,6 +145,10 @@ Mulai sekarang: **`git push` = web otomatis ter-deploy dalam ±1 menit**, dan AP
 
 ---
 
+## Tempat pickup (Places)
+
+Admin → Places: daftar kantin/toko/tempat print di dalam UM. Saat membuat permintaan, member mencari dan memilih dari daftar ini (dikelompokkan per area, misalnya KK12). Kalau tempatnya belum ada, member tetap bisa mengetik sendiri; permintaan dari daftar diberi tanda centang supaya runner tahu itu tempat resmi. Isi awal: "Kafeteria" di KK1–KK13, silakan ganti/tambah sesuai nama asli. Jangan hapus, cukup "Hide". Tabelnya dibuat oleh `db/migrations/007-places.sql` lewat `scripts/update.sh`.
+
 ## Maintenance & Broadcast
 
 **Broadcast** (Admin → Broadcasts): pengumuman di bawah header. Pilih gaya (info/peringatan/sukses), siapa yang lihat (semua / member login / runner), link opsional (path di UMOVE, misalnya `/runner`), dan jadwal mulai–selesai. "End now" menghentikan langsung. Maksimal 3 tampil sekaligus; user bisa menutupnya.

@@ -18,6 +18,7 @@ export const faq: FaqCategory[] = [
     items: [
       { id: "post", q: "How do I post a request?", a: "Tap Post a request, write what you need, where to pick it up, where to deliver it, and the delivery fee you'll pay. Runners see it right away on the live board." },
       { id: "what-can", q: "What can I request?", a: "Food, drinks, groceries, printing, stationery and parcel pick-ups around campus. Be specific: the shop, the item and any options." },
+      { id: "pickup-place", q: "Where can runners pick things up?", a: "From places inside UM: cafeterias at the residential colleges, shops and print corners. Choose one from the list when you post. If your spot isn't listed yet, type it in, but keep it inside campus. A check mark shows a place from the UMOVE list." },
       { id: "not-allowed", q: "What isn't allowed?", a: "Alcohol, tobacco or vapes, drugs, weapons, exam help, anything illegal or against UM rules, and anything a runner couldn't carry safely. Such requests are removed and accounts can be suspended." },
       { id: "fee", q: "How much delivery fee should I offer?", a: "At least RM1. A fair guide: RM1 to RM2 within the same college or faculty, RM3 to RM5 across campus, and more for heavy items, rain or late at night. A fair fee gets taken faster." },
       { id: "code", q: "What's the order code (like UM-7K3F9Q)?", a: "Every request gets a random code. Use it when you talk to your runner or to us, so everyone knows which order you mean." },

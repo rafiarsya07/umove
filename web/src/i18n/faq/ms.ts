@@ -18,6 +18,7 @@ export const faq: FaqCategory[] = [
     items: [
       { id: "post", q: "Bagaimana cara memasang permintaan?", a: "Ketik Pasang permintaan, tulis apa yang anda perlukan, ambil dari mana, hantar ke mana, dan upah hantar yang anda bayar. Runner terus nampak di papan." },
       { id: "what-can", q: "Apa yang boleh dipesan?", a: "Makanan, minuman, barang runcit, cetakan, alat tulis dan ambil bungkusan sekitar kampus. Tulis dengan jelas: kedai, barang dan pilihan lain." },
+      { id: "pickup-place", q: "Dari mana runner boleh ambil barang?", a: "Dari tempat di dalam UM: kafeteria kolej kediaman, kedai dan tempat cetak. Pilih daripada senarai semasa membuat permintaan. Jika tempat anda belum tersenarai, taip sahaja, tetapi pastikan di dalam kampus. Tanda semak menunjukkan tempat daripada senarai UMOVE." },
       { id: "not-allowed", q: "Apa yang tidak dibenarkan?", a: "Alkohol, rokok atau vape, dadah, senjata, bantuan peperiksaan, apa-apa yang menyalahi undang-undang atau peraturan UM, dan barang yang tidak selamat dibawa. Permintaan sebegini dibuang dan akaun boleh digantung." },
       { id: "fee", q: "Berapa upah hantar yang berpatutan?", a: "Sekurang-kurangnya RM1. Panduan: RM1 hingga RM2 dalam kolej atau fakulti yang sama, RM3 hingga RM5 merentas kampus, dan lebih untuk barang berat, hujan atau lewat malam. Upah yang berpatutan lebih cepat diambil." },
       { id: "code", q: "Apa itu kod pesanan (cth. UM-7K3F9Q)?", a: "Setiap permintaan mendapat kod rawak. Gunakannya semasa bercakap dengan runner atau dengan kami, supaya jelas pesanan yang mana." },

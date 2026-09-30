@@ -18,6 +18,7 @@ export const faq: FaqCategory[] = [
     items: [
       { id: "post", q: "Bagaimana cara memasang permintaan?", a: "Ketuk Pasang permintaan, tulis apa yang kamu butuhkan, ambil dari mana, antar ke mana, dan upah antar yang akan kamu bayar. Runner langsung melihatnya di papan." },
       { id: "what-can", q: "Apa saja yang boleh dipesan?", a: "Makanan, minuman, belanja harian, print, alat tulis, dan ambil paket di sekitar kampus. Tulis dengan jelas: tokonya, barangnya, dan pilihan lainnya." },
+      { id: "pickup-place", q: "Runner bisa ambil barang dari mana?", a: "Dari tempat di dalam UM: kantin kolej kediaman, toko, dan tempat print. Pilih dari daftar saat membuat permintaan. Kalau tempatmu belum ada, ketik saja, tapi tetap di dalam kampus. Tanda centang menunjukkan tempat dari daftar UMOVE." },
       { id: "not-allowed", q: "Apa yang tidak boleh?", a: "Alkohol, rokok atau vape, narkoba, senjata, joki ujian, apa pun yang ilegal atau melanggar aturan UM, dan barang yang tidak aman dibawa runner. Permintaan seperti itu dihapus dan akun bisa ditangguhkan." },
       { id: "fee", q: "Berapa upah antar yang wajar?", a: "Minimal RM1. Patokan: RM1 sampai RM2 dalam satu kolej atau fakultas, RM3 sampai RM5 antar area kampus, dan lebih untuk barang berat, hujan, atau larut malam. Upah yang wajar lebih cepat diambil." },
       { id: "code", q: "Apa itu kode pesanan (misal UM-7K3F9Q)?", a: "Setiap permintaan mendapat kode acak. Pakai kode itu saat bicara dengan runner atau dengan kami, supaya jelas pesanan yang mana." },

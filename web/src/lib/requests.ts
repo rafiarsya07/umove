@@ -5,6 +5,8 @@ export type BoardItem = {
   code: string;
   details: string;
   pickup: string;
+  /** The pickup is on the admin's list of UM places. */
+  listed: boolean;
   dropoff: string;
   tipSen: number;
   status: RequestStatus;

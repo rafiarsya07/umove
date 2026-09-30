@@ -21,6 +21,8 @@ export type BoardItem = {
   code: string;
   details: string;
   pickup: string;
+  /** True when the pickup is a place from the admin's UM list. */
+  listed: boolean;
   dropoff: string;
   tipSen: number;
   status: Status;
@@ -31,7 +33,7 @@ export type BoardItem = {
 /** Open requests, newest first. Public: only usernames and first names. */
 export async function openBoard(limit: number): Promise<BoardItem[]> {
   const rows = await sql<(Omit<BoardItem, "customer"> & { cUsername: string; cName: string })[]>`
-    select o.code, o.details, o.pickup, o.dropoff, o.tip_sen as "tipSen", o.status,
+    select o.code, o.details, o.pickup, o.place_id is not null as listed, o.dropoff, o.tip_sen as "tipSen", o.status,
            o.created_at as "createdAt", c.username::text as "cUsername", split_part(c.name, ' ', 1) as "cName"
     from orders o join users c on c.id = o.customer_id
     where o.status = 'open' and c.status = 'active'
@@ -43,7 +45,7 @@ export async function openBoard(limit: number): Promise<BoardItem[]> {
 
 export async function createRequest(
   userId: string,
-  r: { details: string; pickup: string; dropoff: string; tipSen: number },
+  r: { details: string; pickup: string; placeId: number | null; dropoff: string; tipSen: number },
 ): Promise<{ code: string } | "need_whatsapp" | "too_many" | "daily_limit"> {
   const [u] = await sql<{ phone: boolean; open: number; today: number }[]>`
     select phone_wa is not null as phone,
@@ -57,8 +59,8 @@ export async function createRequest(
   if (u.open >= MAX_OPEN_PER_CUSTOMER) return "too_many";
   if (u.today >= MAX_POSTS_PER_DAY) return "daily_limit";
   const [row] = await sql<{ code: string }[]>`
-    insert into orders (type, customer_id, pickup, dropoff, details, tip_sen)
-    values ('deliver', ${userId}, ${r.pickup}, ${r.dropoff}, ${r.details}, ${r.tipSen})
+    insert into orders (type, customer_id, pickup, place_id, dropoff, details, tip_sen)
+    values ('deliver', ${userId}, ${r.pickup}, ${r.placeId}, ${r.dropoff}, ${r.details}, ${r.tipSen})
     returning code
   `;
   return row;
@@ -77,6 +79,7 @@ export async function requestForViewer(code: string, viewerId: string | null) {
       code: string;
       details: string;
       pickup: string;
+      listed: boolean;
       dropoff: string;
       tipSen: number;
       status: Status;
@@ -93,7 +96,8 @@ export async function requestForViewer(code: string, viewerId: string | null) {
       rPhone: string | null;
     }[]
   >`
-    select o.id::int as id, o.code, o.details, o.pickup, o.dropoff, o.tip_sen as "tipSen", o.status,
+    select o.id::int as id, o.code, o.details, o.pickup, o.place_id is not null as listed, o.dropoff,
+           o.tip_sen as "tipSen", o.status,
            o.created_at as "createdAt", o.accepted_at as "acceptedAt", o.delivered_at as "deliveredAt",
            o.customer_id as "customerId", o.runner_id as "runnerId",
            c.username::text as "cUsername", c.name as "cName", c.phone_wa as "cPhone",
@@ -128,6 +132,7 @@ export async function requestForViewer(code: string, viewerId: string | null) {
     code: o.code,
     details: o.details,
     pickup: o.pickup,
+    listed: o.listed,
     dropoff: o.dropoff,
     tipSen: o.tipSen,
     status: o.status,

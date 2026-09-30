@@ -118,6 +118,12 @@ export default function RequestDetail() {
           <span>
             <span className="t-meta block text-[0.75rem]">{r.pickup}</span>
             {data.pickup}
+            {data.listed ? (
+              <span className="mt-1 flex items-center gap-1 text-[0.75rem] font-medium text-primary-strong">
+                <CheckIcon className="size-3.5" />
+                {r.placeListed}
+              </span>
+            ) : null}
           </span>
           <DropoffIcon className="mt-3 size-5" />
           <span>

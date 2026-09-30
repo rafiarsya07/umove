@@ -30,3 +30,5 @@ NODE_ENV=test PUBLIC_ORIGIN=http://localhost:3222 \
 DATABASE_URL=postgres://umove_app:pw123@localhost:5432/umove \
 DATABASE_URL_ADMIN=postgres://postgres@localhost:5432/umove node test/applications.test.mjs
 ```
+
+Pickup places (UM list, listed vs typed pickup, hide/show) on a fresh database with `ADMIN_EMAILS=admin@x.com`: `node test/places.test.mjs`.

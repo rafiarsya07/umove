@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { fmt, useI18n } from "../i18n";
-import { DropoffIcon, PickupIcon } from "./Icon";
+import { CheckIcon, DropoffIcon, PickupIcon } from "./Icon";
 import { ringgit, timeAgo } from "../lib/format";
 import type { BoardItem } from "../lib/requests";
 
@@ -20,7 +20,15 @@ export function RequestCard({ item }: { item: BoardItem }) {
       </div>
       <div className="mt-3 mb-4 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1.5 text-[0.8125rem]">
         <PickupIcon className="size-4" />
-        <span className="truncate text-foreground-secondary">{item.pickup}</span>
+        <span className="flex min-w-0 items-center gap-1 text-foreground-secondary">
+          <span className="truncate">{item.pickup}</span>
+          {item.listed ? (
+            <span title={t.requests.placeListed} className="shrink-0 text-primary">
+              <CheckIcon className="size-3.5" />
+              <span className="sr-only">{t.requests.placeListed}</span>
+            </span>
+          ) : null}
+        </span>
         <DropoffIcon className="size-4" />
         <span className="truncate font-medium">{item.dropoff}</span>
       </div>

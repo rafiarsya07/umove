@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
+import { PlacePicker } from "../components/PlacePicker";
 import { btn } from "../components/ui";
 import { useI18n } from "../i18n";
 import { ApiError, api } from "../lib/api";
@@ -13,6 +14,7 @@ export default function NewRequest() {
   const r = t.requests;
   const navigate = useNavigate();
   const [form, setForm] = useState({ details: "", pickup: "", dropoff: "", tip: "3" });
+  const [placeId, setPlaceId] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +38,12 @@ export default function NewRequest() {
     try {
       const res = await api<{ code: string }>("/requests", {
         method: "POST",
-        body: { details: form.details, pickup: form.pickup, dropoff: form.dropoff, tip: Math.round(tip * 100) / 100 },
+        body: {
+          details: form.details,
+          ...(placeId ? { placeId } : { pickup: form.pickup }),
+          dropoff: form.dropoff,
+          tip: Math.round(tip * 100) / 100,
+        },
       });
       navigate(`/requests/${res.code}`);
     } catch (err) {
@@ -72,17 +79,22 @@ export default function NewRequest() {
             maxLength={300}
           />
         </label>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <label className="block">
+        <div className="grid items-start gap-5 sm:grid-cols-2">
+          <div>
             <span className="t-label">{r.pickup}</span>
-            <input
-              className={`${field} mt-1.5`}
-              value={form.pickup}
-              onChange={set("pickup")}
-              placeholder={r.pickupPlaceholder}
-              maxLength={80}
-            />
-          </label>
+            <div className="mt-1.5">
+              <PlacePicker
+                className={field}
+                value={form.pickup}
+                placeId={placeId}
+                onChange={(text, id) => {
+                  setError(null);
+                  setForm((f) => ({ ...f, pickup: text }));
+                  setPlaceId(id);
+                }}
+              />
+            </div>
+          </div>
           <label className="block">
             <span className="t-label">{r.dropoff}</span>
             <input

@@ -47,6 +47,7 @@ export default function AdminLayout() {
     { to: "/admin", label: "Overview", end: true },
     { to: "/admin/applications", label: "Applications", count: counts?.pending },
     { to: "/admin/support", label: "Help chat", count: counts?.support },
+    { to: "/admin/places", label: "Places" },
     { to: "/admin/broadcasts", label: "Broadcasts" },
     { to: "/admin/maintenance", label: "Maintenance", count: status.maintenance.on ? "On" : undefined },
     { to: "/admin/users", label: "Users" },

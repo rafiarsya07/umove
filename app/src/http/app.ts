@@ -1,3 +1,4 @@
+import { activePlaces } from "../repo/places.js";
 import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
@@ -94,6 +95,10 @@ export function createApp() {
   });
 
   /** Public: maintenance state and the broadcasts this viewer should see. */
+  api.get("/places", async (c) => {
+    c.header("cache-control", "public, max-age=60");
+    return c.json(await activePlaces());
+  });
   api.get("/status", async (c) => {
     const user = c.get("user");
     const [m, broadcasts] = await Promise.all([maintenance(), liveBroadcasts(user ? { id: user.id } : null)]);

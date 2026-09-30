@@ -111,10 +111,23 @@ export const decisionSchema = z
 export const requestSchema = z
   .object({
     details: text(300).pipe(z.string().min(2)),
-    pickup: text(80).pipe(z.string().min(2)),
+    /** Typed pickup place; ignored when placeId (a listed UM place) is given. */
+    pickup: text(80).optional(),
+    placeId: z.number().int().positive().max(2_000_000_000).optional(),
     dropoff: text(80).pipe(z.string().min(2)),
     /** Delivery fee (upah antar) in ringgit, e.g. 3 or 2.50, paid to the runner in person. Stored as sen. */
     tip: z.number().min(1).max(100),
+  })
+  .strict()
+  .refine((r) => r.placeId !== undefined || (r.pickup?.length ?? 0) >= 2, { path: ["pickup"] });
+
+/** Admin: add or edit a pickup place. */
+export const placeSchema = z
+  .object({
+    name: text(50).pipe(z.string().min(2)),
+    area: text(40).pipe(z.string().min(2)),
+    kind: z.enum(["food", "shop", "print", "other"]),
+    active: z.boolean().default(true),
   })
   .strict();
 

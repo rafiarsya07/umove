@@ -8,6 +8,7 @@ import { useSession } from "./lib/session";
 import { useStatus } from "./lib/status";
 import AdminBroadcasts from "./pages/admin/Broadcasts";
 import AdminMaintenance from "./pages/admin/Maintenance";
+import AdminPlaces from "./pages/admin/Places";
 import AccountLayout from "./pages/AccountLayout";
 import Apply from "./pages/Apply";
 import Dashboard from "./pages/Dashboard";
@@ -60,6 +61,7 @@ export default function App() {
             <Route path="applications" element={<AdminApplications />} />
             <Route path="support" element={<AdminSupport />} />
             <Route path="broadcasts" element={<AdminBroadcasts />} />
+            <Route path="places" element={<AdminPlaces />} />
             <Route path="maintenance" element={<AdminMaintenance />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="requests" element={<AdminRequests />} />

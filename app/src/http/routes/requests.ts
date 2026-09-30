@@ -14,6 +14,7 @@ import {
 import type { AppEnv } from "../../types.js";
 import { codeParam, rateSchema, requestSchema, statusSchema } from "../../validation.js";
 import { requireUser } from "../guards.js";
+import { activePlace, placeLabel } from "../../repo/places.js";
 
 /** Delivery requests: the board, posting, taking, status, rating. */
 export const requests = new Hono<AppEnv>();
@@ -27,8 +28,16 @@ requests.get("/mine", requireUser, async (c) => c.json(await myRequests(c.get("u
 requests.post("/", requireUser, async (c) => {
   const parsed = requestSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json(invalid([...new Set(parsed.error.issues.map((i) => String(i.path[0])))]), 400);
-  const { tip, ...rest } = parsed.data;
-  const result = await createRequest(c.get("user")!.id, { ...rest, tipSen: Math.round(tip * 100) });
+  const { tip, placeId, pickup, ...rest } = parsed.data;
+  // A listed place is looked up here, so its name can't be spoofed; a hidden or unknown one is refused.
+  const place = placeId === undefined ? null : await activePlace(placeId);
+  if (placeId !== undefined && !place) return c.json(invalid(["pickup"]), 400);
+  const result = await createRequest(c.get("user")!.id, {
+    ...rest,
+    pickup: place ? placeLabel(place) : pickup!,
+    placeId: place?.id ?? null,
+    tipSen: Math.round(tip * 100),
+  });
   if (typeof result === "string") return c.json({ error: result }, 409);
   announceChange();
   return c.json(result, 201);

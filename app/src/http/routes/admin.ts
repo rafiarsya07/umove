@@ -1,9 +1,10 @@
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { z } from "zod";
 import { config } from "../../config.js";
 import { announceChange } from "../../live.js";
 import { adminCancelRequest, adminStats, auditLog, listRequests, listUsers, setUserStatus } from "../../repo/admin.js";
 import { announceSite, announceSupport } from "../../live.js";
+import { allPlaces, savePlace } from "../../repo/places.js";
 import { allBroadcasts, createBroadcast, endBroadcast, maintenance, setMaintenance } from "../../repo/site.js";
 import { mailDecision, mailSupportDecision, mailSupportReply } from "../../mail.js";
 import { adminThread, closeThread, decide, inbox, postMessage } from "../../repo/support.js";
@@ -15,6 +16,7 @@ import {
   fileKindParam,
   idParam,
   maintenanceSchema,
+  placeSchema,
   supportDecisionSchema,
   supportSchema,
 } from "../../validation.js";
@@ -190,6 +192,28 @@ admin.post("/broadcasts/:id/end", async (c) => {
   if (!ok) return c.json({ error: "not_live" }, 409);
   announceSite();
   return c.json({ ok: true });
+});
+
+/* ---- Pickup places --------------------------------------------------------- */
+
+admin.get("/places", async (c) => c.json(await allPlaces()));
+
+const savePlaceRoute = async (c: Context<AppEnv>, id?: number) => {
+  const parsed = placeSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) {
+    return c.json({ error: "invalid", fields: [...new Set(parsed.error.issues.map((i) => String(i.path[0])))] }, 400);
+  }
+  const r = await savePlace(c.get("user")!.id, { ...parsed.data, id });
+  if (!r.ok) return c.json({ error: r.error }, r.error === "not_found" ? 404 : 409);
+  return c.json({ id: r.id }, id === undefined ? 201 : 200);
+};
+
+admin.post("/places", (c) => savePlaceRoute(c));
+
+admin.post("/places/:id", async (c) => {
+  const id = idParam.safeParse(c.req.param("id"));
+  if (!id.success) return c.json({ error: "not_found" }, 404);
+  return savePlaceRoute(c, id.data);
 });
 
 /* ---- Maintenance ----------------------------------------------------------- */
