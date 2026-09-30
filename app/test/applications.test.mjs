@@ -28,7 +28,7 @@ await profile(R, "rina"); await profile(D, "dian");
 // --- validation
 check("visitor cannot apply", (await apply(null, "runner")).status === 401);
 check("seller not open yet", (await apply(R, "seller")).status === 404);
-check("runner without photo", (await apply(R, "runner", undefined, { files: [] })).body?.fields?.includes("matric_card"));
+check("runner without face photo", (await apply(R, "runner", undefined, { files: [] })).body?.fields?.includes("selfie"));
 check("runner photo not an image", (await apply(R, "runner", undefined, { blob: new Uint8Array(300).fill(65) })).body?.error === "invalid_photo");
 check("runner photo too small", (await apply(R, "runner", undefined, { blob: JPEG.slice(0, 50) })).body?.error === "invalid_photo");
 check("runner photo too big", [400, 413].includes((await apply(R, "runner", undefined, { blob: new Uint8Array(3_100_000).fill(0xff) })).status));
@@ -36,7 +36,8 @@ check("unknown upload field rejected", (await apply(R, "runner", undefined, { ex
 check("runner must agree", (await apply(R, "runner", runnerDetails({ agree: false }))).body?.fields?.includes("agree"));
 check("runner extra field rejected", (await apply(R, "runner", runnerDetails({ isAdmin: true }))).status === 400);
 check("runner must say how they deliver", (await apply(R, "runner", runnerDetails({ vehicle: "rocket" }))).body?.fields?.includes("vehicle"));
-check("bad matric no", (await apply(R, "runner", runnerDetails({ matricNo: "x" }))).body?.fields?.includes("matricNo"));
+check("runner form asks no matric number", (await apply(R, "runner", runnerDetails({ matricNo: "U2102345" }))).status === 400);
+check("runner matric card photo not accepted", (await apply(R, "runner", undefined, { files: ["selfie", "matric_card"] })).body?.fields?.includes("matric_card"));
 check("broken JSON", (await (async () => { const fd = new FormData(); fd.set("details", "{"); const r = await fetch(`${BASE}/api/me/roles/runner`, { method: "POST", headers: { cookie: R, origin: BASE }, body: fd }); return r.status; })()) === 400);
 
 let r = await apply(D, "driver", undefined, { files: ["matric_card", "license"] });
@@ -124,7 +125,7 @@ if (purgeOldFiles) {
 }
 const purged = (await call("/admin/applications?status=approved", A)).body.find((x) => x.id === run.id);
 check("purged app has no files", purged.files.length === 0);
-check("purged photo 404", (await fetch(`${BASE}/api/admin/applications/${run.id}/files/matric_card`, { headers: { cookie: A } })).status === 404);
+check("purged photo 404", (await fetch(`${BASE}/api/admin/applications/${run.id}/files/selfie`, { headers: { cookie: A } })).status === 404);
 
 // --- CSRF
 const fd = new FormData(); fd.set("details", JSON.stringify(runnerDetails())); fd.set("matric_card", new Blob([JPEG]));

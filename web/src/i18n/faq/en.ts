@@ -6,7 +6,7 @@ export const faq: FaqCategory[] = [
     title: "Getting started",
     items: [
       { id: "what", q: "What is UMOVE?", a: "A campus errand board for UM students. Post what you need, and a verified student runner collects it and brings it to you." },
-      { id: "who", q: "Who can use UMOVE?", a: "Anyone with a Google account can sign in and post a request. Runners and drivers must be UM students and are checked by an admin before they can take requests." },
+      { id: "who", q: "Who can use UMOVE?", a: "Anyone with a Google account can sign in and post a request. Runners are UM students checked by an admin before they can take requests." },
       { id: "signup", q: "How do I sign up?", a: "Tap Sign in and continue with Google. There's no password to remember. Then add your WhatsApp number in Settings so your runner can reach you." },
       { id: "where", q: "Which areas does UMOVE cover?", a: "The UM campus and the residential colleges around it. Runners decide which trips they take, so nearby spots may work too; just say where in your request." },
       { id: "when", q: "When can I use it?", a: "Any time. Requests are taken by students who are free at that moment, so it's quickest during the day and evening." },
@@ -43,8 +43,8 @@ export const faq: FaqCategory[] = [
     id: "runners",
     title: "For runners",
     items: [
-      { id: "become", q: "Who can become a runner?", a: "UM students with an active WhatsApp number. You apply with your matric card, and an admin reviews it." },
-      { id: "apply", q: "How do I apply?", a: "Go to Become a runner or Settings → Roles → Apply. Fill in your name as on your matric card, your matric number, faculty or college, how you'll deliver, and a photo of your matric card." },
+      { id: "become", q: "Who can become a runner?", a: "UM students with an active WhatsApp number. The form is short: your name, college, how you'll deliver, and a clear photo of your face. No ID documents." },
+      { id: "apply", q: "How do I apply?", a: "Go to Become a runner or Settings → Roles → Apply. Fill in your name, college or faculty, how you'll deliver, and add a clear photo of your face." },
       { id: "review-time", q: "How long does approval take?", a: "Usually within 24 hours. You'll see the status in Settings and get an email. If it's not approved, you'll see why and can apply again after 24 hours." },
       { id: "vehicle", q: "Do I need a vehicle?", a: "No. You can deliver on foot, by bicycle or scooter, motorcycle or car. Choose what you'll use when you apply; it shows on your profile." },
       { id: "earn", q: "How do I get paid?", a: "The customer pays you the item price plus the delivery fee on handover. You keep the whole fee; UMOVE takes nothing." },
@@ -54,21 +54,11 @@ export const faq: FaqCategory[] = [
     ],
   },
   {
-    id: "drivers",
-    title: "Drivers and rides",
-    items: [
-      { id: "ride", q: "When is Ride coming?", a: "Soon. Rides with verified student drivers are next. Approved drivers get access first." },
-      { id: "driver-req", q: "What do I need to become a driver?", a: "A Malaysian driving licence valid for at least 30 more days (class matching your vehicle), current road tax, insurance, and photos of your matric card, licence, vehicle with the plate visible, and a selfie holding your matric card." },
-      { id: "driver-strict", q: "Why is the driver check stricter?", a: "Carrying passengers is a bigger responsibility than carrying food. We check every driver by hand before they can offer rides." },
-      { id: "documents", q: "What happens to my document photos?", a: "Only the UMOVE admin can see them. They're deleted automatically 30 days after your application is reviewed." },
-    ],
-  },
-  {
     id: "safety",
     title: "Safety and privacy",
     items: [
       { id: "who-coming", q: "Will I know who's delivering?", a: "Yes. Once a runner takes your request, you'll see their face photo, name, how they travel, and their deliveries and rating on the request page. Check it's the same person when they arrive. Photos are checked by an admin and only shown to you after the match." },
-      { id: "verified", q: "How are runners and drivers checked?", a: "Everyone applies with their matric card (drivers also with licence, vehicle, road tax and insurance), and an admin reviews every application within 24 hours. Verified people have a blue check." },
+      { id: "verified", q: "How are runners checked?", a: "Every runner is reviewed by an admin within 24 hours, including their face photo. Verified runners have a blue check, and you see who's coming once your request is taken." },
       { id: "whatsapp", q: "Who sees my WhatsApp number?", a: "Only the one person you're matched with, after a runner takes your request. It never appears on public pages." },
       { id: "meet", q: "Where should we meet?", a: "At a public spot such as a college lobby, guard house or faculty entrance. Runners don't go into rooms." },
       { id: "report", q: "How do I report someone?", a: "Send a Help request, choose Report someone, and include the order code. We review every report and can suspend accounts." },

@@ -27,6 +27,8 @@ export const id: Dict = {
     tabPost: "Pasang",
   },
   hero: {
+    examplesLabel: "Yang bisa kamu titip",
+    examples: ["Makanan dan minuman", "Print", "Belanja kebutuhan", "Alat tulis", "Ambil paket"],
     title: "Apa pun di kampus, diantar.",
     lead: "Pasang permintaan, sesama mahasiswa yang antar.",
     primary: "Pasang permintaan",
@@ -157,7 +159,6 @@ export const id: Dict = {
     reqs: [
       "Mahasiswa UM",
       "Nomor WhatsApp aktif",
-      "Kartu matrik, untuk verifikasi",
       "Foto wajah yang jelas",
       "Cara berkeliling: jalan kaki pun boleh",
     ],
@@ -169,7 +170,7 @@ export const id: Dict = {
       },
       {
         title: "Isi form singkat",
-        body: "Nama, nomor matrik, cara mengantar, foto kartu matrik, dan foto wajah.",
+        body: "Nama, kolej, cara mengantar, dan foto wajah yang jelas. Tanpa dokumen identitas.",
       },
       {
         title: "Tunggu persetujuan",
@@ -242,7 +243,7 @@ export const id: Dict = {
     save: "Simpan perubahan",
     saved: "Tersimpan",
     roles: "Peran",
-    rolesLead: "Pilih apa yang kamu lakukan di UMOVE; Runner dan Driver perlu persetujuan admin.",
+    rolesLead: "Runner dicek admin dulu sebelum bisa mengambil permintaan.",
     photo: "Foto runner",
     photoLead: "Pemesan melihat foto ini setelah kamu mengambil permintaannya, supaya tahu siapa yang datang.",
     photoApproved: "Dipakai",
@@ -299,7 +300,7 @@ export const id: Dict = {
     notFoundBody: "Username ini tidak ada, atau profilnya sudah dihapus.",
   },
   footer: {
-    tagline: "Titipan kampus, tumpangan, dan pasar mahasiswa, sesama mahasiswa UM.",
+    tagline: "Titipan di kampus, diantar sesama mahasiswa UM.",
     product: "Produk",
     account: "Akun",
     help: "Bantuan",
@@ -419,11 +420,11 @@ export const id: Dict = {
     vehicle: "Kamu mengantar dengan apa?",
     titleRunner: "Jadi Runner",
     titleDriver: "Jadi Driver",
-    leadRunner: "Form singkat supaya pelanggan tahu siapa yang mengantar. Setiap pendaftaran kami tinjau dalam 24 jam.",
+    leadRunner: "Form singkat supaya pemesan tahu siapa yang mengantar. Tanpa dokumen identitas. Setiap pendaftaran kami tinjau dalam 24 jam.",
     leadDriver:
       "Membawa penumpang itu tanggung jawab besar, jadi setiap driver kami periksa satu per satu. Setiap pendaftaran kami tinjau dalam 24 jam.",
     needTitle: "Yang perlu disiapkan",
-    needRunner: ["Kartu matrik UM", "Foto wajah yang jelas", "Nomor WhatsApp di profil"],
+    needRunner: ["Foto wajah yang jelas", "Nomor WhatsApp di profil"],
     needDriver: [
       "Kartu matrik UM",
       "SIM (lesen memandu) Malaysia yang masih berlaku minimal 30 hari lagi",
@@ -432,6 +433,7 @@ export const id: Dict = {
     ],
     sectionYou: "Tentang kamu",
     fullName: "Nama lengkap (sesuai kartu matrik)",
+    fullNameRunner: "Nama lengkap",
     matricNo: "Nomor matrik",
     faculty: "Fakultas atau kolej",
     facultyPh: "mis. FSKTM",
@@ -466,7 +468,7 @@ export const id: Dict = {
     photo_selfie: "Selfie sambil memegang kartu matrik",
     photo_face: "Foto wajah yang jelas",
     photo_faceHint: "Hanya ditampilkan ke pemesan setelah kamu mengambil permintaannya.",
-    photosLeadRunner: "Jelas dan terang. Kartu matrik hanya dilihat admin dan dihapus 30 hari setelah ditinjau. Foto wajah ditampilkan ke pemesan setelah kamu mengambil permintaannya.",
+    photosLeadRunner: "Jelas dan terang. Hanya admin, dan pemesan dari pesanan yang kamu ambil, yang bisa melihatnya.",
     choosePhoto: "Tambah foto",
     changePhoto: "Ganti",
     agree: "Semua data di atas benar dan milik saya. UMOVE boleh mencabut peran saya jika tidak benar.",
@@ -501,7 +503,7 @@ export const id: Dict = {
     startTitle: "Kirim permintaan bantuan",
     startLead: "Admin meninjaunya dulu, biasanya dalam beberapa jam. Setelah disetujui, kamu bisa chat di sini.",
     topic: "Soal apa?",
-    topics: { order: "Pesanan", account: "Akun saya", application: "Pendaftaran Runner/Driver", report: "Melaporkan seseorang", other: "Lainnya" },
+    topics: { order: "Pesanan", account: "Akun saya", application: "Pendaftaran runner", report: "Melaporkan seseorang", other: "Lainnya" },
     orderCode: "Kode pesanan (opsional)",
     orderCodePh: "UM-7K3F9Q",
     message: "Jelaskan masalahnya",

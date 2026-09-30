@@ -41,7 +41,7 @@ export type ApplyRole = z.infer<typeof roleParam>;
 
 /** Photos each role must upload with its application. */
 export const REQUIRED_FILES = {
-  runner: ["matric_card", "selfie"],
+  runner: ["selfie"],
   driver: ["matric_card", "license", "vehicle", "selfie"],
 } as const;
 export type FileKind = (typeof REQUIRED_FILES)["driver"][number];
@@ -65,8 +65,17 @@ const identity = {
   agree: z.literal(true),
 };
 
+/**
+ * Runner: kept short and private. Name, college or faculty, how they deliver,
+ * and a face photo (the requester sees it after the match). No ID documents.
+ */
 export const runnerApplicationSchema = z
-  .object({ ...identity, vehicle: z.enum(["walk", "bicycle", "motorcycle", "car"]) })
+  .object({
+    fullName: identity.fullName,
+    faculty: identity.faculty,
+    agree: identity.agree,
+    vehicle: z.enum(["walk", "bicycle", "motorcycle", "car"]),
+  })
   .strict();
 
 export const driverApplicationSchema = z

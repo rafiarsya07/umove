@@ -61,8 +61,9 @@ export function createApp() {
   const tooLarge = { onError: (c: Context) => c.json({ error: "payload_too_large" }, 413) };
   const smallBody = bodyLimit({ maxSize: 32 * 1024, ...tooLarge });
   const uploadBody = bodyLimit({ maxSize: 13 * 1024 * 1024, ...tooLarge });
+  // Uploads with photos: role applications and a runner's face photo.
   const isApplication = (c: { req: { method: string; path: string } }) =>
-    c.req.method === "POST" && /^\/api\/me\/roles\/[a-z]+$/.test(c.req.path);
+    c.req.method === "POST" && /^\/api\/me\/(roles\/[a-z]+|photo)$/.test(c.req.path);
   api.use("*", async (c, next) => (isApplication(c) ? uploadBody(c, next) : smallBody(c, next)));
   // Every API call has a deadline (longer for uploads), except the long-lived live stream.
   const deadline = timeout(15_000);

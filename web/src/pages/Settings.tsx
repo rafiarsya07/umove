@@ -299,8 +299,7 @@ function RolesPanel({ user }: { user: Me }) {
   const rows: { key: string; title: string; body: string; status: RoleStatus | "soon"; role?: ApplyRole }[] = [
     { key: "customer", title: s.roleCustomer, body: s.roleCustomerBody, status: "active" },
     { key: "runner", title: s.roleRunner, body: s.roleRunnerBody, status: user.roles.runner, role: "runner" },
-    { key: "driver", title: s.roleDriver, body: s.roleDriverBody, status: user.roles.driver, role: "driver" },
-    { key: "seller", title: s.roleSeller, body: s.roleSellerBody, status: "soon" },
+    // Driver and Seller come back with Ride and Market; deliveries only for now.
   ];
 
   return (

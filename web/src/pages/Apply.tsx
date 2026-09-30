@@ -9,13 +9,14 @@ import { preparePhoto } from "../lib/photo";
 import { useSession } from "../lib/session";
 
 /**
- * Apply for a role. Runner: a short form and a photo of the matric card.
+ * Apply for a role. Runner: a short private form (name, college, how they deliver) and a face photo.
  * Driver: identity, licence, vehicle and four photos. Every application is
  * reviewed by an admin (target: within 24 hours).
  */
 export default function Apply() {
   const { role } = useParams();
-  if (role !== "runner" && role !== "driver") return <Navigate to="/settings#roles" replace />;
+  // UMOVE focuses on deliveries for now: driver sign-ups are paused (rides aren't live).
+  if (role !== "runner") return <Navigate to="/runner" replace />;
   return <ApplyFor role={role} />;
 }
 
@@ -126,7 +127,7 @@ function ApplyFor({ role }: { role: ApplyRole }) {
     setFormError(null);
     const errs: Record<string, string> = {};
     if (form.fullName.trim().length < 3) errs.fullName = a.errRequired;
-    if (!/^[A-Za-z0-9/-]{5,20}$/.test(form.matricNo.replace(/\s/g, ""))) errs.matricNo = a.errMatric;
+    if (driver && !/^[A-Za-z0-9/-]{5,20}$/.test(form.matricNo.replace(/\s/g, ""))) errs.matricNo = a.errMatric;
     if (form.faculty.trim().length < 2) errs.faculty = a.errRequired;
     if (driver) {
       if (!form.licenseClass) errs.licenseClass = a.errRequired;
@@ -168,7 +169,7 @@ function ApplyFor({ role }: { role: ApplyRole }) {
           roadTaxExpiry: form.roadTaxExpiry,
           insured: true,
         }
-      : { fullName: form.fullName, matricNo: form.matricNo, faculty: form.faculty, vehicle: form.vehicle, agree: true };
+      : { fullName: form.fullName, faculty: form.faculty, vehicle: form.vehicle, agree: true };
     const fd = new FormData();
     fd.set("details", JSON.stringify(details));
     for (const k of PHOTOS[role]) fd.set(k, photos[k]!, `${k}.jpg`);
@@ -243,21 +244,23 @@ function ApplyFor({ role }: { role: ApplyRole }) {
         <form onSubmit={submit} noValidate className="mt-8 space-y-10">
           <Section title={a.sectionYou}>
             <Text
-              label={a.fullName}
+              label={driver ? a.fullName : a.fullNameRunner}
               value={form.fullName}
               onChange={(v) => set("fullName", v)}
               error={errors.fullName}
               max={60}
               autoComplete="name"
             />
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Text
-                label={a.matricNo}
-                value={form.matricNo}
-                onChange={(v) => set("matricNo", v.toUpperCase())}
-                error={errors.matricNo}
-                max={20}
-              />
+            <div className={driver ? "grid gap-5 sm:grid-cols-2" : ""}>
+              {driver ? (
+                <Text
+                  label={a.matricNo}
+                  value={form.matricNo}
+                  onChange={(v) => set("matricNo", v.toUpperCase())}
+                  error={errors.matricNo}
+                  max={20}
+                />
+              ) : null}
               <Text
                 label={a.faculty}
                 value={form.faculty}

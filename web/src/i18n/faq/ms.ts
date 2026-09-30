@@ -6,7 +6,7 @@ export const faq: FaqCategory[] = [
     title: "Bermula",
     items: [
       { id: "what", q: "Apa itu UMOVE?", a: "Papan tugasan kampus untuk pelajar UM. Pasang apa yang anda perlukan, dan runner pelajar yang disahkan akan mengambil dan menghantarnya kepada anda." },
-      { id: "who", q: "Siapa boleh guna UMOVE?", a: "Sesiapa dengan akaun Google boleh log masuk dan memasang permintaan. Runner dan driver mesti pelajar UM dan disemak oleh admin sebelum boleh mengambil permintaan." },
+      { id: "who", q: "Siapa boleh guna UMOVE?", a: "Sesiapa yang ada akaun Google boleh log masuk dan membuat permintaan. Runner ialah pelajar UM yang disemak admin sebelum boleh mengambil permintaan." },
       { id: "signup", q: "Bagaimana cara mendaftar?", a: "Ketik Log masuk dan teruskan dengan Google. Tiada kata laluan untuk diingat. Kemudian tambah nombor WhatsApp dalam Tetapan supaya runner boleh menghubungi anda." },
       { id: "where", q: "Kawasan mana yang diliputi?", a: "Kampus UM dan kolej kediaman di sekitarnya. Runner memilih perjalanan sendiri, jadi lokasi berdekatan mungkin juga boleh; nyatakan sahaja dalam permintaan anda." },
       { id: "when", q: "Bila boleh digunakan?", a: "Bila-bila masa. Permintaan diambil oleh pelajar yang lapang pada masa itu, jadi paling cepat pada waktu siang dan malam." },
@@ -43,8 +43,8 @@ export const faq: FaqCategory[] = [
     id: "runners",
     title: "Untuk runner",
     items: [
-      { id: "become", q: "Siapa boleh jadi runner?", a: "Pelajar UM dengan nombor WhatsApp aktif. Anda memohon dengan kad matrik, dan admin menyemaknya." },
-      { id: "apply", q: "Bagaimana cara memohon?", a: "Pergi ke Jadi runner atau Tetapan → Peranan → Mohon. Isi nama seperti dalam kad matrik, nombor matrik, fakulti atau kolej, cara menghantar, dan gambar kad matrik." },
+      { id: "become", q: "Siapa boleh jadi runner?", a: "Pelajar UM dengan nombor WhatsApp aktif. Borangnya ringkas: nama, kolej, cara menghantar, dan gambar wajah yang jelas. Tanpa dokumen pengenalan." },
+      { id: "apply", q: "Bagaimana cara memohon?", a: "Pergi ke Jadi runner atau Tetapan → Peranan → Mohon. Isi nama, kolej atau fakulti, cara menghantar, dan tambah gambar wajah yang jelas." },
       { id: "review-time", q: "Berapa lama kelulusan?", a: "Biasanya dalam 24 jam. Status dipaparkan dalam Tetapan dan anda terima e-mel. Jika tidak diluluskan, anda akan nampak sebabnya dan boleh memohon semula selepas 24 jam." },
       { id: "vehicle", q: "Perlukah saya ada kenderaan?", a: "Tidak. Anda boleh menghantar dengan berjalan kaki, basikal atau skuter, motosikal atau kereta. Pilih semasa memohon; ia dipaparkan di profil anda." },
       { id: "earn", q: "Bagaimana saya dibayar?", a: "Pelanggan membayar harga barang dan upah hantar semasa serahan. Anda simpan keseluruhan upah; UMOVE tidak mengambil apa-apa." },
@@ -54,21 +54,11 @@ export const faq: FaqCategory[] = [
     ],
   },
   {
-    id: "drivers",
-    title: "Driver dan tumpangan",
-    items: [
-      { id: "ride", q: "Bila Ride akan tiba?", a: "Tidak lama lagi. Tumpangan dengan driver pelajar yang disahkan ialah ciri seterusnya. Driver yang diluluskan mendapat akses dahulu." },
-      { id: "driver-req", q: "Apa syarat untuk jadi driver?", a: "Lesen memandu Malaysia yang sah sekurang-kurangnya 30 hari lagi (kelas sepadan dengan kenderaan), cukai jalan dan insurans yang sah, serta gambar kad matrik, lesen, kenderaan dengan plat kelihatan, dan swafoto memegang kad matrik." },
-      { id: "driver-strict", q: "Kenapa semakan driver lebih ketat?", a: "Membawa penumpang ialah tanggungjawab yang lebih besar daripada membawa makanan. Setiap driver disemak satu per satu sebelum boleh menawarkan tumpangan." },
-      { id: "documents", q: "Apa yang berlaku kepada gambar dokumen saya?", a: "Hanya admin UMOVE boleh melihatnya. Gambar dipadam secara automatik 30 hari selepas permohonan anda disemak." },
-    ],
-  },
-  {
     id: "safety",
     title: "Keselamatan dan privasi",
     items: [
       { id: "who-coming", q: "Adakah saya tahu siapa yang menghantar?", a: "Ya. Selepas runner mengambil permintaan anda, anda boleh melihat gambar wajah, nama, cara dia bergerak, serta jumlah penghantaran dan penarafannya di halaman permintaan. Pastikan orangnya sama apabila dia tiba. Gambar disemak oleh admin dan hanya ditunjukkan kepada anda selepas padanan." },
-      { id: "verified", q: "Bagaimana runner dan driver disemak?", a: "Semua memohon dengan kad matrik (driver juga dengan lesen, kenderaan, cukai jalan dan insurans), dan admin menyemak setiap permohonan dalam 24 jam. Yang disahkan ada tanda biru." },
+      { id: "verified", q: "Bagaimana runner disemak?", a: "Setiap runner disemak admin dalam 24 jam, termasuk gambar wajahnya. Runner yang disahkan ada tanda biru, dan anda boleh melihat siapa yang datang selepas permintaan anda diambil." },
       { id: "whatsapp", q: "Siapa boleh lihat nombor WhatsApp saya?", a: "Hanya seorang yang dipadankan dengan anda, selepas runner mengambil permintaan anda. Nombor anda tidak pernah muncul di halaman awam." },
       { id: "meet", q: "Di mana kita berjumpa?", a: "Di tempat awam seperti lobi kolej, pondok pengawal atau pintu masuk fakulti. Runner tidak masuk ke bilik." },
       { id: "report", q: "Bagaimana melaporkan seseorang?", a: "Hantar permintaan Bantuan, pilih Melaporkan seseorang, dan sertakan kod pesanan. Setiap laporan disemak dan akaun boleh digantung." },

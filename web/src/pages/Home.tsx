@@ -1,28 +1,17 @@
-import type { ComponentType } from "react";
 import { Link } from "react-router";
 import { Container } from "../components/Container";
 import { HowItWorks } from "../components/HowItWorks";
 import { RequestGrid } from "../components/RequestCard";
 import { useBoard } from "../lib/useBoard";
-import {
-  ArrowRightIcon,
-  MarketIcon,
-  QuestionIcon,
-  RequestsIcon,
-  RideIcon,
-  RunnerIcon,
-  StepsIcon,
-} from "../components/Icon";
-import { Badge, SectionHeading, btn } from "../components/ui";
+import { ArrowRightIcon, QuestionIcon, RequestsIcon, StepsIcon } from "../components/Icon";
+import { SectionHeading, btn } from "../components/ui";
 import { useI18n } from "../i18n";
 import { useCoreFaq } from "../i18n/faq";
 import { FaqList } from "../components/FaqList";
 
-type IconType = ComponentType<{ className?: string }>;
-
 /**
  * Home: quiet and typographic.
- *   1. Hero: one line, one sentence, two actions, the three services.
+ *   1. Hero: one line, one sentence, two actions, what people usually ask for.
  *   2. How it works.
  *   3. Questions.
  *   4. One band for runners.
@@ -30,12 +19,6 @@ type IconType = ComponentType<{ className?: string }>;
 export default function Home() {
   const { t } = useI18n();
   const core = useCoreFaq();
-
-  const services: { icon: IconType; title: string; body: string; soon: boolean }[] = [
-    { icon: RunnerIcon, ...t.services.deliver, soon: false },
-    { icon: RideIcon, ...t.services.ride, soon: true },
-    { icon: MarketIcon, ...t.services.market, soon: true },
-  ];
 
   return (
     <>
@@ -55,16 +38,17 @@ export default function Home() {
             </div>
           </div>
 
+          {/* Deliveries only for now: what people usually ask for. */}
           <ul
-            aria-label={t.services.label}
-            className="mx-auto mt-12 grid max-w-4xl grid-cols-3 divide-x divide-border overflow-hidden rounded-(--radius-surface) border border-border sm:mt-16"
+            aria-label={t.hero.examplesLabel}
+            className="mx-auto mt-10 flex max-w-2xl flex-wrap justify-center gap-2 sm:mt-12"
           >
-            {services.map(({ icon: Icon, title, body, soon }) => (
-              <li key={title} className="flex flex-col items-center gap-2 px-2 py-4 text-center sm:px-5 sm:py-6">
-                <Icon className={`size-8 sm:size-9 ${soon ? "opacity-45" : ""}`} />
-                <span className="text-[0.9375rem] font-semibold sm:text-[1rem]">{title}</span>
-                <span className="t-meta hidden text-[0.8125rem] sm:block">{body}</span>
-                <Badge tone={soon ? "soon" : "live"}>{soon ? t.services.soon : t.services.live}</Badge>
+            {t.hero.examples.map((x) => (
+              <li
+                key={x}
+                className="rounded-full border border-border bg-card px-3.5 py-1.5 text-[0.875rem] font-medium text-foreground-secondary"
+              >
+                {x}
               </li>
             ))}
           </ul>

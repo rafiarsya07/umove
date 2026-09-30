@@ -5,7 +5,7 @@ export type ApplyRole = "runner" | "driver";
 export type PhotoKind = "matric_card" | "license" | "vehicle" | "selfie";
 
 export const PHOTOS: Record<ApplyRole, PhotoKind[]> = {
-  runner: ["matric_card", "selfie"],
+  runner: ["selfie"],
   driver: ["matric_card", "license", "vehicle", "selfie"],
 };
 

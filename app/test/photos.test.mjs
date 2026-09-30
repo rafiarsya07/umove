@@ -35,7 +35,7 @@ await profile(R, "rina", "0111111111"); await profile(S, "sam", "0122222222");
 await profile(C, "caca", "0133333333"); await profile(X, "xena", "0144444444");
 
 // --- selfie is part of the runner application
-check("runner application without selfie rejected", (await apply(R, "runner", undefined, { files: ["matric_card"] })).body?.fields?.includes("selfie"));
+check("runner application without face photo rejected", (await apply(R, "runner", undefined, { files: [] })).body?.fields?.includes("selfie"));
 check("runner application with selfie", (await apply(R, "runner")).status === 200);
 await apply(S, "runner");
 check("stats count pending applications", (await call("/admin/stats", A)).body.pending === 2);
@@ -55,6 +55,9 @@ check("accept without photo = need_photo", (await call(`/requests/${code}/accept
 // --- sending a new photo
 check("non-runner cannot send a photo", (await upload(X)).status === 403);
 check("not an image rejected", (await upload(S, new Uint8Array(300).fill(65))).status === 400);
+const big = new Uint8Array(900_000).fill(7); big.set([0xff, 0xd8, 0xff, 0xe0]);
+check("a normal-size phone photo (900 KB) uploads", (await upload(S, big)).status === 201);
+check("over 3 MB rejected", [400, 413].includes((await upload(S, new Uint8Array(3_100_000).fill(0xff))).status));
 r = await upload(S);
 check("runner sends photo, pending", r.status === 201 && r.body.pending === true && r.body.approved === false);
 check("still cannot accept while pending", (await call(`/requests/${code}/accept`, S, "POST")).body?.error === "need_photo");

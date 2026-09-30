@@ -30,6 +30,8 @@ export const en = {
     tabPost: "Post",
   },
   hero: {
+    examplesLabel: "What you can ask for",
+    examples: ["Food and drinks", "Printing", "Groceries", "Stationery", "Parcel pick-ups"],
     title: "Anything on campus, delivered.",
     lead: "Post a request and a fellow student brings it over.",
     primary: "Post a request",
@@ -160,7 +162,6 @@ export const en = {
     reqs: [
       "You're a UM student",
       "An active WhatsApp number",
-      "Your matric card, for verification",
       "A clear photo of your face",
       "A way to get around: on foot is fine",
     ],
@@ -172,7 +173,7 @@ export const en = {
       },
       {
         title: "Fill in a short form",
-        body: "Your name, matric number, how you'll deliver, a photo of your matric card and one of your face.",
+        body: "Your name, college, how you'll deliver, and a clear photo of your face. No ID documents.",
       },
       {
         title: "Get approved",
@@ -244,7 +245,7 @@ export const en = {
     save: "Save changes",
     saved: "Saved",
     roles: "Roles",
-    rolesLead: "Choose what you do on UMOVE; Runner and Driver need admin approval.",
+    rolesLead: "Runners are checked by an admin before they can take requests.",
     photo: "Runner photo",
     photoLead: "Requesters see this after you take their request, so they know who's coming.",
     photoApproved: "In use",
@@ -301,7 +302,7 @@ export const en = {
     notFoundBody: "This username doesn't exist, or the profile was removed.",
   },
   footer: {
-    tagline: "Campus errands, rides and a student market, between UM students.",
+    tagline: "Campus errands, delivered by UM students.",
     product: "Product",
     account: "Account",
     help: "Help",
@@ -421,11 +422,11 @@ export const en = {
     vehicle: "How will you deliver?",
     titleRunner: "Become a Runner",
     titleDriver: "Become a Driver",
-    leadRunner: "A short form so customers know who's delivering. We review every application within 24 hours.",
+    leadRunner: "A short form so requesters know who's delivering. No ID documents needed. We review every application within 24 hours.",
     leadDriver:
       "Driving people is a real responsibility, so every driver is checked by hand. We review every application within 24 hours.",
     needTitle: "What you need",
-    needRunner: ["Your UM matric card", "A clear photo of your face", "A WhatsApp number in your profile"],
+    needRunner: ["A clear photo of your face", "A WhatsApp number in your profile"],
     needDriver: [
       "Your UM matric card",
       "A Malaysian driving licence valid for at least 30 more days",
@@ -434,6 +435,7 @@ export const en = {
     ],
     sectionYou: "About you",
     fullName: "Full name (as on your matric card)",
+    fullNameRunner: "Full name",
     matricNo: "Matric number",
     faculty: "Faculty or college",
     facultyPh: "e.g. FSKTM",
@@ -468,7 +470,7 @@ export const en = {
     photo_selfie: "Selfie holding your matric card",
     photo_face: "A clear photo of your face",
     photo_faceHint: "Shown to a requester only after you take their request.",
-    photosLeadRunner: "Clear and well lit. Your matric card is only seen by the admin and is deleted 30 days after the review. Your face photo is shown to requesters after you take their request.",
+    photosLeadRunner: "Clear and well lit. Only the admin, and the requester of an order you take, can see it.",
     choosePhoto: "Add photo",
     changePhoto: "Change",
     agree: "Everything above is true and belongs to me. UMOVE may remove my role if it isn't.",
@@ -503,7 +505,7 @@ export const en = {
     startTitle: "Send a help request",
     startLead: "An admin reviews it first, usually within a few hours. Once it's approved, you can chat here.",
     topic: "What's it about?",
-    topics: { order: "An order", account: "My account", application: "Runner/Driver application", report: "Report someone", other: "Something else" },
+    topics: { order: "An order", account: "My account", application: "Runner application", report: "Report someone", other: "Something else" },
     orderCode: "Order code (optional)",
     orderCodePh: "UM-7K3F9Q",
     message: "Describe the problem",

@@ -6,7 +6,7 @@ export const faq: FaqCategory[] = [
     title: "Memulai",
     items: [
       { id: "what", q: "Apa itu UMOVE?", a: "Papan titip-antar kampus untuk mahasiswa UM. Pasang apa yang kamu butuhkan, lalu runner mahasiswa terverifikasi mengambil dan mengantarkannya." },
-      { id: "who", q: "Siapa yang bisa memakai UMOVE?", a: "Siapa pun dengan akun Google bisa masuk dan memasang permintaan. Runner dan driver harus mahasiswa UM dan diperiksa admin sebelum bisa mengambil permintaan." },
+      { id: "who", q: "Siapa yang bisa memakai UMOVE?", a: "Siapa pun yang punya akun Google bisa masuk dan membuat permintaan. Runner adalah mahasiswa UM yang dicek admin sebelum bisa mengambil permintaan." },
       { id: "signup", q: "Bagaimana cara daftar?", a: "Ketuk Masuk lalu lanjutkan dengan Google. Tidak ada kata sandi yang perlu diingat. Setelah itu tambahkan nomor WhatsApp di Pengaturan supaya runner bisa menghubungimu." },
       { id: "where", q: "Area mana saja yang dilayani?", a: "Kampus UM dan kolej-kolej di sekitarnya. Runner memilih sendiri perjalanan yang diambil, jadi lokasi dekat kampus mungkin juga bisa; tulis saja di permintaanmu." },
       { id: "when", q: "Kapan bisa dipakai?", a: "Kapan saja. Permintaan diambil oleh mahasiswa yang sedang senggang, jadi paling cepat di siang dan malam hari." },
@@ -43,8 +43,8 @@ export const faq: FaqCategory[] = [
     id: "runners",
     title: "Untuk runner",
     items: [
-      { id: "become", q: "Siapa yang bisa jadi runner?", a: "Mahasiswa UM dengan nomor WhatsApp aktif. Kamu mendaftar dengan kartu matrik, lalu admin meninjaunya." },
-      { id: "apply", q: "Bagaimana cara mendaftar?", a: "Buka Jadi runner atau Pengaturan → Peran → Daftar. Isi nama sesuai kartu matrik, nomor matrik, fakultas atau kolej, cara mengantar, dan foto kartu matrik." },
+      { id: "become", q: "Siapa yang bisa jadi runner?", a: "Mahasiswa UM dengan nomor WhatsApp aktif. Formnya singkat: nama, kolej, cara mengantar, dan foto wajah yang jelas. Tanpa dokumen identitas." },
+      { id: "apply", q: "Bagaimana cara mendaftar?", a: "Buka Jadi runner atau Pengaturan → Peran → Daftar. Isi nama, kolej atau fakultas, cara mengantar, dan tambahkan foto wajah yang jelas." },
       { id: "review-time", q: "Berapa lama persetujuannya?", a: "Biasanya dalam 24 jam. Statusnya terlihat di Pengaturan dan kamu dapat email. Kalau belum disetujui, kamu akan melihat alasannya dan bisa daftar lagi setelah 24 jam." },
       { id: "vehicle", q: "Apakah harus punya kendaraan?", a: "Tidak. Kamu bisa mengantar dengan jalan kaki, sepeda atau skuter, motor, atau mobil. Pilih saat mendaftar; pilihanmu tampil di profil." },
       { id: "earn", q: "Bagaimana aku dibayar?", a: "Pemesan membayar harga barang ditambah upah antar saat serah terima. Upahnya utuh untukmu; UMOVE tidak mengambil apa pun." },
@@ -54,21 +54,11 @@ export const faq: FaqCategory[] = [
     ],
   },
   {
-    id: "drivers",
-    title: "Driver dan tumpangan",
-    items: [
-      { id: "ride", q: "Kapan Ride hadir?", a: "Segera. Tumpangan dengan driver mahasiswa terverifikasi adalah fitur berikutnya. Driver yang sudah disetujui mendapat akses pertama." },
-      { id: "driver-req", q: "Apa syarat jadi driver?", a: "SIM Malaysia yang masih berlaku minimal 30 hari (kelas sesuai kendaraan), road tax dan asuransi yang berlaku, serta foto kartu matrik, SIM, kendaraan dengan plat terlihat, dan selfie sambil memegang kartu matrik." },
-      { id: "driver-strict", q: "Kenapa pemeriksaan driver lebih ketat?", a: "Membawa penumpang jauh lebih besar tanggung jawabnya daripada membawa makanan. Setiap driver kami periksa satu per satu sebelum bisa menawarkan tumpangan." },
-      { id: "documents", q: "Apa yang terjadi dengan foto dokumenku?", a: "Hanya admin UMOVE yang bisa melihatnya. Foto otomatis dihapus 30 hari setelah pendaftaranmu ditinjau." },
-    ],
-  },
-  {
     id: "safety",
     title: "Keamanan dan privasi",
     items: [
       { id: "who-coming", q: "Apakah saya tahu siapa yang mengantar?", a: "Ya. Setelah runner mengambil permintaanmu, kamu bisa melihat foto wajah, nama, cara dia berkeliling, serta jumlah antaran dan ratingnya di halaman permintaan. Pastikan orangnya sama saat dia datang. Foto dicek admin dan hanya ditampilkan ke kamu setelah cocok." },
-      { id: "verified", q: "Bagaimana runner dan driver diperiksa?", a: "Semua mendaftar dengan kartu matrik (driver juga dengan SIM, kendaraan, road tax, dan asuransi), dan admin meninjau setiap pendaftaran dalam 24 jam. Yang terverifikasi punya centang biru." },
+      { id: "verified", q: "Bagaimana runner diperiksa?", a: "Setiap runner ditinjau admin dalam 24 jam, termasuk foto wajahnya. Runner terverifikasi punya centang biru, dan kamu bisa melihat siapa yang datang setelah permintaanmu diambil." },
       { id: "whatsapp", q: "Siapa yang bisa melihat nomor WhatsApp-ku?", a: "Hanya satu orang yang dipasangkan denganmu, setelah runner mengambil permintaanmu. Nomormu tidak pernah muncul di halaman publik." },
       { id: "meet", q: "Ketemunya di mana?", a: "Di tempat umum seperti lobi kolej, pos satpam, atau pintu fakultas. Runner tidak masuk ke kamar." },
       { id: "report", q: "Bagaimana cara melaporkan seseorang?", a: "Kirim permintaan Bantuan, pilih Melaporkan seseorang, dan sertakan kode pesanan. Setiap laporan kami tinjau dan akun bisa ditangguhkan." },
