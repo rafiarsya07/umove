@@ -17,9 +17,20 @@ export type BoardItem = {
 export type RequestDetail = BoardItem & {
   acceptedAt: string | null;
   deliveredAt: string | null;
-  runner: { username: string; name: string } | null;
+  runner: {
+    username: string;
+    name: string;
+    /** Only for the requester once matched. */
+    hasPhoto?: boolean;
+    vehicle?: "walk" | "bicycle" | "motorcycle" | "car" | null;
+    runs?: number;
+    rating?: number | null;
+    ratingCount?: number;
+  } | null;
   viewerRole: "customer" | "runner" | null;
   canAccept: boolean;
+  /** A runner who could take this but has no approved face photo yet. */
+  needsPhoto: boolean;
   canRate: boolean;
   /** The other side's WhatsApp number, only after a match. */
   contact: string | null;

@@ -67,6 +67,7 @@ export const faq: FaqCategory[] = [
     id: "safety",
     title: "Keselamatan dan privasi",
     items: [
+      { id: "who-coming", q: "Adakah saya tahu siapa yang menghantar?", a: "Ya. Selepas runner mengambil permintaan anda, anda boleh melihat gambar wajah, nama, cara dia bergerak, serta jumlah penghantaran dan penarafannya di halaman permintaan. Pastikan orangnya sama apabila dia tiba. Gambar disemak oleh admin dan hanya ditunjukkan kepada anda selepas padanan." },
       { id: "verified", q: "Bagaimana runner dan driver disemak?", a: "Semua memohon dengan kad matrik (driver juga dengan lesen, kenderaan, cukai jalan dan insurans), dan admin menyemak setiap permohonan dalam 24 jam. Yang disahkan ada tanda biru." },
       { id: "whatsapp", q: "Siapa boleh lihat nombor WhatsApp saya?", a: "Hanya seorang yang dipadankan dengan anda, selepas runner mengambil permintaan anda. Nombor anda tidak pernah muncul di halaman awam." },
       { id: "meet", q: "Di mana kita berjumpa?", a: "Di tempat awam seperti lobi kolej, pondok pengawal atau pintu masuk fakulti. Runner tidak masuk ke bilik." },

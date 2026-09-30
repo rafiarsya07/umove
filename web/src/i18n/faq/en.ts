@@ -67,6 +67,7 @@ export const faq: FaqCategory[] = [
     id: "safety",
     title: "Safety and privacy",
     items: [
+      { id: "who-coming", q: "Will I know who's delivering?", a: "Yes. Once a runner takes your request, you'll see their face photo, name, how they travel, and their deliveries and rating on the request page. Check it's the same person when they arrive. Photos are checked by an admin and only shown to you after the match." },
       { id: "verified", q: "How are runners and drivers checked?", a: "Everyone applies with their matric card (drivers also with licence, vehicle, road tax and insurance), and an admin reviews every application within 24 hours. Verified people have a blue check." },
       { id: "whatsapp", q: "Who sees my WhatsApp number?", a: "Only the one person you're matched with, after a runner takes your request. It never appears on public pages." },
       { id: "meet", q: "Where should we meet?", a: "At a public spot such as a college lobby, guard house or faculty entrance. Runners don't go into rooms." },

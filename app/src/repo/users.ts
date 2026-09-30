@@ -61,7 +61,7 @@ async function rolesOf(userId: string): Promise<Roles> {
   return roles;
 }
 
-async function statsOf(userId: string) {
+export async function statsOf(userId: string) {
   const [s] = await sql<{ requests: number; runs: number; rating: string | null; ratingCount: number }[]>`
     select
       (select count(*)::int from orders where customer_id = ${userId}) as requests,

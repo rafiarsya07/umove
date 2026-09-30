@@ -67,6 +67,7 @@ export const faq: FaqCategory[] = [
     id: "safety",
     title: "Keamanan dan privasi",
     items: [
+      { id: "who-coming", q: "Apakah saya tahu siapa yang mengantar?", a: "Ya. Setelah runner mengambil permintaanmu, kamu bisa melihat foto wajah, nama, cara dia berkeliling, serta jumlah antaran dan ratingnya di halaman permintaan. Pastikan orangnya sama saat dia datang. Foto dicek admin dan hanya ditampilkan ke kamu setelah cocok." },
       { id: "verified", q: "Bagaimana runner dan driver diperiksa?", a: "Semua mendaftar dengan kartu matrik (driver juga dengan SIM, kendaraan, road tax, dan asuransi), dan admin meninjau setiap pendaftaran dalam 24 jam. Yang terverifikasi punya centang biru." },
       { id: "whatsapp", q: "Siapa yang bisa melihat nomor WhatsApp-ku?", a: "Hanya satu orang yang dipasangkan denganmu, setelah runner mengambil permintaanmu. Nomormu tidak pernah muncul di halaman publik." },
       { id: "meet", q: "Ketemunya di mana?", a: "Di tempat umum seperti lobi kolej, pos satpam, atau pintu fakultas. Runner tidak masuk ke kamar." },

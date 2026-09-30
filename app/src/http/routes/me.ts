@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { announceSupport } from "../../live.js";
-import { mailNewApplication, mailSupportToAdmins } from "../../mail.js";
+import { mailNewApplication, mailNewPhoto, mailSupportToAdmins } from "../../mail.js";
 import { myLatest, postMessage, startThread, unreadForMember, withdraw } from "../../repo/support.js";
 import { myApplications, submitApplication, withdrawApplication, type Upload } from "../../repo/applications.js";
 import { getMe, updateProfile } from "../../repo/users.js";
@@ -16,6 +16,8 @@ import {
   supportStartSchema,
 } from "../../validation.js";
 import { requireUser } from "../guards.js";
+import { SANDBOX_HEADER } from "../security.js";
+import { myPhotoStatus, ownPhoto, submitPhoto } from "../../repo/photos.js";
 
 /** The signed-in user's own account. Every query is keyed by the session. */
 export const me = new Hono<AppEnv>();
@@ -116,6 +118,40 @@ me.delete("/roles/:role", async (c) => {
   if (!role.success) return c.json({ error: "not_found" }, 404);
   const ok = await withdrawApplication(c.get("user")!.id, role.data);
   return ok ? c.json({ ok: true }) : c.json({ error: "not_pending" }, 409);
+});
+
+/* ---- Face photo (runners and drivers) ---------------------------------------- */
+
+me.get("/photo", async (c) => c.json(await myPhotoStatus(c.get("user")!.id)));
+
+/** My own photo: `approved` (in use) or `pending` (waiting for review). */
+me.get("/photo/:which", async (c) => {
+  const which = c.req.param("which");
+  if (which !== "approved" && which !== "pending") return c.json({ error: "not_found" }, 404);
+  const p = await ownPhoto(c.get("user")!.id, which);
+  if (!p) return c.json({ error: "not_found" }, 404);
+  return c.body(new Uint8Array(p.data), 200, {
+    "Content-Type": p.mime,
+    "Content-Disposition": "inline",
+    [SANDBOX_HEADER]: "1",
+    "Cache-Control": "private, no-store",
+  });
+});
+
+/** Send a new face photo (multipart field `photo`); an admin reviews it. */
+me.post("/photo", async (c) => {
+  const form = await c.req.parseBody({ all: false }).catch(() => null);
+  const f = form?.photo;
+  if (!(f instanceof File) || f.size < 100 || f.size > MAX_PHOTO_BYTES) {
+    return c.json({ error: "invalid_photo", fields: ["photo"] }, 400);
+  }
+  const data = new Uint8Array(await f.arrayBuffer());
+  const mime = sniffImage(data);
+  if (!mime) return c.json({ error: "invalid_photo", fields: ["photo"] }, 400);
+  const r = await submitPhoto(c.get("user")!.id, mime, data);
+  if (!r.ok) return c.json({ error: r.error }, r.error === "too_many" ? 429 : 403);
+  mailNewPhoto();
+  return c.json(await myPhotoStatus(c.get("user")!.id), 201);
 });
 
 /* ---- Help chat (reviewed by an admin before it opens) ----------------------- */

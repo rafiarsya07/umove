@@ -5,6 +5,7 @@ import { announceChange } from "../../live.js";
 import { adminCancelRequest, adminStats, auditLog, listRequests, listUsers, setUserStatus } from "../../repo/admin.js";
 import { announceSite, announceSupport } from "../../live.js";
 import { allPlaces, savePlace } from "../../repo/places.js";
+import { adminPhoto, decidePhoto, pendingPhotos } from "../../repo/photos.js";
 import { allBroadcasts, createBroadcast, endBroadcast, maintenance, setMaintenance } from "../../repo/site.js";
 import { mailDecision, mailSupportDecision, mailSupportReply } from "../../mail.js";
 import { adminThread, closeThread, decide, inbox, postMessage } from "../../repo/support.js";
@@ -192,6 +193,33 @@ admin.post("/broadcasts/:id/end", async (c) => {
   if (!ok) return c.json({ error: "not_live" }, 409);
   announceSite();
   return c.json({ ok: true });
+});
+
+/* ---- Runner face photos ------------------------------------------------------ */
+
+admin.get("/photos", async (c) => c.json(await pendingPhotos()));
+
+admin.get("/photos/:userId/:which", async (c) => {
+  const userId = z.uuid().safeParse(c.req.param("userId"));
+  const which = c.req.param("which");
+  if (!userId.success || (which !== "approved" && which !== "pending")) return c.json({ error: "not_found" }, 404);
+  const p = await adminPhoto(userId.data, which);
+  if (!p) return c.json({ error: "not_found" }, 404);
+  return c.body(new Uint8Array(p.data), 200, {
+    "Content-Type": p.mime,
+    "Content-Disposition": "inline",
+    [SANDBOX_HEADER]: "1",
+    "Cache-Control": "private, no-store",
+  });
+});
+
+admin.post("/photos/:userId/decision", async (c) => {
+  const userId = z.uuid().safeParse(c.req.param("userId"));
+  if (!userId.success) return c.json({ error: "not_found" }, 404);
+  const parsed = decisionSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ error: "invalid", fields: ["reason"] }, 400);
+  const ok = await decidePhoto(c.get("user")!.id, userId.data, parsed.data.decision, parsed.data.reason || null);
+  return ok ? c.json({ ok: true }) : c.json({ error: "not_pending" }, 409);
 });
 
 /* ---- Pickup places --------------------------------------------------------- */

@@ -33,6 +33,9 @@ const PHOTO_LABEL: Record<string, string> = {
 };
 
 const PHOTO_ORDER = ["matric_card", "license", "vehicle", "selfie"];
+/** A runner's "selfie" is a plain face photo shown to requesters; a driver's shows the matric card. */
+const photoLabel = (role: Application["role"], k: string) =>
+  role === "runner" && k === "selfie" ? "Face (shown to requesters)" : (PHOTO_LABEL[k] ?? k);
 
 const DETAIL_LABEL: [string, string][] = [
   ["fullName", "Full name"],
@@ -57,6 +60,7 @@ const REASONS = [
   "Licence is expired, probationary or doesn't match the vehicle.",
   "Plate isn't visible in the vehicle photo.",
   "Selfie doesn't clearly show you with your matric card.",
+  "Face photo isn't clear. Please use a well-lit photo without sunglasses or a mask.",
   "We couldn't reach you on WhatsApp to verify.",
 ];
 
@@ -64,16 +68,18 @@ const OVERDUE_MS = 24 * 3600 * 1000;
 
 export default function Applications() {
   const [params, setParams] = useSearchParams();
+  const tab = params.get("tab") === "photos" ? "photos" : "applications";
   const status = (["pending", "approved", "rejected"] as const).find((s) => s === params.get("status")) ?? "pending";
   const [apps, setApps] = useState<Application[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
+    if (tab === "photos") return;
     setApps(null);
     api<Application[]>(`/admin/applications?status=${status}`)
       .then(setApps)
       .catch(() => setError("Could not load applications."));
-  }, [status]);
+  }, [status, tab]);
   useEffect(load, [load]);
 
   return (
@@ -89,7 +95,7 @@ export default function Applications() {
             type="button"
             onClick={() => setParams(f === "pending" ? {} : { status: f })}
             className={`rounded-full px-3 py-1.5 text-[0.8125rem] font-medium capitalize motion-interactive ${
-              status === f
+              tab === "applications" && status === f
                 ? "bg-foreground text-background"
                 : "border border-border bg-card text-foreground-secondary hover:text-foreground"
             }`}
@@ -97,19 +103,37 @@ export default function Applications() {
             {f}
           </button>
         ))}
+        <button
+          type="button"
+          onClick={() => setParams({ tab: "photos" })}
+          className={`rounded-full px-3 py-1.5 text-[0.8125rem] font-medium motion-interactive ${
+            tab === "photos"
+              ? "bg-foreground text-background"
+              : "border border-border bg-card text-foreground-secondary hover:text-foreground"
+          }`}
+        >
+          Runner photos
+        </button>
       </div>
-      {error ? <p className="mb-4 text-[0.875rem] text-danger">{error}</p> : null}
-      {apps === null ? (
+      {tab === "photos" ? <PhotoReview /> : null}
+      {tab === "photos" ? null : error ? <p className="mb-4 text-[0.875rem] text-danger">{error}</p> : null}
+      {tab === "photos" ? null : apps === null ? (
         <p className="t-meta">Loading…</p>
       ) : apps.length === 0 ? (
         <div className={`${panel} px-6 py-10 text-center`}>
           <p className="font-semibold">{status === "pending" ? "All caught up" : "Nothing here yet"}</p>
-          <p className="t-meta mt-1">{status === "pending" ? "No applications waiting." : "No applications in this list."}</p>
+          <p className="t-meta mt-1">
+            {status === "pending" ? "No applications waiting." : "No applications in this list."}
+          </p>
         </div>
       ) : (
         <ul className="space-y-4">
           {apps.map((a) => (
-            <ApplicationCard key={a.id} app={a} onDone={() => setApps((l) => l?.filter((x) => x.id !== a.id) ?? null)} />
+            <ApplicationCard
+              key={a.id}
+              app={a}
+              onDone={() => setApps((l) => l?.filter((x) => x.id !== a.id) ?? null)}
+            />
           ))}
         </ul>
       )}
@@ -163,12 +187,19 @@ function ApplicationCard({ app: a, onDone }: { app: Application; onDone: () => v
           </p>
           <p className="t-meta text-[0.75rem]">
             Applied {timeAgo(a.createdAt, "en-MY")}
-            {a.decidedAt ? ` · ${a.status} ${timeAgo(a.decidedAt, "en-MY")}${a.decidedBy ? ` by @${a.decidedBy}` : ""}` : ""}
+            {a.decidedAt
+              ? ` · ${a.status} ${timeAgo(a.decidedAt, "en-MY")}${a.decidedBy ? ` by @${a.decidedBy}` : ""}`
+              : ""}
           </p>
           {a.reason ? <p className="mt-1 text-[0.8125rem] text-foreground-secondary">Reason: {a.reason}</p> : null}
         </div>
         {a.whatsapp ? (
-          <a className={btn.small} href={`https://wa.me/${a.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
+          <a
+            className={btn.small}
+            href={`https://wa.me/${a.whatsapp.replace(/\D/g, "")}`}
+            target="_blank"
+            rel="noreferrer"
+          >
             WhatsApp
           </a>
         ) : null}
@@ -188,20 +219,22 @@ function ApplicationCard({ app: a, onDone }: { app: Application; onDone: () => v
             <p className="t-meta">Photos were deleted 30 days after the decision.</p>
           ) : (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-              {[...a.files].sort((x, y) => PHOTO_ORDER.indexOf(x) - PHOTO_ORDER.indexOf(y)).map((k) => {
-                const src = `/api/admin/applications/${a.id}/files/${k}`;
-                return (
-                  <a key={k} href={src} target="_blank" rel="noreferrer" className="group block">
-                    <img
-                      src={src}
-                      alt={PHOTO_LABEL[k] ?? k}
-                      loading="lazy"
-                      className="aspect-[4/3] w-full rounded-(--radius-control) border border-border bg-muted object-cover group-hover:opacity-90"
-                    />
-                    <span className="t-meta mt-1 block text-[0.75rem]">{PHOTO_LABEL[k] ?? k}</span>
-                  </a>
-                );
-              })}
+              {[...a.files]
+                .sort((x, y) => PHOTO_ORDER.indexOf(x) - PHOTO_ORDER.indexOf(y))
+                .map((k) => {
+                  const src = `/api/admin/applications/${a.id}/files/${k}`;
+                  return (
+                    <a key={k} href={src} target="_blank" rel="noreferrer" className="group block">
+                      <img
+                        src={src}
+                        alt={photoLabel(a.role, k)}
+                        loading="lazy"
+                        className="aspect-[4/3] w-full rounded-(--radius-control) border border-border bg-muted object-cover group-hover:opacity-90"
+                      />
+                      <span className="t-meta mt-1 block text-[0.75rem]">{photoLabel(a.role, k)}</span>
+                    </a>
+                  );
+                })}
             </div>
           )}
         </div>
@@ -263,6 +296,166 @@ function ApplicationCard({ app: a, onDone }: { app: Application; onDone: () => v
           {error ? <p className="mt-2 text-[0.8125rem] text-danger">{error}</p> : null}
         </div>
       ) : null}
+    </li>
+  );
+}
+
+type PendingPhoto = {
+  userId: string;
+  name: string;
+  username: string;
+  email: string;
+  pendingAt: string;
+  hasApproved: boolean;
+};
+
+const PHOTO_REASONS = [
+  "Face isn't clearly visible. Please retake it in good light.",
+  "Please remove sunglasses, a mask or anything covering your face.",
+  "This doesn't look like the same person as your application.",
+  "Please use a real photo of yourself, not an avatar or group photo.",
+];
+
+/** New face photos sent by runners: compare with the one in use, then approve or reject. */
+function PhotoReview() {
+  const [rows, setRows] = useState<PendingPhoto[] | null>(null);
+  const load = useCallback(() => {
+    api<PendingPhoto[]>("/admin/photos")
+      .then(setRows)
+      .catch(() => setRows([]));
+  }, []);
+  useEffect(load, [load]);
+
+  if (rows === null) return <p className="t-meta">Loading…</p>;
+  if (rows.length === 0)
+    return (
+      <div className={`${panel} px-6 py-10 text-center`}>
+        <p className="font-semibold">All caught up</p>
+        <p className="t-meta mt-1">No runner photos waiting.</p>
+      </div>
+    );
+  return (
+    <ul className="space-y-4">
+      {rows.map((p) => (
+        <PhotoCard
+          key={p.userId}
+          photo={p}
+          onDone={() => setRows((l) => l?.filter((x) => x.userId !== p.userId) ?? null)}
+        />
+      ))}
+    </ul>
+  );
+}
+
+function PhotoCard({ photo: p, onDone }: { photo: PendingPhoto; onDone: () => void }) {
+  const [rejecting, setRejecting] = useState(false);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const decide = async (decision: "approve" | "reject") => {
+    setBusy(true);
+    setError(null);
+    try {
+      await api(`/admin/photos/${p.userId}/decision`, {
+        method: "POST",
+        body: decision === "approve" ? { decision } : { decision, reason: reason.trim() },
+      });
+      onDone();
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.code === "not_pending" ? "Already reviewed." : "That didn't work. Try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  const img = (which: string) => `/api/admin/photos/${p.userId}/${which}`;
+  return (
+    <li className={`${panel} overflow-hidden`}>
+      <div className="flex flex-col gap-4 p-4 sm:flex-row">
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold">{p.name}</p>
+          <p className="t-meta">@{p.username}</p>
+          <p className="t-meta">{p.email}</p>
+          <p className="t-meta mt-1 text-[0.75rem]">Sent {timeAgo(p.pendingAt, "en-MY")}</p>
+        </div>
+        <div className="flex gap-3">
+          {p.hasApproved ? (
+            <figure>
+              <img
+                src={img("approved")}
+                alt="In use"
+                className="size-28 rounded-(--radius-control) border border-border object-cover"
+              />
+              <figcaption className="t-meta mt-1 text-[0.75rem]">In use</figcaption>
+            </figure>
+          ) : null}
+          <figure>
+            <a href={img("pending")} target="_blank" rel="noreferrer">
+              <img
+                src={img("pending")}
+                alt="New photo"
+                className="size-28 rounded-(--radius-control) border-2 border-warning object-cover"
+              />
+            </a>
+            <figcaption className="t-meta mt-1 text-[0.75rem]">New</figcaption>
+          </figure>
+        </div>
+      </div>
+      <div className="border-t border-border bg-surface p-4">
+        {rejecting ? (
+          <div className="space-y-3">
+            <p className="t-label">Why is it rejected? The runner will see this.</p>
+            <div className="flex flex-wrap gap-1.5">
+              {PHOTO_REASONS.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setReason(r)}
+                  className="rounded-full border border-border bg-card px-2.5 py-1 text-left text-[0.75rem] text-foreground-secondary hover:text-foreground"
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+            <textarea
+              className="h-20 w-full resize-none rounded-(--radius-control) border border-border-input bg-card px-3 py-2 text-[0.875rem] focus:border-foreground focus:outline-none"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              maxLength={300}
+              placeholder="Reason"
+            />
+            <div className="flex gap-2">
+              <button type="button" className={btn.small} onClick={() => setRejecting(false)} disabled={busy}>
+                Back
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-9 items-center rounded-full bg-danger px-3.5 text-[0.8125rem] font-semibold text-white motion-pressable disabled:opacity-60"
+                disabled={busy || reason.trim().length < 5}
+                onClick={() => decide("reject")}
+              >
+                Reject photo
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap justify-end gap-2">
+            <button type="button" className={btn.small} disabled={busy} onClick={() => setRejecting(true)}>
+              Reject…
+            </button>
+            <button
+              type="button"
+              className="inline-flex h-9 items-center rounded-full bg-primary px-3.5 text-[0.8125rem] font-semibold text-primary-foreground motion-pressable hover:bg-primary-hover disabled:opacity-60"
+              disabled={busy}
+              onClick={() => decide("approve")}
+            >
+              Approve photo
+            </button>
+          </div>
+        )}
+        {error ? <p className="mt-2 text-[0.8125rem] text-danger">{error}</p> : null}
+      </div>
     </li>
   );
 }

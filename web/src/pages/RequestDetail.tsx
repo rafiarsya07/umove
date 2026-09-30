@@ -2,8 +2,17 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router";
 import { Container } from "../components/Container";
 import { ConfirmDialog } from "../components/ConfirmDialog";
-import { CheckIcon, DropoffIcon, PickupIcon, StarIcon } from "../components/Icon";
-import { btn } from "../components/ui";
+import {
+  BikeIcon,
+  CarIcon,
+  CheckIcon,
+  DropoffIcon,
+  MotorIcon,
+  PickupIcon,
+  StarIcon,
+  WalkIcon,
+} from "../components/Icon";
+import { Stars, VerifiedMark, btn } from "../components/ui";
 import { fmt, useI18n } from "../i18n";
 import { ApiError, api } from "../lib/api";
 import { ringgit, timeAgo } from "../lib/format";
@@ -68,7 +77,9 @@ export default function RequestDetail() {
             ? r.errBusy
             : code === "not_runner"
               ? r.errNotRunner
-              : r.errGeneric,
+              : code === "need_photo"
+                ? r.errNeedPhoto
+                : r.errGeneric,
       );
       setAsking(null);
       load();
@@ -166,15 +177,19 @@ export default function RequestDetail() {
         </div>
       ) : null}
 
-      {/* The other person, once matched */}
+      {/* The other person, once matched. The requester also sees who is coming. */}
       {counterpart && data.contact ? (
-        <div className="mt-4 flex flex-col gap-3 rounded-(--radius-surface) border border-border p-4 sm:flex-row sm:items-center">
-          <div className="min-w-0 flex-1">
-            <p className="t-meta text-[0.75rem]">{data.viewerRole === "customer" ? r.runner : r.customer}</p>
-            <Link to={`/u/${counterpart.username}`} className="text-[0.9375rem] font-semibold hover:underline">
-              {counterpart.name} <span className="t-meta font-normal">@{counterpart.username}</span>
-            </Link>
-          </div>
+        <div className="mt-4 flex flex-col gap-4 rounded-(--radius-surface) border border-border p-4 sm:flex-row sm:items-center">
+          {data.viewerRole === "customer" && data.runner ? (
+            <RunnerCard code={data.code} runner={data.runner} />
+          ) : (
+            <div className="min-w-0 flex-1">
+              <p className="t-meta text-[0.75rem]">{r.customer}</p>
+              <Link to={`/u/${counterpart.username}`} className="text-[0.9375rem] font-semibold hover:underline">
+                {counterpart.name} <span className="t-meta font-normal">@{counterpart.username}</span>
+              </Link>
+            </div>
+          )}
           <a
             href={`https://wa.me/${data.contact.replace(/\D/g, "")}?text=${encodeURIComponent(waText)}`}
             target="_blank"
@@ -193,6 +208,14 @@ export default function RequestDetail() {
             <Link to={`/login?next=/requests/${data.code}`} className={btn.primary}>
               {r.signInToTake}
             </Link>
+          ) : data.canAccept && data.needsPhoto ? (
+            <div className="w-full rounded-(--radius-surface) border border-warning/30 bg-warning-soft p-4">
+              <p className="text-[0.9375rem] font-semibold">{r.needPhotoTitle}</p>
+              <p className="t-meta mt-1">{r.needPhotoBody}</p>
+              <Link to="/settings#photo" className={`${btn.small} mt-3`}>
+                {r.needPhotoButton}
+              </Link>
+            </div>
           ) : data.canAccept ? (
             <button
               type="button"
@@ -335,5 +358,59 @@ function RateForm({ code, role, onDone }: { code: string; role: Detail["viewerRo
       </button>
       {state === "error" ? <p className="mt-2 text-[0.875rem] text-danger">{r.errGeneric}</p> : null}
     </form>
+  );
+}
+
+const WAYS = ["walk", "bicycle", "motorcycle", "car"] as const;
+const WAY_ICON = { walk: WalkIcon, bicycle: BikeIcon, motorcycle: MotorIcon, car: CarIcon };
+
+/** Who is coming: face, name, how they travel, deliveries and rating. For the requester only. */
+function RunnerCard({ code, runner }: { code: string; runner: NonNullable<Detail["runner"]> }) {
+  const { t } = useI18n();
+  const r = t.requests;
+  const [broken, setBroken] = useState(false);
+  const Way = runner.vehicle ? WAY_ICON[runner.vehicle] : null;
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-4">
+      <span className="inline-flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-foreground font-display text-[1.75rem] font-bold text-background ring-4 ring-primary-soft">
+        {runner.hasPhoto && !broken ? (
+          <img
+            src={`/api/requests/${encodeURIComponent(code)}/runner-photo`}
+            alt={runner.name}
+            onError={() => setBroken(true)}
+            className="size-full object-cover"
+          />
+        ) : (
+          runner.name.trim().charAt(0).toUpperCase()
+        )}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="t-meta text-[0.75rem]">{r.yourRunner}</p>
+        <Link to={`/u/${runner.username}`} className="flex items-center gap-1.5 hover:underline">
+          <span className="truncate text-[1.0625rem] font-semibold">{runner.name}</span>
+          <VerifiedMark className="size-4 shrink-0" />
+        </Link>
+        <p className="t-meta text-[0.8125rem]">@{runner.username}</p>
+        <div className="mt-2 flex flex-wrap gap-1.5 text-[0.75rem]">
+          {Way && runner.vehicle ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5">
+              <Way className="size-3.5" />
+              {t.runner.ways[WAYS.indexOf(runner.vehicle)].title}
+            </span>
+          ) : null}
+          <span className="rounded-full border border-border px-2 py-0.5">
+            {runner.runs ? fmt(r.runnerRuns, { n: runner.runs }) : r.runnerNew}
+          </span>
+          {runner.rating != null ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5">
+              <Stars value={runner.rating} className="size-3" />
+              <span className="font-semibold tabular-nums">{runner.rating.toFixed(1)}</span>
+              <span className="text-muted-foreground">({runner.ratingCount})</span>
+            </span>
+          ) : null}
+        </div>
+        <p className="t-meta mt-2 text-[0.75rem]">{r.runnerCheck}</p>
+      </div>
+    </div>
   );
 }

@@ -41,7 +41,7 @@ export type ApplyRole = z.infer<typeof roleParam>;
 
 /** Photos each role must upload with its application. */
 export const REQUIRED_FILES = {
-  runner: ["matric_card"],
+  runner: ["matric_card", "selfie"],
   driver: ["matric_card", "license", "vehicle", "selfie"],
 } as const;
 export type FileKind = (typeof REQUIRED_FILES)["driver"][number];

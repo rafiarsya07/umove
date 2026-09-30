@@ -1,4 +1,5 @@
 import { sql } from "../db.js";
+import { statsOf } from "./users.js";
 
 /**
  * Delivery requests ("orders" table).
@@ -114,11 +115,14 @@ export async function requestForViewer(code: string, viewerId: string | null) {
 
   const matched = role !== null && ["accepted", "on_the_way", "delivered"].includes(o.status);
   let canAccept = false;
+  let needsPhoto = false;
   if (viewerId && o.status === "open" && role === null) {
-    const [r] = await sql<{ ok: boolean }[]>`
-      select exists (select 1 from user_roles where user_id = ${viewerId} and role = 'runner' and status = 'active') as ok
+    const [r] = await sql<{ ok: boolean; photo: boolean }[]>`
+      select exists (select 1 from user_roles where user_id = ${viewerId} and role = 'runner' and status = 'active') as ok,
+             exists (select 1 from profile_photos where user_id = ${viewerId} and data is not null) as photo
     `;
     canAccept = r.ok;
+    needsPhoto = r.ok && !r.photo;
   }
   let rated = false;
   if (role && o.status === "delivered") {
@@ -140,20 +144,35 @@ export async function requestForViewer(code: string, viewerId: string | null) {
     acceptedAt: o.acceptedAt,
     deliveredAt: o.deliveredAt,
     customer: { username: o.cUsername, name: role ? o.cName : o.cName.split(" ")[0] },
-    runner: o.rUsername ? { username: o.rUsername, name: o.rName } : null,
+    runner: o.rUsername
+      ? {
+          username: o.rUsername,
+          name: o.rName,
+          // Who is coming: shown to the requester once the runner has taken the request.
+          ...(matched && role === "customer" && o.runnerId ? await runnerCard(o.runnerId) : {}),
+        }
+      : null,
     viewerRole: role,
     canAccept,
+    /** A runner who can take this request but has no approved face photo yet. */
+    needsPhoto,
     canRate: role !== null && o.status === "delivered" && !rated,
     contact: matched ? (role === "customer" ? o.rPhone : o.cPhone) : null,
   };
 }
 
-export async function acceptRequest(code: string, runnerId: string): Promise<"ok" | "gone" | "not_runner" | "busy"> {
-  const [r] = await sql<{ runner: boolean; active: number }[]>`
+export async function acceptRequest(
+  code: string,
+  runnerId: string,
+): Promise<"ok" | "gone" | "not_runner" | "busy" | "need_photo"> {
+  const [r] = await sql<{ runner: boolean; active: number; photo: boolean }[]>`
     select exists (select 1 from user_roles where user_id = ${runnerId} and role = 'runner' and status = 'active') as runner,
-           (select count(*)::int from orders where runner_id = ${runnerId} and status in ('accepted','on_the_way')) as active
+           (select count(*)::int from orders where runner_id = ${runnerId} and status in ('accepted','on_the_way')) as active,
+           exists (select 1 from profile_photos where user_id = ${runnerId} and data is not null) as photo
   `;
   if (!r.runner) return "not_runner";
+  // Requesters see who is coming, so a runner needs an approved face photo first.
+  if (!r.photo) return "need_photo";
   if (r.active >= MAX_ACTIVE_PER_RUNNER) return "busy";
   const rows = await sql`
     update orders set runner_id = ${runnerId}, status = 'accepted', accepted_at = now()
@@ -228,4 +247,16 @@ export async function myRequests(userId: string) {
     order by (status in ('open','accepted','on_the_way')) desc, created_at desc
     limit 40
   `;
+}
+
+/** Runner details for the requester: photo flag, how they travel, runs and rating. */
+async function runnerCard(runnerId: string) {
+  const [r] = await sql<{ hasPhoto: boolean; vehicle: string | null }[]>`
+    select exists (select 1 from profile_photos where user_id = ${runnerId} and data is not null) as "hasPhoto",
+           (select details->>'vehicle' from role_applications
+             where user_id = ${runnerId} and role = 'runner' and status = 'approved'
+             order by decided_at desc limit 1) as vehicle
+  `;
+  const s = await statsOf(runnerId);
+  return { hasPhoto: r.hasPhoto, vehicle: r.vehicle, runs: s.runs, rating: s.rating, ratingCount: s.ratingCount };
 }

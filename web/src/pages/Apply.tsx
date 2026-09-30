@@ -412,12 +412,14 @@ function ApplyFor({ role }: { role: ApplyRole }) {
             </>
           ) : null}
 
-          <Section title={a.sectionPhotos} lead={a.photosLead}>
+          <Section title={a.sectionPhotos} lead={role === "runner" ? a.photosLeadRunner : a.photosLead}>
             <div className="grid gap-3 sm:grid-cols-2">
               {PHOTOS[role].map((k) => (
                 <PhotoPicker
                   key={k}
-                  label={a[`photo_${k}`]}
+                  // A runner's "selfie" is a plain face photo that requesters see later.
+                  label={role === "runner" && k === "selfie" ? a.photo_face : a[`photo_${k}`]}
+                  hint={role === "runner" && k === "selfie" ? a.photo_faceHint : undefined}
                   blob={photos[k]}
                   error={errors[k]}
                   onPick={(b) => {
@@ -567,7 +569,14 @@ function Check(p: { checked: boolean; onChange: (v: boolean) => void; error?: st
   );
 }
 
-function PhotoPicker(p: { label: string; blob?: Blob; error?: string; onPick: (b: Blob) => void; onFail: () => void }) {
+function PhotoPicker(p: {
+  label: string;
+  hint?: string;
+  blob?: Blob;
+  error?: string;
+  onPick: (b: Blob) => void;
+  onFail: () => void;
+}) {
   const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const url = useMemo(() => (p.blob ? URL.createObjectURL(p.blob) : null), [p.blob]);
@@ -588,6 +597,7 @@ function PhotoPicker(p: { label: string; blob?: Blob; error?: string; onPick: (b
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-[0.875rem] font-semibold">{p.label}</span>
+        {p.hint ? <span className="block text-[0.75rem] text-muted-foreground">{p.hint}</span> : null}
         <span className={`block text-[0.75rem] ${p.error ? "font-medium text-danger" : "text-muted-foreground"}`}>
           {p.error || (busy ? "…" : p.blob ? t.apply.changePhoto : t.apply.choosePhoto)}
         </span>

@@ -14,6 +14,8 @@ import {
 import type { AppEnv } from "../../types.js";
 import { codeParam, rateSchema, requestSchema, statusSchema } from "../../validation.js";
 import { requireUser } from "../guards.js";
+import { SANDBOX_HEADER } from "../security.js";
+import { runnerPhotoForCustomer } from "../../repo/photos.js";
 import { activePlace, placeLabel } from "../../repo/places.js";
 
 /** Delivery requests: the board, posting, taking, status, rating. */
@@ -48,6 +50,20 @@ requests.get("/:code", async (c) => {
   if (!id.success) return c.json({ error: "not_found" }, 404);
   const r = await requestForViewer(id.data, c.get("user")?.id ?? null);
   return r ? c.json(r) : c.json({ error: "not_found" }, 404);
+});
+
+/** The runner's face, for the requester of an order that runner has taken. */
+requests.get("/:code/runner-photo", requireUser, async (c) => {
+  const id = codeParam.safeParse(c.req.param("code"));
+  if (!id.success) return c.json({ error: "not_found" }, 404);
+  const p = await runnerPhotoForCustomer(id.data, c.get("user")!.id);
+  if (!p) return c.json({ error: "not_found" }, 404);
+  return c.body(new Uint8Array(p.data), 200, {
+    "Content-Type": p.mime,
+    "Content-Disposition": "inline",
+    [SANDBOX_HEADER]: "1",
+    "Cache-Control": "private, no-store",
+  });
 });
 
 /** Runs a state change and answers 409 when it did not apply. */

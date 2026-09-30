@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Container } from "../components/Container";
 import { CheckIcon } from "../components/Icon";
+import { RunnerPhotoPanel } from "../components/RunnerPhoto";
 import { Avatar, Badge, Segment, SettingsRow, VerifiedMark, btn, segmentClass } from "../components/ui";
 import { LANGS, fmt, useI18n } from "../i18n";
 import { ApiError, api } from "../lib/api";
@@ -55,6 +56,11 @@ export default function Settings() {
             <SettingsRow id="roles" title={s.roles} lead={s.rolesLead}>
               <RolesPanel user={user} />
             </SettingsRow>
+            {user.roles.runner === "active" ? (
+              <SettingsRow id="photo" title={s.photo} lead={s.photoLead}>
+                <RunnerPhotoPanel />
+              </SettingsRow>
+            ) : null}
           </>
         ) : null}
 

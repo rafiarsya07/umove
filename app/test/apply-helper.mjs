@@ -10,7 +10,7 @@ export const driverDetails = (o = {}) => ({
   vehicleType: "car", vehicleModel: "Perodua Myvi", vehicleColor: "White", plate: "wxy 1234", seats: 4,
   roadTaxExpiry: day(100), insured: true, ...o,
 });
-const FILES = { runner: ["matric_card"], driver: ["matric_card", "license", "vehicle", "selfie"] };
+const FILES = { runner: ["matric_card", "selfie"], driver: ["matric_card", "license", "vehicle", "selfie"] };
 
 export async function apply(sid, role, details, { files = FILES[role] ?? [], blob = JPEG, extra } = {}) {
   const fd = new FormData();

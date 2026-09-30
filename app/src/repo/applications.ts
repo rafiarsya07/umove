@@ -162,9 +162,7 @@ export async function applicationFile(id: number, kind: FileKind) {
   return f ?? null;
 }
 
-export type DecideResult =
-  | { ok: true; role: ApplyRole; email: string; name: string }
-  | { ok: false };
+export type DecideResult = { ok: true; role: ApplyRole; email: string; name: string } | { ok: false };
 
 /** Admin: approve or reject an open application; updates the role and the audit log together. */
 export async function decideApplication(
@@ -189,6 +187,17 @@ export async function decideApplication(
           reviewed_by = ${adminId}, reviewed_at = now()
       where user_id = ${a.userId} and role = ${a.role}
     `;
+    // A runner's face photo becomes the face requesters see (see repo/photos.ts).
+    // Drivers' selfies show their matric card, so they are never copied.
+    if (decision === "approve" && a.role === "runner") {
+      await tx`
+        insert into profile_photos (user_id, mime, data, approved_at)
+        select ${a.userId}, f.mime, f.data, now() from application_files f
+        where f.application_id = ${id} and f.kind = 'selfie'
+        on conflict (user_id) do update
+          set mime = excluded.mime, data = excluded.data, approved_at = now(), reason = null, updated_at = now()
+      `;
+    }
     await tx`
       insert into audit_log (actor_id, action, target)
       values (${adminId}, ${`role.${a.role}.${decision}`}, ${a.userId})

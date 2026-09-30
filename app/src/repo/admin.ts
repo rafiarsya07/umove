@@ -18,13 +18,16 @@ export async function adminStats() {
       suspended: number;
       support: number;
       supportPending: number;
+      photosPending: number;
     }[]
   >`
     select
       (select count(*)::int from users) as users,
       (select count(*)::int from users where created_at > now() - interval '7 days') as "newUsers7d",
       (select count(*)::int from user_roles where role = 'runner' and status = 'active') as runners,
-      (select count(*)::int from user_roles where status = 'pending') as pending,
+      (select count(*)::int from user_roles where status = 'pending')
+        + (select count(*)::int from profile_photos where pending_data is not null) as pending,
+      (select count(*)::int from profile_photos where pending_data is not null) as "photosPending",
       (select count(*)::int from orders where status = 'open') as open,
       (select count(*)::int from orders where status in ('accepted', 'on_the_way')) as active,
       (select count(*)::int from orders where status = 'delivered' and delivered_at > now() - interval '7 days') as "delivered7d",

@@ -55,6 +55,20 @@ export function mailNewApplication(role: "runner" | "driver", name: string, user
   );
 }
 
+/** A runner sent a new face photo to review. */
+export function mailNewPhoto() {
+  sendMail(
+    [...config.adminEmails],
+    "New runner photo to review",
+    [
+      "A runner sent a new face photo on UMOVE.",
+      "",
+      "Review it here:",
+      `${config.publicOrigin}/admin/applications?tab=photos`,
+    ].join("\n"),
+  );
+}
+
 export function mailDecision(
   to: string,
   name: string,
@@ -81,11 +95,11 @@ export function mailDecision(
           "",
           `You can fix this and apply again after 24 hours: ${config.publicOrigin}/settings#roles`,
         ];
-  sendMail([to], decision === "approve" ? `You're approved as a UMOVE ${r}` : `Your UMOVE ${r} application`, [
-    ...lines,
-    "",
-    "— UMOVE",
-  ].join("\n"));
+  sendMail(
+    [to],
+    decision === "approve" ? `You're approved as a UMOVE ${r}` : `Your UMOVE ${r} application`,
+    [...lines, "", "— UMOVE"].join("\n"),
+  );
 }
 
 const TOPIC = {
@@ -115,7 +129,12 @@ export function mailSupportDecision(to: string, name: string, decision: "approve
     [to],
     decision === "approve" ? "Your UMOVE help chat is open" : "About your UMOVE help request",
     (decision === "approve"
-      ? [`Hi ${name},`, "", "We've reviewed your request and opened the chat. Continue here:", `${config.publicOrigin}/help`]
+      ? [
+          `Hi ${name},`,
+          "",
+          "We've reviewed your request and opened the chat. Continue here:",
+          `${config.publicOrigin}/help`,
+        ]
       : [
           `Hi ${name},`,
           "",
@@ -134,6 +153,8 @@ export function mailSupportReply(to: string, name: string) {
   sendMail(
     [to],
     "UMOVE replied to your message",
-    [`Hi ${name},`, "", "The UMOVE team replied in your help chat:", `${config.publicOrigin}/help`, "", "— UMOVE"].join("\n"),
+    [`Hi ${name},`, "", "The UMOVE team replied in your help chat:", `${config.publicOrigin}/help`, "", "— UMOVE"].join(
+      "\n",
+    ),
   );
 }
