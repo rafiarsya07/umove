@@ -42,7 +42,7 @@ export function mountWeb(app: Hono<AppEnv>) {
     // A request for a missing file with an extension is a real 404.
     if (/\.[a-z0-9]{2,5}$/i.test(c.req.path)) return c.text("Not found", 404);
     indexHtml ??= await readFile(join(root, "index.html"), "utf8").catch(() => null);
-    if (!indexHtml) return c.text("Web app not built", 503);
+    if (!indexHtml) return c.text(`UMOVE API. The app lives at ${config.publicOrigin}`, 404);
     c.header("Cache-Control", "no-cache");
     return c.html(indexHtml);
   });

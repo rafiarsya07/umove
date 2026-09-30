@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# UMove: first-time setup on the mini PC.
+# UMOVE: first-time setup on the mini PC.
 #
 #   cd ~/umove && bash scripts/install.sh
 #
@@ -13,7 +13,7 @@ cd "$(dirname "$0")/.."
 say()  { printf '\n\033[1m%s\033[0m\n' "$*"; }
 fail() { printf '\n\033[31m%s\033[0m\n' "$*" >&2; exit 1; }
 
-[ -f docker-compose.yml ] || fail "Run this from the UMove folder."
+[ -f docker-compose.yml ] || fail "Run this from the UMOVE folder."
 [ "$(id -u)" -ne 0 ] || fail "Run as your normal user, not root."
 
 # --- Docker ---------------------------------------------------------------
@@ -29,11 +29,13 @@ docker compose version >/dev/null 2>&1 || fail "Docker Compose plugin missing: s
 # --- .env -----------------------------------------------------------------
 gen() { head -c 48 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 40; }
 
-ask() { # ask VAR "Question" [secret] [optional]
-  local var=$1 q=$2 secret=${3:-} optional=${4:-} val=""
+ask() { # ask VAR "Question" [secret] [optional] [default]
+  local var=$1 q=$2 secret=${3:-} optional=${4:-} def=${5:-} val=""
+  [ -n "$def" ] && q="$q [$def]"
   while :; do
     if [ -n "$secret" ]; then read -rsp "$q: " val; echo; else read -rp "$q: " val; fi
     val=$(printf '%s' "$val" | tr -d '[:space:]')
+    [ -z "$val" ] && val=$def
     [ -n "$val" ] || [ -n "$optional" ] && break
     echo "  (required)"
   done
@@ -42,12 +44,17 @@ ask() { # ask VAR "Question" [secret] [optional]
 
 if [ -f .env ]; then
   say "Keeping your existing .env"
+  if ! grep -q '^PROXY_SECRET=.\{32,\}' .env; then
+    sed -i '/^PROXY_SECRET=/d' .env
+    echo "PROXY_SECRET=$(gen)$(gen)" >> .env
+    echo "  Added a new PROXY_SECRET."
+  fi
 else
   say "Creating .env: paste each value and press Enter (secret values stay hidden)"
-  ask TUNNEL_TOKEN "Cloudflare Tunnel token" secret
+  ask TUNNEL_TOKEN "Cloudflare Tunnel token (tunnel for umove-api.rafiarsya.com)" secret
   ask GOOGLE_CLIENT_ID "Google Client ID (…apps.googleusercontent.com)"
   ask GOOGLE_CLIENT_SECRET "Google Client secret" secret
-  ask ADMIN_EMAILS "Admin Google email(s), comma-separated"
+  ask ADMIN_EMAILS "Admin Google email(s), comma-separated" "" "" "rafiarsya.work@gmail.com"
   ask TELEGRAM_BOT_TOKEN "Telegram bot token (optional, Enter to skip)" secret optional
 
   case "$GOOGLE_CLIENT_ID" in *.apps.googleusercontent.com) ;; *) fail "That Client ID doesn't end with .apps.googleusercontent.com";; esac
@@ -55,6 +62,7 @@ else
   cat > .env <<ENV
 POSTGRES_PASSWORD=$(gen)
 APP_DB_PASSWORD=$(gen)
+PROXY_SECRET=$(gen)$(gen)
 TUNNEL_TOKEN=$TUNNEL_TOKEN
 GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
@@ -69,20 +77,23 @@ ENV
 fi
 
 # --- Build and start ------------------------------------------------------
-say "Building and starting UMove (the first build takes a few minutes)..."
+say "Building and starting UMOVE (the first build takes a few minutes)..."
 docker compose up -d --build
 
-say "Waiting for UMove to become healthy..."
+say "Waiting for UMOVE to become healthy..."
 for _ in $(seq 1 60); do
   if curl -fsS http://127.0.0.1:3000/api/health >/dev/null 2>&1; then
     docker compose ps
-    say "UMove is running."
+    say "UMOVE API is running."
     echo "  Local check:  curl http://127.0.0.1:3000/api/health"
-    echo "  Public:       https://umove.rafiarsya.com"
     echo "  Logs:         docker compose logs -f app"
+    say "Last step: give the web Worker this secret (Cloudflare → Workers → umove → Settings → Variables and Secrets → Add → Secret):"
+    echo "  Name:  PROXY_SECRET"
+    echo "  Value: $(grep '^PROXY_SECRET=' .env | cut -d= -f2)"
+    echo "Then open https://umove.rafiarsya.com"
     exit 0
   fi
   sleep 3
 done
 docker compose ps
-fail "UMove didn't become healthy in 3 minutes. Check: docker compose logs app db"
+fail "UMOVE didn't become healthy in 3 minutes. Check: docker compose logs app db"

@@ -8,3 +8,6 @@ app/public/
 backups/
 *.log
 Claude outputs/
+.dev.vars
+.wrangler/
+*.tsbuildinfo

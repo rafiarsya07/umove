@@ -18,3 +18,5 @@ node test/auth.test.mjs
 ```
 
 The Google overrides are ignored when NODE_ENV=production.
+
+For the requests flow, restart the app on a fresh database with `ADMIN_EMAILS=admin@x.com`, then run `node test/requests.test.mjs` (post, race to accept, WhatsApp privacy, status, rating, live stream).

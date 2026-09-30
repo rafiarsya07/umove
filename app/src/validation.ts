@@ -39,3 +39,28 @@ export const profileSchema = z
 export const decisionSchema = z.object({ decision: z.enum(["approve", "reject"]) }).strict();
 
 export const roleParam = z.enum(["runner"]);
+
+export const requestSchema = z
+  .object({
+    details: text(300).pipe(z.string().min(2)),
+    pickup: text(80).pipe(z.string().min(2)),
+    dropoff: text(80).pipe(z.string().min(2)),
+    /** Tip in ringgit, e.g. 3 or 2.50. Stored as sen. */
+    tip: z.number().min(0).max(100),
+  })
+  .strict();
+
+export const statusSchema = z.object({ status: z.enum(["on_the_way", "delivered"]) }).strict();
+
+export const rateSchema = z
+  .object({
+    stars: z.number().int().min(1).max(5),
+    body: text(300),
+  })
+  .strict();
+
+export const idParam = z.coerce
+  .number()
+  .int()
+  .positive()
+  .max(2 ** 53);

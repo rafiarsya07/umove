@@ -8,13 +8,15 @@ import { config } from "../config.js";
 import { dbHealthy } from "../db.js";
 import { log } from "../log.js";
 import type { AppEnv } from "../types.js";
-import { clientIp } from "./client-ip.js";
+import { clientIp, isLocal, viaWorker } from "./client-ip.js";
 import { sameOrigin } from "./guards.js";
 import { rateLimit } from "./rate-limit.js";
 import { admin } from "./routes/admin.js";
 import { auth } from "./routes/auth.js";
 import { me } from "./routes/me.js";
+import { requests } from "./routes/requests.js";
 import { users } from "./routes/users.js";
+import { liveHandler } from "../live.js";
 import { securityHeaders } from "./security.js";
 import { mountWeb } from "./static.js";
 
@@ -37,8 +39,17 @@ export function createApp() {
   });
 
   const api = new Hono<AppEnv>();
+  // When a PROXY_SECRET is set, the API answers only requests forwarded by the
+  // UMOVE Worker (plus health checks from the mini PC itself). Calling the
+  // tunnel hostname directly gets nothing.
+  api.use("*", async (c, next) => {
+    if (config.proxySecret && !viaWorker(c) && !isLocal(c)) return c.json({ error: "forbidden" }, 403);
+    return next();
+  });
   api.use("*", bodyLimit({ maxSize: 32 * 1024, onError: (c) => c.json({ error: "payload_too_large" }, 413) }));
-  api.use("*", timeout(15_000));
+  // Every API call has a deadline, except the long-lived live stream.
+  const deadline = timeout(15_000);
+  api.use("*", async (c, next) => (c.req.path.endsWith("/api/live") ? next() : deadline(c, next)));
   api.use("*", rateLimit("api", config.rateLimit.api));
   api.use("*", sameOrigin);
   api.use("/auth/*", rateLimit("auth", 20));
@@ -59,6 +70,8 @@ export function createApp() {
   api.route("/me", me);
   api.route("/users", users);
   api.route("/admin", admin);
+  api.route("/requests", requests);
+  api.get("/live", (c) => liveHandler(c));
 
   api.notFound((c) => c.json({ error: "not_found" }, 404));
   app.route("/api", api);

@@ -57,8 +57,11 @@ CREATE TABLE orders (
   tip_sen     INT NOT NULL CHECK (tip_sen BETWEEN 0 AND 100000),
   status      TEXT NOT NULL DEFAULT 'open'
               CHECK (status IN ('open', 'accepted', 'on_the_way', 'delivered', 'cancelled')),
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  accepted_at  TIMESTAMPTZ,
+  delivered_at TIMESTAMPTZ,
+  cancelled_at TIMESTAMPTZ,
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   CHECK (runner_id IS NULL OR runner_id <> customer_id),
   CHECK ((status = 'open') = (runner_id IS NULL) OR status = 'cancelled')
 );

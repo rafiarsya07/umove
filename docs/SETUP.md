@@ -1,108 +1,86 @@
-# Setup UMove di mini PC (production)
+# Setup UMOVE (production)
 
-Semuanya jalan di mini PC lu: web, API, database, login Google, dan bot
-Telegram. Cloudflare cuma jadi jalur masuk (HTTPS + perlindungan) lewat
-Tunnel. Tidak ada layanan pihak ketiga yang membatasi jumlah request.
+UMOVE dibagi dua, supaya cepat, murah, dan tidak ada batas request:
 
 ```
-Pengunjung ──HTTPS──▶ Cloudflare ──Tunnel──▶ mini PC
-                                              ├─ tunnel  (cloudflared)
-                                              ├─ app     (web + /api + bot)
-                                              └─ db      (Postgres, internal saja)
+Pengunjung ──▶ umove.rafiarsya.com  (Cloudflare Worker)
+                 ├─ tampilan web   → langsung dari Cloudflare (cepat, gratis, tanpa batas)
+                 └─ /api/*         → diteruskan ke mini PC lewat Tunnel
+                                         │
+                          umove-api.rafiarsya.com (Cloudflare Tunnel)
+                                         │
+                                      mini PC
+                                         ├─ app  (API, login Google, realtime, bot)
+                                         └─ db   (Postgres, tidak bisa diakses dari luar)
 ```
 
-Hasil akhir: **https://umove.rafiarsya.com** jalan, dan kamu bisa login pakai Google.
+- **Web** ter-deploy **otomatis** setiap `git push` (Cloudflare Workers Builds + Wrangler).
+- **API** di mini PC ter-update **otomatis** tiap 5 menit kalau ada kode baru (cron).
+- Login Google, cookie, dan keamanan tetap satu domain: `umove.rafiarsya.com`.
 
-Butuh sekitar 30 menit. Kerjakan urut; kalau ada error, berhenti dan kirim pesan error-nya.
+Kerjakan urut. Kalau ada error, berhenti dan kirim pesan error-nya.
 
 ---
 
-## 1. Siapkan 3 hal di browser (dari laptop)
+## 1. Kode di GitHub
 
-### a. Cloudflare Tunnel
+Repo: `github.com/rafiarsya07/umove` (disarankan **Private**: Settings → Change visibility).
 
-1. dash.cloudflare.com → **Zero Trust → Networks → Tunnels → Create a tunnel → Cloudflared**, nama `umove`
-2. Pilih **Docker**. Salin **token**-nya saja (teks panjang setelah `--token`). Simpan dulu di Notepad.
-3. **Public hostname**: subdomain `umove`, domain `rafiarsya.com`, service **HTTP**, URL **`app:3000`** → Save
-
-Kalau `umove.rafiarsya.com` sebelumnya diarahkan ke tempat lain (Pages/Vercel), hapus dulu record DNS lamanya.
-
-### b. Login Google (OAuth)
-
-1. Buka **console.cloud.google.com** → buat project baru `UMove`
-2. **Google Auth Platform → Branding**: App name `UMove`, support email = email lu,
-   Authorized domain = `rafiarsya.com`
-3. **Audience**: External → **Publish app** (status *In production*). Untuk scope
-   dasar (nama + email) tidak perlu verifikasi Google.
-4. **Clients → Create client → Web application**, nama `UMove web`
-   - Authorized JavaScript origins: `https://umove.rafiarsya.com`
-   - Authorized redirect URIs: `https://umove.rafiarsya.com/api/auth/google/callback`
-5. Salin **Client ID** dan **Client secret** ke Notepad.
-
-### c. Kode di GitHub
-
-Di laptop, folder `E:\UMOVE` (buat repo **private** `umove` di GitHub dulu):
+Di laptop (`E:\UMOVE`):
 
 ```bash
-git init
 git add .
-git commit -m "UMove"
-git branch -M main
-git remote add origin https://github.com/USERNAME-LU/umove.git
-git push -u origin main
+git commit -m "UMOVE"
+git push
 ```
 
-`.env` (rahasia) tidak pernah ikut ter-upload.
+(Kalau belum pernah push, lihat perintah `git init … git push -u origin main` di README.)
 
-## 2. Siapkan mini PC (sekali saja)
+## 2. Login Google (OAuth)
 
-Login ke mini PC (langsung atau SSH), lalu:
+1. **console.cloud.google.com** → project baru `UMOVE`
+2. **Google Auth Platform → Branding**: nama `UMOVE`, support email, authorized domain `rafiarsya.com`
+3. **Audience**: External → **Publish app**
+4. **Clients → Create client → Web application**
+   - Authorized JavaScript origins: `https://umove.rafiarsya.com`
+   - Authorized redirect URIs: `https://umove.rafiarsya.com/api/auth/google/callback`
+5. Simpan **Client ID** dan **Client secret**.
+
+## 3. Cloudflare Tunnel (untuk API)
+
+1. dash.cloudflare.com → **Zero Trust → Networks → Tunnels → Create a tunnel → Cloudflared**, nama `umove`
+2. Pilih **Docker**, salin **token**-nya saja
+3. **Public hostname**: subdomain **`umove-api`**, domain `rafiarsya.com`, service **HTTP**, URL **`app:3000`** → Save
+
+> Jangan buat record DNS untuk `umove` sendiri: itu dibuat otomatis oleh Worker di langkah 5.
+> Kalau sudah ada record `umove` lama (Pages/Vercel/tunnel), hapus dulu.
+
+## 4. Mini PC
+
+Sekali saja:
 
 ```bash
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y git curl ufw unattended-upgrades
-sudo dpkg-reconfigure -plow unattended-upgrades   # update keamanan otomatis
-
-# Firewall: tidak ada yang boleh masuk kecuali SSH dari jaringan rumah
-sudo ufw default deny incoming
-sudo ufw default allow outgoing
-sudo ufw allow from 192.168.0.0/16 to any port 22 proto tcp
-sudo ufw enable
+sudo dpkg-reconfigure -plow unattended-upgrades
+sudo ufw default deny incoming && sudo ufw default allow outgoing
+sudo ufw allow from 192.168.0.0/16 to any port 22 proto tcp && sudo ufw enable
 ```
 
-> Tunnel membuat koneksi **keluar**, jadi jangan port-forward apa pun di router.
-
-## 3. Install UMove
+Install UMOVE:
 
 ```bash
-git clone https://github.com/USERNAME-LU/umove.git
+git clone https://github.com/rafiarsya07/umove.git
 cd umove
 bash scripts/install.sh
 ```
 
-Script ini akan:
+Script menanyakan token Tunnel, Google Client ID & secret, email admin, dan token bot (opsional),
+lalu menyalakan semuanya. Email admin default: `rafiarsya.work@gmail.com` (tekan Enter). Di akhir dia menampilkan **PROXY_SECRET**. Salin, dipakai di langkah 5.
 
-- menginstall Docker kalau belum ada (lalu minta kamu logout/login dan jalankan lagi),
-- menanyakan token Tunnel, Google Client ID & secret, email admin, dan token bot (opsional),
-- membuat password database acak dan menyimpan semuanya di `.env` (hanya bisa dibaca kamu),
-- build dan menyalakan UMove, lalu menunggu sampai sehat.
+Login pakai email admin → langsung masuk **panel admin** (`/admin`): ringkasan, persetujuan runner, pengguna (suspend/pulihkan), semua permintaan (batalkan yang melanggar), dan audit log. Akun lain masuk ke dashboard pengguna biasa.
 
-Setelah muncul **"UMove is running."**, buka **https://umove.rafiarsya.com** dari HP dan coba login.
-Email yang kamu isi sebagai admin akan melihat menu **Admin** untuk menyetujui runner.
-
-## 4. Pengaturan keamanan Cloudflare (sekali saja)
-
-Untuk domain `rafiarsya.com`:
-
-| Menu | Pengaturan |
-|---|---|
-| SSL/TLS → Overview | **Full (strict)** |
-| SSL/TLS → Edge Certificates | Always Use HTTPS **on**, Minimum TLS **1.2**, TLS 1.3 **on** |
-| Security → Settings | Security level **Medium**, Browser Integrity Check **on** |
-| Security → WAF → Rate limiting rules | `/api/*`: 100 request / 10 detik per IP → Block 1 menit |
-| Security → Bots | Bot Fight Mode **on** |
-
-## 5. Backup otomatis
+Update otomatis (API ikut update setiap kali kamu push):
 
 ```bash
 crontab -e
@@ -111,38 +89,53 @@ crontab -e
 Tambahkan (ganti `USER`):
 
 ```
+*/5 * * * * cd /home/USER/umove && bash scripts/auto-update.sh >> backups/auto-update.log 2>&1
 0 4 * * * cd /home/USER/umove && bash scripts/backup.sh >> backups/backup.log 2>&1
 ```
 
-Sesekali salin folder `backups/` ke perangkat lain.
+## 5. Web di Cloudflare (Wrangler, auto deploy)
+
+1. dash.cloudflare.com → **Workers & Pages → Create → Import a repository**
+2. Hubungkan GitHub, pilih **rafiarsya07/umove**
+3. Pengaturan build:
+   - Project name: **`umove`** (harus sama dengan `name` di `web/wrangler.jsonc`)
+   - Root directory: **`web`**
+   - Build command: **`npm run build`**
+   - Deploy command: **`npx wrangler deploy`**
+4. **Save and Deploy**. Domain `umove.rafiarsya.com` dipasang otomatis (sudah diatur di `web/wrangler.jsonc`).
+5. Setelah deploy pertama: Worker **umove → Settings → Variables and Secrets → Add**
+   - Type **Secret**, name **`PROXY_SECRET`**, value = yang ditampilkan `install.sh`
+6. Buka **https://umove.rafiarsya.com**, lalu coba login.
+
+Mulai sekarang: **`git push` = web otomatis ter-deploy dalam ±1 menit**, dan API di mini PC ikut update dalam ≤5 menit.
+
+## 6. Keamanan Cloudflare (sekali saja)
+
+| Menu | Pengaturan |
+|---|---|
+| SSL/TLS → Overview | **Full (strict)** |
+| SSL/TLS → Edge Certificates | Always Use HTTPS **on**, Minimum TLS **1.2** |
+| Security → WAF → Rate limiting rules | `/api/*`: 100 request / 10 detik per IP → Block 1 menit |
+| Security → Bots | Bot Fight Mode **on** |
 
 ---
 
-## Update setelah ada perubahan kode
+## Soal batas request
 
-Di laptop: `git add . && git commit -m "update" && git push`. Lalu di mini PC:
-
-```bash
-cd ~/umove && bash scripts/update.sh
-```
-
-## Perintah berguna
-
-```bash
-docker compose ps                 # status
-docker compose logs -f app        # log aplikasi
-docker compose restart app        # restart app
-nano .env && docker compose up -d # ubah setting (mis. tambah admin atau token bot)
-```
+- Tampilan web (HTML, JS, CSS, font) dilayani Cloudflare sebagai file statis: **gratis dan tanpa batas**.
+- Hanya panggilan `/api/*` yang lewat Worker. Paket gratis Workers memberi 100.000 panggilan per hari,
+  jauh di atas kebutuhan kampus. Kalau suatu saat terlewati, paket Workers Paid ($5/bulan) memberi 10 juta.
+- Database dan semua data tetap di mini PC kamu.
 
 ## Masalah yang sering muncul
 
 | Masalah | Solusi |
 |---|---|
-| Login Google: `redirect_uri_mismatch` | Redirect URI di Google harus persis `https://umove.rafiarsya.com/api/auth/google/callback` |
-| Login Google: "access blocked" | Di Google Auth Platform → Audience, klik **Publish app** |
-| Cloudflare error 1033 | Tunnel tidak jalan: `docker compose logs tunnel` |
-| Error 502 | Public hostname harus `app:3000`, bukan `localhost:3000` |
-| `app` unhealthy | `docker compose logs app` (error config menyebut nama variabelnya) |
-| `db` tidak mau start | Hapus baris `read_only`, `tmpfs`, dan `cap_add` di bagian `db` pada `docker-compose.yml`, lalu `docker compose up -d` |
-| Ganti password DB setelah start pertama | Password hanya dibaca saat database dibuat. Mulai ulang: `docker compose down -v` (**semua data terhapus**) |
+| Build Cloudflare "sukses" tapi web kosong/aneh | Worker → **Settings → Build**: Root directory harus `web`, Build command `npm run build`, Deploy command `npx wrangler deploy`. Lalu **Retry build** |
+| Web menampilkan `api_not_configured` | `PROXY_SECRET` belum diisi di Worker (langkah 5.5) |
+| Semua `/api` jawab `forbidden` | `PROXY_SECRET` di Worker berbeda dengan yang di `.env` mini PC |
+| `api_unreachable` / error 1033 | Tunnel mati: `docker compose logs tunnel` di mini PC |
+| Deploy Worker gagal "domain already has a record" | Hapus record DNS `umove` lama di Cloudflare, lalu deploy ulang |
+| Login: `redirect_uri_mismatch` | Redirect URI Google harus persis `https://umove.rafiarsya.com/api/auth/google/callback` |
+| `app` unhealthy | `docker compose logs app` |
+| `db` tidak mau start | Hapus baris `read_only`, `tmpfs`, `cap_add` di bagian `db` pada `docker-compose.yml` |

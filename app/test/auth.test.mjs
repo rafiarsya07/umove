@@ -20,7 +20,7 @@ const call = (path, sid, init = {}) => fetch(`${BASE}/api${path}`, { ...init, he
 const a = await signIn({ sub: "g-aiman", email: "Rafi.Admin@Gmail.com", name: "Muhammad Rafi" });
 check("auth redirect uses PKCE S256 + state + nonce", a.q.get("code_challenge_method") === "S256" && a.q.get("state") && a.q.get("nonce"));
 check("oauth cookie is __Host HttpOnly Secure", /HttpOnly/i.test(a.r1.headers.getSetCookie()[0]) && /Secure/i.test(a.r1.headers.getSetCookie()[0]));
-check("new user lands on /settings?welcome=1", a.r2.headers.get("location") === "/settings?welcome=1", a.r2.headers.get("location"));
+check("new admin goes to ?next (admins skip the welcome page)", a.r2.headers.get("location") === "/settings", a.r2.headers.get("location"));
 const sidHeader = a.r2.headers.getSetCookie().find((c) => c.startsWith("__Host-umove_sid"));
 check("session cookie HttpOnly+Secure+SameSite=Lax+Path=/", /HttpOnly/i.test(sidHeader) && /Secure/i.test(sidHeader) && /SameSite=Lax/i.test(sidHeader) && /Path=\//.test(sidHeader), sidHeader);
 

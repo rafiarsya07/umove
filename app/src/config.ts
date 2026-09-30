@@ -29,6 +29,8 @@ const schema = z
     /** Comma-separated emails that may use /admin. */
     ADMIN_EMAILS: z.string().default(""),
     SESSION_DAYS: z.coerce.number().int().min(1).max(90).default(30),
+    /** Shared with the Cloudflare Worker that forwards /api (web/worker). */
+    PROXY_SECRET: z.string().min(32).optional().or(z.literal("")),
     /** Test-only overrides for the Google endpoints (ignored in production). */
     GOOGLE_AUTH_URL: z.string().url().optional(),
     GOOGLE_TOKEN_URL: z.string().url().optional(),
@@ -64,6 +66,7 @@ function load() {
     rateLimit: { site: env.RATE_LIMIT_SITE, api: env.RATE_LIMIT_API },
     logLevel: env.LOG_LEVEL,
     sessionDays: env.SESSION_DAYS,
+    proxySecret: env.PROXY_SECRET || null,
     adminEmails: new Set(
       env.ADMIN_EMAILS.split(",")
         .map((e) => e.trim().toLowerCase())

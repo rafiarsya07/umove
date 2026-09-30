@@ -1,11 +1,11 @@
-# UMove
+# UMOVE
 
 Titipan kampus, tumpangan, dan pasar mahasiswa untuk mahasiswa Universiti Malaya.
-Web dan API di-host sendiri di mini PC, di belakang Cloudflare Tunnel.
+Web di Cloudflare Workers (auto deploy lewat Wrangler), API + database di mini PC lewat Cloudflare Tunnel.
 
 **https://umove.rafiarsya.com**
 
-© UMove · Built by **Muhammad Rafi Arsya**
+© UMOVE · Built by **Muhammad Rafi Arsya**
 
 ## Struktur folder
 
@@ -66,5 +66,5 @@ bash scripts/update.sh
 
 - [x] 1. Struktur, UI 3 bahasa, server yang diperkeras, setup mini PC
 - [x] 2. Login Google, profil & peran tersimpan di database, halaman admin
-- [ ] 3. Permintaan: pasang, terima, lanjut ke WhatsApp, status
-- [ ] 4. Notifikasi Telegram untuk runner, persetujuan admin, rating
+- [x] 3. Permintaan: papan realtime, pasang, ambil, WhatsApp, status, rating
+- [ ] 4. Notifikasi Telegram untuk runner
