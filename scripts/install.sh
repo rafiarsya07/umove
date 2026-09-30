@@ -77,15 +77,16 @@ ENV
 fi
 
 # --- Build and start ------------------------------------------------------
+PORT_LOCAL=$(grep -s '^UMOVE_PORT=' .env | cut -d= -f2 || true); PORT_LOCAL=${PORT_LOCAL:-3100}
 say "Building and starting UMOVE (the first build takes a few minutes)..."
 docker compose up -d --build
 
 say "Waiting for UMOVE to become healthy..."
 for _ in $(seq 1 60); do
-  if curl -fsS http://127.0.0.1:3000/api/health >/dev/null 2>&1; then
+  if curl -fsS http://127.0.0.1:$PORT_LOCAL/api/health >/dev/null 2>&1; then
     docker compose ps
     say "UMOVE API is running."
-    echo "  Local check:  curl http://127.0.0.1:3000/api/health"
+    echo "  Local check:  curl http://127.0.0.1:$PORT_LOCAL/api/health"
     echo "  Logs:         docker compose logs -f app"
     say "Last step: give the web Worker this secret (Cloudflare → Workers → umove → Settings → Variables and Secrets → Add → Secret):"
     echo "  Name:  PROXY_SECRET"
