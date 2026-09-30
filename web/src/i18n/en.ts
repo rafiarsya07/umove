@@ -67,60 +67,16 @@ export const en = {
   },
   faq: {
     title: "Questions",
-    items: [
-      {
-        q: "What is UMOVE?",
-        a: "A campus errand board for UM students. Post what you need, and a verified student runner collects it and brings it to you.",
-      },
-      {
-        q: "How much does it cost?",
-        a: "UMOVE itself is free. You pay the item price plus the delivery fee you set (at least RM1), straight to your runner.",
-      },
-      {
-        q: "How do I pay?",
-        a: "When your order arrives, directly to the runner: cash, DuitNow QR or Touch 'n Go. UMOVE never holds anyone's money.",
-      },
-      {
-        q: "Who pays for the items first?",
-        a: "Usually the runner buys them and you pay back on delivery. Agree the price on WhatsApp first. For expensive orders a runner may ask you to transfer the item cost in advance: only do this with a verified runner, after you've chatted.",
-      },
-      {
-        q: "How much delivery fee should I offer?",
-        a: "A fair guide: RM1 to RM2 within the same college or faculty, RM3 to RM5 across campus, and more for heavy items, rain or late at night. A fair fee gets taken faster.",
-      },
-      {
-        q: "What can I request?",
-        a: "Food, drinks, groceries, printing, stationery and parcel pick-ups around campus. Not allowed: alcohol, tobacco or vapes, drugs, weapons, exam help, or anything illegal or against UM rules.",
-      },
-      {
-        q: "Where do we meet?",
-        a: "At a public spot such as a college lobby, guard house or faculty entrance. Runners don't go into rooms.",
-      },
-      {
-        q: "How are runners and drivers checked?",
-        a: "Everyone applies with their matric card (drivers also with licence, vehicle, road tax and insurance), and an admin reviews every application within 24 hours. Verified people have a blue check.",
-      },
-      {
-        q: "Who sees my WhatsApp number?",
-        a: "Only the one person you're matched with, after a runner takes your request. It never appears on public pages.",
-      },
-      {
-        q: "Can I cancel?",
-        a: "You can cancel until a runner takes your request. A runner can give it back before setting off. After that, sort it out together on WhatsApp, or message us in Help.",
-      },
-      {
-        q: "Something went wrong. What now?",
-        a: "Open Help and send a request to the UMOVE team; once it is reviewed, you chat with us there. Include the order code (like UM-7K3F9Q) so we can find it quickly. Rude or unsafe behaviour gets accounts suspended.",
-      },
-      {
-        q: "Can I install UMOVE like an app?",
-        a: "Yes, on any phone or laptop. Android or computer: open it in Chrome or Edge and choose Install app. iPhone: open it in Safari, tap Share, then Add to Home Screen.",
-      },
-      {
-        q: "What about Ride and Market?",
-        a: "Coming soon: rides with verified student drivers, and a campus marketplace. You can already apply as a driver in Settings.",
-      },
-    ],
+    seeAll: "See all questions",
+    pageTitle: "Frequently asked questions",
+    lead: "Everything about ordering, paying, runners and safety on UMOVE.",
+    search: "Search questions",
+    all: "All",
+    noResults: "No questions match \"{q}\".",
+    count: "{n} questions",
+    stillTitle: "Still need help?",
+    stillBody: "Send us a message. An admin reviews it and replies in the app.",
+    stillButton: "Contact admin",
   },
   cta: {
     title: "Earn between classes.",
@@ -551,6 +507,18 @@ export const en = {
     signIn: "Sign in to chat with us",
     faqLink: "Most answers are in the FAQ",
     nav: "Help",
+  },
+  site: {
+    dismiss: "Dismiss",
+    learnMore: "Learn more",
+    maintTitle: "UMOVE is under maintenance",
+    maintBody: "We're making UMOVE better. Please check back soon; this page reloads by itself.",
+    offlineTitle: "We'll be right back",
+    offlineBody: "UMOVE can't reach its server right now. This usually takes only a few minutes; this page reloads by itself.",
+    backAround: "Expected back around {time}.",
+    adminOn: "Maintenance mode is on. Only admins can use UMOVE right now.",
+    manage: "Manage",
+    adminSignIn: "Admin sign in",
   },
   common: {
     loading: "Loading…",

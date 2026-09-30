@@ -9,7 +9,8 @@ import type { AppEnv } from "./types.js";
  * A live message never carries data, only a topic:
  *   - "requests": the board or a request changed (sent to everyone);
  *   - "support":  a help-chat thread changed (sent only to that member and
- *                 to admins).
+ *                 to admins);
+ *   - "site":     a broadcast or maintenance mode changed (sent to everyone).
  * Each page then fetches what it is allowed to see through the normal API,
  * so nothing private can leak through this channel.
  *
@@ -18,7 +19,7 @@ import type { AppEnv } from "./types.js";
  * Each stream closes after 30 minutes (the browser reconnects on its own),
  * and a ping every 25 seconds keeps proxies from closing idle streams.
  */
-type Topic = "requests" | "support";
+type Topic = "requests" | "support" | "site";
 type Listener = { userId: string | null; isAdmin: boolean; notify: (t: Topic) => void };
 
 const listeners = new Set<Listener>();
@@ -37,6 +38,11 @@ export function announceChange() {
     pending = null;
     for (const l of listeners) l.notify("requests");
   }, 300);
+}
+
+/** Tell everyone that broadcasts or maintenance changed. */
+export function announceSite() {
+  for (const l of listeners) l.notify("site");
 }
 
 /** Tell one member (and the admins) that their help thread changed. */

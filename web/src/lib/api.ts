@@ -39,6 +39,10 @@ export async function api<T>(
     throw new ApiError(res.ok ? 502 : res.status, "bad_response");
   }
   const data = (await res.json().catch(() => ({}))) as { error?: string; fields?: string[]; until?: string };
-  if (!res.ok) throw new ApiError(res.status, data.error ?? "error", data.fields ?? [], data.until);
+  if (!res.ok) {
+    // The site just went into maintenance: let the status provider show the maintenance screen.
+    if (res.status === 503 && data.error === "maintenance") window.dispatchEvent(new Event("umove:maintenance"));
+    throw new ApiError(res.status, data.error ?? "error", data.fields ?? [], data.until);
+  }
   return data as T;
 }

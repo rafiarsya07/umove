@@ -64,7 +64,7 @@ export default function Help() {
     <div className="mx-auto max-w-2xl">
       <h1 className="t-page-title">{h.title}</h1>
       <p className="t-body mt-1 text-foreground-secondary">{h.lead}</p>
-      <Link to="/#faq" className="mt-2 inline-block text-[0.875rem] font-semibold text-primary-strong hover:underline">
+      <Link to="/faq" className="mt-2 inline-block text-[0.875rem] font-semibold text-primary-strong hover:underline">
         {h.faqLink}
       </Link>
 

@@ -3,12 +3,21 @@ import { z } from "zod";
 import { config } from "../../config.js";
 import { announceChange } from "../../live.js";
 import { adminCancelRequest, adminStats, auditLog, listRequests, listUsers, setUserStatus } from "../../repo/admin.js";
-import { announceSupport } from "../../live.js";
+import { announceSite, announceSupport } from "../../live.js";
+import { allBroadcasts, createBroadcast, endBroadcast, maintenance, setMaintenance } from "../../repo/site.js";
 import { mailDecision, mailSupportDecision, mailSupportReply } from "../../mail.js";
 import { adminThread, closeThread, decide, inbox, postMessage } from "../../repo/support.js";
 import { applicationFile, decideApplication, listApplications } from "../../repo/applications.js";
 import type { AppEnv } from "../../types.js";
-import { decisionSchema, fileKindParam, idParam, supportDecisionSchema, supportSchema } from "../../validation.js";
+import {
+  broadcastSchema,
+  decisionSchema,
+  fileKindParam,
+  idParam,
+  maintenanceSchema,
+  supportDecisionSchema,
+  supportSchema,
+} from "../../validation.js";
 import { requireAdmin } from "../guards.js";
 import { SANDBOX_HEADER } from "../security.js";
 
@@ -149,4 +158,53 @@ admin.post("/support/:id", async (c) => {
     if (t) mailSupportReply(t.member.email, t.member.name);
   }
   return c.json(r.message, 201);
+});
+
+/* ---- Broadcasts ------------------------------------------------------------ */
+
+admin.get("/broadcasts", async (c) => c.json(await allBroadcasts()));
+
+admin.post("/broadcasts", async (c) => {
+  const parsed = broadcastSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) {
+    return c.json({ error: "invalid", fields: [...new Set(parsed.error.issues.map((i) => String(i.path[0])))] }, 400);
+  }
+  const b = parsed.data;
+  const id = await createBroadcast(c.get("user")!.id, {
+    title: b.title,
+    body: b.body,
+    tone: b.tone,
+    audience: b.audience,
+    linkPath: b.linkPath || null,
+    startsAt: b.startsAt ? new Date(b.startsAt) : null,
+    endsAt: b.endsAt ? new Date(b.endsAt) : null,
+  });
+  announceSite();
+  return c.json({ id }, 201);
+});
+
+admin.post("/broadcasts/:id/end", async (c) => {
+  const id = idParam.safeParse(c.req.param("id"));
+  if (!id.success) return c.json({ error: "not_found" }, 404);
+  const ok = await endBroadcast(c.get("user")!.id, id.data);
+  if (!ok) return c.json({ error: "not_live" }, 409);
+  announceSite();
+  return c.json({ ok: true });
+});
+
+/* ---- Maintenance ----------------------------------------------------------- */
+
+admin.get("/maintenance", async (c) => c.json(await maintenance()));
+
+admin.post("/maintenance", async (c) => {
+  const parsed = maintenanceSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ error: "invalid", fields: ["message"] }, 400);
+  const { on, message, until } = parsed.data;
+  const m = await setMaintenance(c.get("user")!.id, {
+    on,
+    message: on ? message || null : null,
+    until: on && until ? new Date(until).toISOString() : null,
+  });
+  announceSite();
+  return c.json(m);
 });

@@ -160,3 +160,30 @@ export const idParam = z.coerce
   .int()
   .positive()
   .max(2 ** 53);
+
+/** Admin: a site-wide announcement. linkPath must stay inside UMOVE (a path, not a URL). */
+export const broadcastSchema = z
+  .object({
+    title: text(80).pipe(z.string().min(3)),
+    body: text(400),
+    tone: z.enum(["info", "warning", "success"]),
+    audience: z.enum(["all", "members", "runners"]),
+    linkPath: z
+      .string()
+      .max(100)
+      .transform((s) => s.trim())
+      .pipe(z.union([z.literal(""), z.string().regex(/^\/(?!\/)[A-Za-z0-9/_#?=&.-]{0,99}$/)]))
+      .optional(),
+    startsAt: z.iso.datetime({ offset: true }).optional().or(z.literal("")),
+    endsAt: z.iso.datetime({ offset: true }).optional().or(z.literal("")),
+  })
+  .strict()
+  .refine((b) => !b.endsAt || new Date(b.endsAt) > new Date(b.startsAt || Date.now()), { path: ["endsAt"] });
+
+export const maintenanceSchema = z
+  .object({
+    on: z.boolean(),
+    message: text(300).optional(),
+    until: z.iso.datetime({ offset: true }).optional().nullable().or(z.literal("")),
+  })
+  .strict();

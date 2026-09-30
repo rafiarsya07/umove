@@ -17,6 +17,7 @@ import { me } from "./routes/me.js";
 import { requests } from "./routes/requests.js";
 import { users } from "./routes/users.js";
 import { liveHandler } from "../live.js";
+import { liveBroadcasts, maintenance } from "../repo/site.js";
 import { SANDBOX_HEADER, securityHeaders } from "./security.js";
 import { mountWeb } from "./static.js";
 
@@ -76,9 +77,27 @@ export function createApp() {
   const writes = rateLimit("writes", 30);
   api.use("*", async (c, next) => (c.req.method === "GET" || c.req.method === "HEAD" ? next() : writes(c, next)));
   api.use("*", loadSession);
+  // Maintenance: admins keep full access; everyone else gets a friendly 503,
+  // except for what the site needs to show the maintenance screen and let an admin sign in.
+  api.use("*", async (c, next) => {
+    const m = await maintenance();
+    if (!m.on || c.get("user")?.isAdmin) return next();
+    const p = c.req.path.slice(4); // strip "/api"
+    const open =
+      p === "/health" || p === "/status" || p === "/live" || p.startsWith("/auth/") || (p === "/me" && c.req.method === "GET");
+    if (open) return next();
+    return c.json({ error: "maintenance", message: m.message, until: m.until }, 503);
+  });
   api.use("*", async (c, next) => {
     await next();
     c.header("Cache-Control", "no-store");
+  });
+
+  /** Public: maintenance state and the broadcasts this viewer should see. */
+  api.get("/status", async (c) => {
+    const user = c.get("user");
+    const [m, broadcasts] = await Promise.all([maintenance(), liveBroadcasts(user ? { id: user.id } : null)]);
+    return c.json({ maintenance: m, broadcasts });
   });
 
   api.get("/health", async (c) => {

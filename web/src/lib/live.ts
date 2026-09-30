@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
  * listens. The server only names a topic ("requests" or "support"); each
  * listener then refetches what it needs through the normal API.
  */
-export type LiveTopic = "requests" | "support";
+export type LiveTopic = "requests" | "support" | "site";
 type Listener = { topic: LiveTopic; fn: () => void };
 const listeners = new Set<Listener>();
 let source: EventSource | null = null;

@@ -15,6 +15,8 @@ import {
 } from "../components/Icon";
 import { Badge, SectionHeading, btn } from "../components/ui";
 import { useI18n } from "../i18n";
+import { useCoreFaq } from "../i18n/faq";
+import { FaqList } from "../components/FaqList";
 
 type IconType = ComponentType<{ className?: string }>;
 
@@ -27,6 +29,7 @@ type IconType = ComponentType<{ className?: string }>;
  */
 export default function Home() {
   const { t } = useI18n();
+  const core = useCoreFaq();
 
   const services: { icon: IconType; title: string; body: string; soon: boolean }[] = [
     { icon: RunnerIcon, ...t.services.deliver, soon: false },
@@ -81,17 +84,11 @@ export default function Home() {
         {/* 4. QUESTIONS */}
         <section id="faq" className="scroll-mt-20 pt-16 sm:pt-24">
           <SectionHeading icon={QuestionIcon} title={t.faq.title} />
-          <div className="divide-y divide-border border-y border-border">
-            {t.faq.items.map(({ q, a }) => (
-              <details key={q} className="group">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-[0.9375rem] font-semibold motion-interactive hover:text-foreground-secondary [&::-webkit-details-marker]:hidden">
-                  {q}
-                  <PlusGlyph />
-                </summary>
-                <p className="t-body max-w-2xl pb-5 text-foreground-secondary">{a}</p>
-              </details>
-            ))}
-          </div>
+          <FaqList items={core} />
+          <Link to="/faq" className={`${btn.outline} mt-6`}>
+            {t.faq.seeAll}
+            <ArrowRightIcon />
+          </Link>
         </section>
 
         {/* 5. RUNNERS */}
@@ -109,16 +106,6 @@ export default function Home() {
         </section>
       </Container>
     </>
-  );
-}
-
-/** A plus that turns into a cross when the question is open. */
-function PlusGlyph() {
-  return (
-    <span aria-hidden="true" className="relative size-4 shrink-0 text-muted-foreground group-open:rotate-45">
-      <span className="absolute top-1/2 left-0 h-px w-4 -translate-y-1/2 bg-current" />
-      <span className="absolute top-0 left-1/2 h-4 w-px -translate-x-1/2 bg-current" />
-    </span>
   );
 }
 

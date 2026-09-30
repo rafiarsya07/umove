@@ -4,6 +4,7 @@ import { LogoMark } from "../../components/Logo";
 import { api } from "../../lib/api";
 import { useLive } from "../../lib/live";
 import { useSession } from "../../lib/session";
+import { useStatus } from "../../lib/status";
 
 export type Stats = {
   users: number;
@@ -25,6 +26,7 @@ export type Stats = {
  */
 export default function AdminLayout() {
   const { user, loading, signOut } = useSession();
+  const { status } = useStatus();
   const navigate = useNavigate();
   const [counts, setCounts] = useState<{ pending: number; support: number } | null>(null);
 
@@ -45,6 +47,8 @@ export default function AdminLayout() {
     { to: "/admin", label: "Overview", end: true },
     { to: "/admin/applications", label: "Applications", count: counts?.pending },
     { to: "/admin/support", label: "Help chat", count: counts?.support },
+    { to: "/admin/broadcasts", label: "Broadcasts" },
+    { to: "/admin/maintenance", label: "Maintenance", count: status.maintenance.on ? "On" : undefined },
     { to: "/admin/users", label: "Users" },
     { to: "/admin/requests", label: "Requests" },
     { to: "/admin/audit", label: "Audit log" },
@@ -78,7 +82,11 @@ export default function AdminLayout() {
             >
               {i.label}
               {i.count ? (
-                <span className="rounded-full bg-primary px-1.5 text-[0.6875rem] leading-5 font-bold text-white">
+                <span
+                  className={`rounded-full px-1.5 text-[0.6875rem] leading-5 font-bold text-white ${
+                    typeof i.count === "string" ? "bg-warning" : "bg-primary"
+                  }`}
+                >
                   {i.count}
                 </span>
               ) : null}

@@ -23,6 +23,8 @@
   "vars": {
     "API_ORIGIN": "https://umove-api.rafiarsya.com"
   },
+  // Keep variables added in the dashboard (e.g. MAINTENANCE = on) across deploys.
+  "keep_vars": true,
   // PROXY_SECRET is a secret, set in the Cloudflare dashboard (Worker →
   // Settings → Variables and Secrets) or with: npx wrangler secret put PROXY_SECRET
   "observability": { "enabled": true }

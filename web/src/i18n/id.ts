@@ -64,60 +64,16 @@ export const id: Dict = {
   },
   faq: {
     title: "Pertanyaan",
-    items: [
-      {
-        q: "Apa itu UMOVE?",
-        a: "Papan titip-antar kampus untuk mahasiswa UM. Pasang apa yang kamu butuhkan, lalu runner mahasiswa terverifikasi mengambil dan mengantarkannya.",
-      },
-      {
-        q: "Berapa biayanya?",
-        a: "UMOVE sendiri gratis. Kamu membayar harga barang ditambah upah antar yang kamu tentukan (minimal RM1), langsung ke runner.",
-      },
-      {
-        q: "Bagaimana cara bayar?",
-        a: "Saat pesanan sampai, langsung ke runner: tunai, DuitNow QR, atau Touch 'n Go. UMOVE tidak pernah memegang uang siapa pun.",
-      },
-      {
-        q: "Siapa yang menalangi harga barang?",
-        a: "Biasanya runner yang membeli dulu, lalu kamu bayar saat barang sampai. Sepakati harganya lewat WhatsApp. Untuk pesanan mahal, runner boleh minta ditransfer dulu: lakukan hanya dengan runner terverifikasi dan setelah chat.",
-      },
-      {
-        q: "Berapa upah antar yang wajar?",
-        a: "Patokan: RM1 sampai RM2 dalam satu kolej atau fakultas, RM3 sampai RM5 antar area kampus, dan lebih untuk barang berat, hujan, atau larut malam. Upah yang wajar lebih cepat diambil.",
-      },
-      {
-        q: "Apa saja yang boleh dipesan?",
-        a: "Makanan, minuman, belanja harian, print, alat tulis, dan ambil paket di sekitar kampus. Tidak boleh: alkohol, rokok atau vape, narkoba, senjata, joki ujian, atau apa pun yang ilegal atau melanggar aturan UM.",
-      },
-      {
-        q: "Ketemunya di mana?",
-        a: "Di tempat umum seperti lobi kolej, pos satpam, atau pintu fakultas. Runner tidak masuk ke kamar.",
-      },
-      {
-        q: "Bagaimana runner dan driver diperiksa?",
-        a: "Semua mendaftar dengan kartu matrik (driver juga dengan SIM, kendaraan, road tax, dan asuransi), dan admin meninjau setiap pendaftaran dalam 24 jam. Yang terverifikasi punya centang biru.",
-      },
-      {
-        q: "Siapa yang bisa melihat nomor WhatsApp-ku?",
-        a: "Hanya satu orang yang dipasangkan denganmu, setelah runner mengambil permintaanmu. Nomormu tidak pernah muncul di halaman publik.",
-      },
-      {
-        q: "Bisakah aku membatalkan?",
-        a: "Kamu bisa membatalkan selama belum ada runner yang mengambil. Runner bisa mengembalikan permintaan sebelum berangkat. Setelah itu, selesaikan bersama lewat WhatsApp, atau kirim pesan ke kami di Bantuan.",
-      },
-      {
-        q: "Ada masalah, lalu bagaimana?",
-        a: "Buka Bantuan dan kirim permintaan ke tim UMOVE; setelah ditinjau, kamu bisa chat dengan kami di sana. Sertakan kode pesanan (misal UM-7K3F9Q) supaya cepat kami cari. Perilaku kasar atau membahayakan membuat akun ditangguhkan.",
-      },
-      {
-        q: "Bisa dipasang seperti aplikasi?",
-        a: "Bisa, di HP atau laptop apa pun. Android atau komputer: buka di Chrome atau Edge lalu pilih Install app. iPhone: buka di Safari, ketuk Bagikan, lalu Tambahkan ke Layar Utama.",
-      },
-      {
-        q: "Bagaimana dengan Ride dan Market?",
-        a: "Segera hadir: tumpangan dengan driver mahasiswa terverifikasi, dan pasar jual-beli kampus. Kamu sudah bisa mendaftar jadi driver di Pengaturan.",
-      },
-    ],
+    seeAll: "Lihat semua pertanyaan",
+    pageTitle: "Pertanyaan yang sering diajukan",
+    lead: "Semua tentang pesan, bayar, runner, dan keamanan di UMOVE.",
+    search: "Cari pertanyaan",
+    all: "Semua",
+    noResults: "Tidak ada pertanyaan yang cocok dengan \"{q}\".",
+    count: "{n} pertanyaan",
+    stillTitle: "Masih butuh bantuan?",
+    stillBody: "Kirim pesan ke kami. Admin akan meninjau dan membalas di aplikasi.",
+    stillButton: "Hubungi admin",
   },
   cta: {
     title: "Cari cuan di sela kuliah.",
@@ -549,6 +505,18 @@ export const id: Dict = {
     signIn: "Masuk untuk chat dengan kami",
     faqLink: "Sebagian besar jawaban ada di FAQ",
     nav: "Bantuan",
+  },
+  site: {
+    dismiss: "Tutup",
+    learnMore: "Selengkapnya",
+    maintTitle: "UMOVE sedang dalam pemeliharaan",
+    maintBody: "Kami sedang memperbaiki UMOVE. Silakan kembali sebentar lagi; halaman ini akan memuat ulang sendiri.",
+    offlineTitle: "Sebentar lagi kembali",
+    offlineBody: "UMOVE belum bisa terhubung ke servernya. Biasanya hanya beberapa menit; halaman ini akan memuat ulang sendiri.",
+    backAround: "Perkiraan kembali sekitar {time}.",
+    adminOn: "Mode pemeliharaan aktif. Saat ini hanya admin yang bisa memakai UMOVE.",
+    manage: "Atur",
+    adminSignIn: "Masuk admin",
   },
   common: {
     loading: "Memuat…",

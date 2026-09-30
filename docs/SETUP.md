@@ -145,6 +145,16 @@ Mulai sekarang: **`git push` = web otomatis ter-deploy dalam ±1 menit**, dan AP
 
 ---
 
+## Maintenance & Broadcast
+
+**Broadcast** (Admin → Broadcasts): pengumuman di bawah header. Pilih gaya (info/peringatan/sukses), siapa yang lihat (semua / member login / runner), link opsional (path di UMOVE, misalnya `/runner`), dan jadwal mulai–selesai. "End now" menghentikan langsung. Maksimal 3 tampil sekaligus; user bisa menutupnya.
+
+**Maintenance** (Admin → Maintenance): nyalakan, isi pesan dan perkiraan selesai. Semua orang selain admin melihat layar maintenance (update realtime), admin tetap bisa pakai semuanya. Matikan dengan "Turn off, go live".
+
+Kalau mini PC-nya sendiri mau dimatikan / dibongkar, saklar di atas ikut mati. Pakai saklar di Cloudflare: Workers & Pages → umove → Settings → Variables and Secrets → tambah `MAINTENANCE` = `on` (opsional `MAINTENANCE_MESSAGE`) → Deploy. Hapus lagi untuk live. Kalau mini PC mati tiba-tiba, web otomatis menampilkan layar "kami segera kembali".
+
+Tabel untuk fitur ini ada di `db/migrations/006-broadcasts-maintenance.sql`, dijalankan otomatis oleh `scripts/update.sh`.
+
 ## Soal batas request
 
 - Tampilan web (HTML, JS, CSS, font) dilayani Cloudflare sebagai file statis: **gratis dan tanpa batas**.
