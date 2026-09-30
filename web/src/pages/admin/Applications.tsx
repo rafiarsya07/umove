@@ -38,6 +38,7 @@ const DETAIL_LABEL: [string, string][] = [
   ["fullName", "Full name"],
   ["matricNo", "Matric no."],
   ["faculty", "Faculty / college"],
+  ["vehicle", "Delivers by"],
   ["vehicleType", "Vehicle"],
   ["vehicleModel", "Make / model"],
   ["vehicleColor", "Colour"],

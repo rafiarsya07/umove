@@ -1,9 +1,8 @@
 import { useI18n } from "../i18n";
-import { CheckIcon } from "./Icon";
-import { LogoMark } from "./Logo";
+import { DropoffIcon, PickupIcon } from "./Icon";
 
 /**
- * A Telegram-style chat with the UMove bot: the alert a runner gets.
+ * What a runner sees: a request on the live board, with the fee up front.
  * Decorative (aria-hidden).
  */
 export function RunnerMock() {
@@ -12,34 +11,26 @@ export function RunnerMock() {
   return (
     <div aria-hidden="true" className="relative mx-auto w-full max-w-[22rem]">
       <div className="overflow-hidden rounded-(--radius-surface) border border-border bg-card">
-        {/* chat header */}
-        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-          <LogoMark className="size-9" />
-          <span className="leading-tight">
-            <span className="block text-[0.875rem] font-semibold">{r.bot}</span>
-            <span className="block text-[0.75rem] text-muted-foreground">{r.botStatus}</span>
-          </span>
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <span className="text-[0.8125rem] font-semibold">{r.mockLabel}</span>
+          <span className="text-[0.75rem] text-muted-foreground">{r.mockWhen}</span>
         </div>
-
-        {/* chat body */}
-        <div className="space-y-3 bg-(--tg-bg) px-3 py-4">
-          <div className="max-w-[88%] rounded-2xl rounded-tl-md bg-card p-3">
-            <p className="text-[0.8125rem] font-bold">{r.msgTitle}</p>
-            <p className="mt-1 text-[0.8125rem]">{r.msgBody}</p>
-            <p className="mt-1 text-[0.75rem] text-muted-foreground">{r.msgTip}</p>
-          </div>
-          <div className="grid max-w-[88%] grid-cols-2 gap-1.5">
-            <span className="rounded-xl bg-primary py-2 text-center text-[0.8125rem] font-bold text-primary-foreground">
-              {r.accept}
-            </span>
-            <span className="rounded-xl bg-card/70 py-2 text-center text-[0.8125rem] font-semibold text-foreground-secondary">
-              {r.skip}
+        <div className="p-4">
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-[0.9375rem] leading-snug font-semibold">{r.mockDetails}</p>
+            <span className="shrink-0 rounded-full bg-primary-soft px-2.5 py-0.5 text-[0.875rem] font-bold text-primary-strong tabular-nums">
+              {r.mockFee}
             </span>
           </div>
-          <div className="ml-auto flex max-w-[80%] items-start gap-2 rounded-2xl rounded-tr-md bg-(--chat-out) p-3 text-(--chat-out-foreground)">
-            <CheckIcon className="mt-0.5 size-4 shrink-0" />
-            <p className="text-[0.8125rem]">{r.accepted}</p>
+          <div className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1.5 text-[0.8125rem]">
+            <PickupIcon className="size-4" />
+            <span className="text-foreground-secondary">{r.mockPickup}</span>
+            <DropoffIcon className="size-4" />
+            <span className="font-medium">{r.mockDropoff}</span>
           </div>
+          <span className="mt-4 flex h-10 items-center justify-center rounded-full bg-primary text-[0.875rem] font-semibold text-primary-foreground">
+            {r.mockTake}
+          </span>
         </div>
       </div>
     </div>

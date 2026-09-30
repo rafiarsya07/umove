@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, NavLink, Navigate, Outlet, useNavigate } from "react-router";
 import { LogoMark } from "../../components/Logo";
 import { api } from "../../lib/api";
+import { useLive } from "../../lib/live";
 import { useSession } from "../../lib/session";
 
 export type Stats = {
@@ -13,6 +14,7 @@ export type Stats = {
   active: number;
   delivered7d: number;
   suspended: number;
+  support: number;
 };
 
 /**
@@ -23,14 +25,16 @@ export type Stats = {
 export default function AdminLayout() {
   const { user, loading, signOut } = useSession();
   const navigate = useNavigate();
-  const [pending, setPending] = useState<number | null>(null);
+  const [counts, setCounts] = useState<{ pending: number; support: number } | null>(null);
 
-  useEffect(() => {
+  const loadCounts = useCallback(() => {
     if (user?.isAdmin)
       api<Stats>("/admin/stats")
-        .then((s) => setPending(s.pending))
+        .then((s) => setCounts({ pending: s.pending, support: s.support }))
         .catch(() => {});
   }, [user?.isAdmin]);
+  useEffect(loadCounts, [loadCounts]);
+  useLive(loadCounts, "support");
 
   if (loading) return <p className="t-meta p-8">Loading…</p>;
   if (!user) return <Navigate to="/login?next=/admin" replace />;
@@ -38,7 +42,8 @@ export default function AdminLayout() {
 
   const items = [
     { to: "/admin", label: "Overview", end: true },
-    { to: "/admin/applications", label: "Applications", count: pending },
+    { to: "/admin/applications", label: "Applications", count: counts?.pending },
+    { to: "/admin/support", label: "Help chat", count: counts?.support },
     { to: "/admin/users", label: "Users" },
     { to: "/admin/requests", label: "Requests" },
     { to: "/admin/audit", label: "Audit log" },

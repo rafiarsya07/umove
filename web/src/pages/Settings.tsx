@@ -6,6 +6,7 @@ import { Avatar, Badge, Segment, SettingsRow, VerifiedMark, btn, segmentClass } 
 import { LANGS, fmt, useI18n } from "../i18n";
 import { ApiError, api } from "../lib/api";
 import { formatWhen, useMyApplications, type ApplyRole } from "../lib/applications";
+import { useInstall } from "../lib/install";
 import { useSession, type Me, type RoleStatus } from "../lib/session";
 
 /**
@@ -61,6 +62,10 @@ export default function Settings() {
           <PreferencesPanel />
         </SettingsRow>
 
+        <SettingsRow id="app" title={s.install} lead={s.installLead}>
+          <InstallPanel />
+        </SettingsRow>
+
         {!user && !loading ? (
           <SettingsRow title={s.profile} lead={s.profileLead}>
             <Link to="/login?next=/settings" className={btn.primary}>
@@ -71,6 +76,20 @@ export default function Settings() {
       </div>
     </Container>
   );
+}
+
+function InstallPanel() {
+  const { t } = useI18n();
+  const s = t.settings;
+  const { state, install } = useInstall();
+  if (state === "installed") return <Badge tone="success">{s.installed}</Badge>;
+  if (state === "prompt")
+    return (
+      <button type="button" onClick={() => void install()} className={btn.ink}>
+        {s.installButton}
+      </button>
+    );
+  return <p className="t-body text-foreground-secondary">{state === "ios" ? s.installIos : s.installManual}</p>;
 }
 
 function PreferencesPanel() {

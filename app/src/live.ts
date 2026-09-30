@@ -1,23 +1,31 @@
 import type { Context } from "hono";
 import { streamSSE } from "hono/streaming";
 import { clientIp } from "./http/client-ip.js";
+import type { AppEnv } from "./types.js";
 
 /**
  * Live updates over Server-Sent Events.
  *
- * A live message never carries data: it only says "requests changed", and
- * each page fetches what it is allowed to see through the normal API. So
- * nothing private can leak through this channel.
+ * A live message never carries data, only a topic:
+ *   - "requests": the board or a request changed (sent to everyone);
+ *   - "support":  a help-chat thread changed (sent only to that member and
+ *                 to admins).
+ * Each page then fetches what it is allowed to see through the normal API,
+ * so nothing private can leak through this channel.
  *
- * Connections are capped in total and per IP, each one closes after 30
- * minutes (the browser reconnects on its own), and a ping every 25 seconds
- * keeps proxies from closing idle streams.
+ * Limits: a signed-in member may hold 6 streams (tabs); visitors are counted
+ * per IP with a larger allowance, because a whole campus can share one IP.
+ * Each stream closes after 30 minutes (the browser reconnects on its own),
+ * and a ping every 25 seconds keeps proxies from closing idle streams.
  */
-type Listener = () => void;
+type Topic = "requests" | "support";
+type Listener = { userId: string | null; isAdmin: boolean; notify: (t: Topic) => void };
+
 const listeners = new Set<Listener>();
-const perIp = new Map<string, number>();
-const MAX_TOTAL = 2000;
-const MAX_PER_IP = 6;
+const perKey = new Map<string, number>();
+const MAX_TOTAL = 3000;
+const MAX_PER_MEMBER = 6;
+const MAX_PER_VISITOR_IP = 150;
 const LIFETIME_MS = 30 * 60_000;
 
 let pending: NodeJS.Timeout | null = null;
@@ -27,25 +35,37 @@ export function announceChange() {
   if (pending) return;
   pending = setTimeout(() => {
     pending = null;
-    for (const l of listeners) l();
+    for (const l of listeners) l.notify("requests");
   }, 300);
 }
 
-export function liveHandler(c: Context) {
+/** Tell one member (and the admins) that their help thread changed. */
+export function announceSupport(userId: string) {
+  for (const l of listeners) if (l.isAdmin || l.userId === userId) l.notify("support");
+}
+
+export function liveHandler(c: Context<AppEnv>) {
+  const user = c.get("user");
   const ip = clientIp(c);
-  const count = perIp.get(ip) ?? 0;
-  if (listeners.size >= MAX_TOTAL || (ip !== "local" && count >= MAX_PER_IP)) {
+  const key = user ? `u:${user.id}` : `ip:${ip}`;
+  const cap = user ? MAX_PER_MEMBER : MAX_PER_VISITOR_IP;
+  const count = perKey.get(key) ?? 0;
+  if (listeners.size >= MAX_TOTAL || (ip !== "local" && count >= cap)) {
     return c.json({ error: "too_many_connections" }, 429);
   }
-  perIp.set(ip, count + 1);
+  perKey.set(key, count + 1);
   c.header("X-Accel-Buffering", "no");
 
   return streamSSE(c, async (stream) => {
     let wake: (() => void) | null = null;
-    let changed = false;
-    const listener = () => {
-      changed = true;
-      wake?.();
+    const changed = new Set<Topic>();
+    const listener: Listener = {
+      userId: user?.id ?? null,
+      isAdmin: user?.isAdmin ?? false,
+      notify: (t) => {
+        changed.add(t);
+        wake?.();
+      },
     };
     listeners.add(listener);
     const started = Date.now();
@@ -58,18 +78,18 @@ export function liveHandler(c: Context) {
         });
         wake = null;
         if (stream.aborted) break;
-        if (changed) {
-          changed = false;
-          await stream.writeSSE({ event: "change", data: "requests" });
+        if (changed.size) {
+          for (const t of changed) await stream.writeSSE({ event: "change", data: t });
+          changed.clear();
         } else {
           await stream.writeSSE({ event: "ping", data: "" });
         }
       }
     } finally {
       listeners.delete(listener);
-      const left = (perIp.get(ip) ?? 1) - 1;
-      if (left <= 0) perIp.delete(ip);
-      else perIp.set(ip, left);
+      const left = (perKey.get(key) ?? 1) - 1;
+      if (left <= 0) perKey.delete(key);
+      else perKey.set(key, left);
     }
   });
 }

@@ -59,9 +59,9 @@ export default function Dashboard() {
           <Avatar name={user.name} />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[0.9375rem] font-semibold">{user.name}</span>
-            <span className="t-meta block truncate">
-              @{user.username}
-              {user.college ? ` · ${user.college}` : ""}
+            <span className="t-meta flex gap-3 truncate">
+              <span>@{user.username}</span>
+              {user.college ? <span>{user.college}</span> : null}
             </span>
           </span>
           <span className="text-[0.8125rem] font-semibold text-primary-strong">{t.settings.viewProfile}</span>
@@ -128,15 +128,16 @@ function MyActivity() {
           ) : (
             <ul className="divide-y divide-border rounded-(--radius-surface) border border-border">
               {g.items.slice(0, 8).map((x) => (
-                <li key={x.id}>
+                <li key={x.code}>
                   <Link
-                    to={`/requests/${x.id}`}
+                    to={`/requests/${x.code}`}
                     className="flex items-center gap-3 px-4 py-3 motion-interactive hover:bg-surface"
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[0.9375rem] font-medium">{x.details}</span>
-                      <span className="t-meta block text-[0.75rem]">
-                        {r.status[x.status]} · {timeAgo(x.createdAt, locale)}
+                      <span className="t-meta flex gap-3 text-[0.75rem]">
+                        <span>{r.status[x.status]}</span>
+                        <span>{timeAgo(x.createdAt, locale)}</span>
                       </span>
                     </span>
                     <span className="text-[0.875rem] font-semibold tabular-nums">{ringgit(x.tipSen)}</span>

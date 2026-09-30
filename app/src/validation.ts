@@ -65,7 +65,9 @@ const identity = {
   agree: z.literal(true),
 };
 
-export const runnerApplicationSchema = z.object(identity).strict();
+export const runnerApplicationSchema = z
+  .object({ ...identity, vehicle: z.enum(["walk", "bicycle", "motorcycle", "car"]) })
+  .strict();
 
 export const driverApplicationSchema = z
   .object({
@@ -111,10 +113,12 @@ export const requestSchema = z
     details: text(300).pipe(z.string().min(2)),
     pickup: text(80).pipe(z.string().min(2)),
     dropoff: text(80).pipe(z.string().min(2)),
-    /** Tip in ringgit, e.g. 3 or 2.50. Stored as sen. */
-    tip: z.number().min(0).max(100),
+    /** Delivery fee (upah antar) in ringgit, e.g. 3 or 2.50, paid to the runner in person. Stored as sen. */
+    tip: z.number().min(1).max(100),
   })
   .strict();
+
+export const supportSchema = z.object({ body: text(1000).pipe(z.string().min(1)) }).strict();
 
 export const statusSchema = z.object({ status: z.enum(["on_the_way", "delivered"]) }).strict();
 
@@ -124,6 +128,13 @@ export const rateSchema = z
     body: text(300),
   })
   .strict();
+
+/** Public order code, e.g. UM-7K3F9Q (case-insensitive in links). */
+export const codeParam = z
+  .string()
+  .max(12)
+  .transform((s) => s.toUpperCase())
+  .pipe(z.string().regex(/^UM-[2-9A-HJ-NP-Z]{6}$/));
 
 export const idParam = z.coerce
   .number()

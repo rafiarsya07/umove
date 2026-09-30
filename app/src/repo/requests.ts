@@ -18,7 +18,7 @@ export type Status = "open" | "accepted" | "on_the_way" | "delivered" | "cancell
 type Person = { username: string; name: string };
 
 export type BoardItem = {
-  id: number;
+  code: string;
   details: string;
   pickup: string;
   dropoff: string;
@@ -31,7 +31,7 @@ export type BoardItem = {
 /** Open requests, newest first. Public: only usernames and first names. */
 export async function openBoard(limit: number): Promise<BoardItem[]> {
   const rows = await sql<(Omit<BoardItem, "customer"> & { cUsername: string; cName: string })[]>`
-    select o.id::int as id, o.details, o.pickup, o.dropoff, o.tip_sen as "tipSen", o.status,
+    select o.code, o.details, o.pickup, o.dropoff, o.tip_sen as "tipSen", o.status,
            o.created_at as "createdAt", c.username::text as "cUsername", split_part(c.name, ' ', 1) as "cName"
     from orders o join users c on c.id = o.customer_id
     where o.status = 'open' and c.status = 'active'
@@ -44,7 +44,7 @@ export async function openBoard(limit: number): Promise<BoardItem[]> {
 export async function createRequest(
   userId: string,
   r: { details: string; pickup: string; dropoff: string; tipSen: number },
-): Promise<{ id: number } | "need_whatsapp" | "too_many" | "daily_limit"> {
+): Promise<{ code: string } | "need_whatsapp" | "too_many" | "daily_limit"> {
   const [u] = await sql<{ phone: boolean; open: number; today: number }[]>`
     select phone_wa is not null as phone,
       (select count(*)::int from orders where customer_id = ${userId}
@@ -56,10 +56,10 @@ export async function createRequest(
   if (!u?.phone) return "need_whatsapp";
   if (u.open >= MAX_OPEN_PER_CUSTOMER) return "too_many";
   if (u.today >= MAX_POSTS_PER_DAY) return "daily_limit";
-  const [row] = await sql<{ id: number }[]>`
+  const [row] = await sql<{ code: string }[]>`
     insert into orders (type, customer_id, pickup, dropoff, details, tip_sen)
     values ('deliver', ${userId}, ${r.pickup}, ${r.dropoff}, ${r.details}, ${r.tipSen})
-    returning id::int as id
+    returning code
   `;
   return row;
 }
@@ -70,10 +70,11 @@ export async function createRequest(
  * WhatsApp number is included only for those two, and only after a runner
  * has accepted.
  */
-export async function requestForViewer(id: number, viewerId: string | null) {
+export async function requestForViewer(code: string, viewerId: string | null) {
   const [o] = await sql<
     {
       id: number;
+      code: string;
       details: string;
       pickup: string;
       dropoff: string;
@@ -92,7 +93,7 @@ export async function requestForViewer(id: number, viewerId: string | null) {
       rPhone: string | null;
     }[]
   >`
-    select o.id::int as id, o.details, o.pickup, o.dropoff, o.tip_sen as "tipSen", o.status,
+    select o.id::int as id, o.code, o.details, o.pickup, o.dropoff, o.tip_sen as "tipSen", o.status,
            o.created_at as "createdAt", o.accepted_at as "acceptedAt", o.delivered_at as "deliveredAt",
            o.customer_id as "customerId", o.runner_id as "runnerId",
            c.username::text as "cUsername", c.name as "cName", c.phone_wa as "cPhone",
@@ -100,7 +101,7 @@ export async function requestForViewer(id: number, viewerId: string | null) {
     from orders o
     join users c on c.id = o.customer_id
     left join users r on r.id = o.runner_id
-    where o.id = ${id}
+    where o.code = ${code}
   `;
   if (!o) return null;
 
@@ -118,13 +119,13 @@ export async function requestForViewer(id: number, viewerId: string | null) {
   let rated = false;
   if (role && o.status === "delivered") {
     const [r] = await sql<{ n: number }[]>`
-      select count(*)::int as n from ratings where order_id = ${id} and from_user = ${viewerId}
+      select count(*)::int as n from ratings where order_id = ${o.id} and from_user = ${viewerId}
     `;
     rated = r.n > 0;
   }
 
   return {
-    id: o.id,
+    code: o.code,
     details: o.details,
     pickup: o.pickup,
     dropoff: o.dropoff,
@@ -142,7 +143,7 @@ export async function requestForViewer(id: number, viewerId: string | null) {
   };
 }
 
-export async function acceptRequest(id: number, runnerId: string): Promise<"ok" | "gone" | "not_runner" | "busy"> {
+export async function acceptRequest(code: string, runnerId: string): Promise<"ok" | "gone" | "not_runner" | "busy"> {
   const [r] = await sql<{ runner: boolean; active: number }[]>`
     select exists (select 1 from user_roles where user_id = ${runnerId} and role = 'runner' and status = 'active') as runner,
            (select count(*)::int from orders where runner_id = ${runnerId} and status in ('accepted','on_the_way')) as active
@@ -151,50 +152,50 @@ export async function acceptRequest(id: number, runnerId: string): Promise<"ok" 
   if (r.active >= MAX_ACTIVE_PER_RUNNER) return "busy";
   const rows = await sql`
     update orders set runner_id = ${runnerId}, status = 'accepted', accepted_at = now()
-    where id = ${id} and status = 'open' and customer_id <> ${runnerId}
+    where code = ${code} and status = 'open' and customer_id <> ${runnerId}
   `;
   return rows.count === 1 ? "ok" : "gone";
 }
 
-export async function advanceRequest(id: number, runnerId: string, to: "on_the_way" | "delivered"): Promise<boolean> {
+export async function advanceRequest(code: string, runnerId: string, to: "on_the_way" | "delivered"): Promise<boolean> {
   const rows =
     to === "on_the_way"
       ? await sql`
           update orders set status = 'on_the_way'
-          where id = ${id} and runner_id = ${runnerId} and status = 'accepted'`
+          where code = ${code} and runner_id = ${runnerId} and status = 'accepted'`
       : await sql`
           update orders set status = 'delivered', delivered_at = now()
-          where id = ${id} and runner_id = ${runnerId} and status in ('accepted', 'on_the_way')`;
+          where code = ${code} and runner_id = ${runnerId} and status in ('accepted', 'on_the_way')`;
   return rows.count === 1;
 }
 
 /** The runner gives the request back to the board (before setting off). */
-export async function releaseRequest(id: number, runnerId: string): Promise<boolean> {
+export async function releaseRequest(code: string, runnerId: string): Promise<boolean> {
   const rows = await sql`
     update orders set runner_id = null, status = 'open', accepted_at = null
-    where id = ${id} and runner_id = ${runnerId} and status = 'accepted'
+    where code = ${code} and runner_id = ${runnerId} and status = 'accepted'
   `;
   return rows.count === 1;
 }
 
 /** The customer withdraws a request nobody has taken yet. */
-export async function cancelRequest(id: number, customerId: string): Promise<boolean> {
+export async function cancelRequest(code: string, customerId: string): Promise<boolean> {
   const rows = await sql`
     update orders set status = 'cancelled', cancelled_at = now()
-    where id = ${id} and customer_id = ${customerId} and status = 'open'
+    where code = ${code} and customer_id = ${customerId} and status = 'open'
   `;
   return rows.count === 1;
 }
 
 /** Rate the other side of a delivered request, once. */
-export async function rateRequest(id: number, userId: string, stars: number, body: string): Promise<boolean> {
+export async function rateRequest(code: string, userId: string, stars: number, body: string): Promise<boolean> {
   const rows = await sql`
     insert into ratings (order_id, from_user, to_user, stars, body)
     select o.id, ${userId},
            case when o.customer_id = ${userId} then o.runner_id else o.customer_id end,
            ${stars}, ${body}
     from orders o
-    where o.id = ${id} and o.status = 'delivered'
+    where o.code = ${code} and o.status = 'delivered'
       and (o.customer_id = ${userId} or o.runner_id = ${userId})
     on conflict (order_id, from_user) do nothing
   `;
@@ -205,7 +206,7 @@ export async function rateRequest(id: number, userId: string, stars: number, bod
 export async function myRequests(userId: string) {
   return sql<
     {
-      id: number;
+      code: string;
       details: string;
       pickup: string;
       dropoff: string;
@@ -215,7 +216,7 @@ export async function myRequests(userId: string) {
       mine: "customer" | "runner";
     }[]
   >`
-    select id::int as id, details, pickup, dropoff, tip_sen as "tipSen", status, created_at as "createdAt",
+    select code, details, pickup, dropoff, tip_sen as "tipSen", status, created_at as "createdAt",
            case when customer_id = ${userId} then 'customer' else 'runner' end as mine
     from orders
     where customer_id = ${userId} or runner_id = ${userId}

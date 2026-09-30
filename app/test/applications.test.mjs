@@ -35,6 +35,7 @@ check("runner photo too big", [400, 413].includes((await apply(R, "runner", unde
 check("unknown upload field rejected", (await apply(R, "runner", undefined, { extra: { passport: new Blob([JPEG]) } })).body?.fields?.includes("passport"));
 check("runner must agree", (await apply(R, "runner", runnerDetails({ agree: false }))).body?.fields?.includes("agree"));
 check("runner extra field rejected", (await apply(R, "runner", runnerDetails({ isAdmin: true }))).status === 400);
+check("runner must say how they deliver", (await apply(R, "runner", runnerDetails({ vehicle: "rocket" }))).body?.fields?.includes("vehicle"));
 check("bad matric no", (await apply(R, "runner", runnerDetails({ matricNo: "x" }))).body?.fields?.includes("matricNo"));
 check("broken JSON", (await (async () => { const fd = new FormData(); fd.set("details", "{"); const r = await fetch(`${BASE}/api/me/roles/runner`, { method: "POST", headers: { cookie: R, origin: BASE }, body: fd }); return r.status; })()) === 400);
 
@@ -95,6 +96,8 @@ check("can reapply after 24h", r.status === 200, JSON.stringify(r.body));
 const run = q[0];
 check("approve runner", (await call(`/admin/applications/${run.id}/decision`, A, "POST", { decision: "approve" })).status === 200);
 check("runner active", (await call("/me", R)).body.roles.runner === "active");
+const pubR = (await call("/users/rina", null)).body;
+check("profile shows how the runner delivers", pubR.verifiedRunner && pubR.runnerVehicle === "bicycle", JSON.stringify(pubR));
 check("active runner cannot reapply", (await apply(R, "runner")).body?.error === "already_applied");
 check("approved list", (await call("/admin/applications?status=approved", A)).body.some((x) => x.id === run.id && x.decidedBy === "admin"));
 const audit = (await call("/admin/audit", A)).body.map((a) => a.action);

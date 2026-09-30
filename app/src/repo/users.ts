@@ -127,10 +127,17 @@ export async function publicProfile(username: string) {
     order by r.created_at desc
     limit 20
   `;
+  const [way] = await sql<{ vehicle: string | null }[]>`
+    select details->>'vehicle' as vehicle from role_applications
+    where user_id = ${u.id} and role = 'runner' and status = 'approved'
+    order by decided_at desc limit 1
+  `;
   const { id: _id, ...pub } = u;
   return {
     ...pub,
     verifiedRunner: roles.runner === "active",
+    verifiedDriver: roles.driver === "active",
+    runnerVehicle: roles.runner === "active" ? (way?.vehicle ?? null) : null,
     stats: await statsOf(u.id),
     reviews,
   };

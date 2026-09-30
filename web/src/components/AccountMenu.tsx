@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from "react";
 import { Link, useNavigate } from "react-router";
 import { useI18n } from "../i18n";
 import { useSession } from "../lib/session";
-import { ChevronDownIcon, LogoutIcon, SettingsIcon } from "./Icon";
+import { useSupportUnread } from "../lib/support";
+import { ChatIcon, ChevronDownIcon, LogoutIcon, SettingsIcon } from "./Icon";
 import { Avatar } from "./ui";
 
 /**
@@ -54,6 +55,24 @@ export function AccountMenu() {
     );
   }
 
+  return <MemberMenu open={open} setOpen={setOpen} menuRef={ref} />;
+}
+
+/** The signed-in menu. A component of its own so the unread count only runs for members. */
+function MemberMenu({
+  open,
+  setOpen,
+  menuRef: ref,
+}: {
+  open: boolean;
+  setOpen: Dispatch<SetStateAction<boolean>>;
+  menuRef: RefObject<HTMLDivElement | null>;
+}) {
+  const { t } = useI18n();
+  const { user, signOut } = useSession();
+  const navigate = useNavigate();
+  const unread = useSupportUnread();
+  if (!user) return null;
   const item =
     "flex w-full items-center gap-2 px-3 py-2 text-left text-[0.875rem] text-foreground-secondary motion-interactive hover:bg-surface hover:text-foreground";
 
@@ -61,13 +80,20 @@ export function AccountMenu() {
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen((o: boolean) => !o)}
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={t.nav.account}
         className="inline-flex h-9 items-center gap-1 rounded-full py-1 pr-2 pl-1 text-foreground-secondary motion-interactive hover:bg-surface hover:text-foreground"
       >
-        <Avatar name={user.name} size="sm" />
+        <span className="relative">
+          <Avatar name={user.name} size="sm" />
+          {unread ? (
+            <span className="absolute -top-1 -right-1.5 min-w-4 rounded-full bg-primary px-1 text-center text-[0.625rem] leading-4 font-bold text-primary-foreground">
+              {unread}
+            </span>
+          ) : null}
+        </span>
         <ChevronDownIcon className="size-3.5" />
       </button>
 
@@ -90,6 +116,15 @@ export function AccountMenu() {
             <Link to="/settings" role="menuitem" onClick={() => setOpen(false)} className={item}>
               <SettingsIcon className="size-4" />
               {t.nav.settings}
+            </Link>
+            <Link to="/help" role="menuitem" onClick={() => setOpen(false)} className={item}>
+              <ChatIcon className="size-4" />
+              <span className="flex-1">{t.help.nav}</span>
+              {unread ? (
+                <span className="rounded-full bg-primary px-1.5 text-[0.6875rem] leading-5 font-bold text-primary-foreground">
+                  {unread}
+                </span>
+              ) : null}
             </Link>
             {user.isAdmin ? (
               <Link

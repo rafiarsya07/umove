@@ -24,17 +24,21 @@ export default function NewRequest() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const tip = Number(form.tip.replace(",", "."));
-    if ([form.details, form.pickup, form.dropoff].some((v) => v.trim().length < 2) || !Number.isFinite(tip)) {
+    if ([form.details, form.pickup, form.dropoff].some((v) => v.trim().length < 2)) {
       setError(r.errFields);
+      return;
+    }
+    if (!Number.isFinite(tip) || tip < 1 || tip > 100) {
+      setError(r.errFee);
       return;
     }
     setBusy(true);
     try {
-      const res = await api<{ id: number }>("/requests", {
+      const res = await api<{ code: string }>("/requests", {
         method: "POST",
         body: { details: form.details, pickup: form.pickup, dropoff: form.dropoff, tip: Math.round(tip * 100) / 100 },
       });
-      navigate(`/requests/${res.id}`);
+      navigate(`/requests/${res.code}`);
     } catch (err) {
       const code = err instanceof ApiError ? err.code : "";
       setError(
@@ -101,6 +105,13 @@ export default function NewRequest() {
           />
         </label>
         <p className="t-meta -mt-3 text-[0.75rem]">{r.tipHint}</p>
+
+        <div className="rounded-(--radius-surface) border border-border bg-surface px-4 py-3.5">
+          <p className="text-[0.875rem] font-semibold">{r.payTitle}</p>
+          <p className="t-meta mt-0.5 leading-relaxed">
+            {r.payBody} {r.handover}
+          </p>
+        </div>
 
         {error ? (
           <p

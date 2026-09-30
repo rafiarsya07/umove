@@ -1,7 +1,8 @@
 export type RequestStatus = "open" | "accepted" | "on_the_way" | "delivered" | "cancelled";
 
 export type BoardItem = {
-  id: number;
+  /** Public order code, e.g. UM-7K3F9Q. */
+  code: string;
   details: string;
   pickup: string;
   dropoff: string;

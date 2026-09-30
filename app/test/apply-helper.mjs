@@ -3,7 +3,7 @@ export const BASE = "http://localhost:3222";
 export const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, ...new Array(200).fill(7)]);
 const day = (n) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
 
-export const runnerDetails = (o = {}) => ({ fullName: "Budi Santoso", matricNo: "u2102345", faculty: "FSKTM", agree: true, ...o });
+export const runnerDetails = (o = {}) => ({ fullName: "Budi Santoso", matricNo: "u2102345", faculty: "FSKTM", vehicle: "bicycle", agree: true, ...o });
 export const driverDetails = (o = {}) => ({
   fullName: "Citra Dewi", matricNo: "S2123456/1", faculty: "Engineering", agree: true,
   licenseClass: "DA", licenseType: "competent", licenseExpiry: day(400),

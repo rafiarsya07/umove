@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link, Navigate, useParams } from "react-router";
-import { CheckIcon, PlusIcon } from "../components/Icon";
+import { BikeIcon, CarIcon, CheckIcon, MotorIcon, PlusIcon, WalkIcon } from "../components/Icon";
 import { Segment, btn, segmentClass } from "../components/ui";
 import { fmt, useI18n } from "../i18n";
 import { ApiError, api } from "../lib/api";
@@ -24,7 +24,16 @@ const field =
 
 const day = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
 
+const WAYS = [
+  ["walk", WalkIcon],
+  ["bicycle", BikeIcon],
+  ["motorcycle", MotorIcon],
+  ["car", CarIcon],
+] as const;
+type Way = (typeof WAYS)[number][0];
+
 type Form = {
+  vehicle: Way | "";
   fullName: string;
   matricNo: string;
   faculty: string;
@@ -49,6 +58,7 @@ function ApplyFor({ role }: { role: ApplyRole }) {
   const driver = role === "driver";
 
   const [form, setForm] = useState<Form>({
+    vehicle: "",
     fullName: user?.name ?? "",
     matricNo: "",
     faculty: user?.college ?? "",
@@ -99,7 +109,9 @@ function ApplyFor({ role }: { role: ApplyRole }) {
     return (
       <Centered>
         <h1 className="t-page-title">{title}</h1>
-        <p className="t-body mt-2 text-foreground-secondary">{status === "pending" ? a.statusPending : a.statusActive}</p>
+        <p className="t-body mt-2 text-foreground-secondary">
+          {status === "pending" ? a.statusPending : a.statusActive}
+        </p>
         <Link to="/settings#roles" className={`${btn.outline} mt-6`}>
           {a.backToSettings}
         </Link>
@@ -130,6 +142,7 @@ function ApplyFor({ role }: { role: ApplyRole }) {
         errs.licenseClass = a.errClassVehicle;
       if (!form.insured) errs.insured = a.errRequired;
     }
+    if (!driver && !form.vehicle) errs.vehicle = a.errRequired;
     for (const k of PHOTOS[role]) if (!photos[k]) errs[k] = a.errRequired;
     if (!form.agree) errs.agree = a.errRequired;
     if (Object.values(errs).some(Boolean)) {
@@ -155,7 +168,7 @@ function ApplyFor({ role }: { role: ApplyRole }) {
           roadTaxExpiry: form.roadTaxExpiry,
           insured: true,
         }
-      : { fullName: form.fullName, matricNo: form.matricNo, faculty: form.faculty, agree: true };
+      : { fullName: form.fullName, matricNo: form.matricNo, faculty: form.faculty, vehicle: form.vehicle, agree: true };
     const fd = new FormData();
     fd.set("details", JSON.stringify(details));
     for (const k of PHOTOS[role]) fd.set(k, photos[k]!, `${k}.jpg`);
@@ -229,11 +242,58 @@ function ApplyFor({ role }: { role: ApplyRole }) {
       ) : (
         <form onSubmit={submit} noValidate className="mt-8 space-y-10">
           <Section title={a.sectionYou}>
-            <Text label={a.fullName} value={form.fullName} onChange={(v) => set("fullName", v)} error={errors.fullName} max={60} autoComplete="name" />
+            <Text
+              label={a.fullName}
+              value={form.fullName}
+              onChange={(v) => set("fullName", v)}
+              error={errors.fullName}
+              max={60}
+              autoComplete="name"
+            />
             <div className="grid gap-5 sm:grid-cols-2">
-              <Text label={a.matricNo} value={form.matricNo} onChange={(v) => set("matricNo", v.toUpperCase())} error={errors.matricNo} max={20} />
-              <Text label={a.faculty} value={form.faculty} onChange={(v) => set("faculty", v)} error={errors.faculty} max={60} placeholder={a.facultyPh} />
+              <Text
+                label={a.matricNo}
+                value={form.matricNo}
+                onChange={(v) => set("matricNo", v.toUpperCase())}
+                error={errors.matricNo}
+                max={20}
+              />
+              <Text
+                label={a.faculty}
+                value={form.faculty}
+                onChange={(v) => set("faculty", v)}
+                error={errors.faculty}
+                max={60}
+                placeholder={a.facultyPh}
+              />
             </div>
+            {!driver ? (
+              <div>
+                <span className="t-label">{a.vehicle}</span>
+                <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label={a.vehicle}>
+                  {WAYS.map(([v, Icon], i) => (
+                    <button
+                      key={v}
+                      type="button"
+                      role="radio"
+                      aria-checked={form.vehicle === v}
+                      onClick={() => set("vehicle", v)}
+                      className={`flex flex-col items-center gap-1.5 rounded-(--radius-control) border px-2 py-3 text-[0.8125rem] font-medium motion-interactive ${
+                        form.vehicle === v
+                          ? "border-primary bg-primary-soft text-primary-strong"
+                          : errors.vehicle
+                            ? "border-danger"
+                            : "border-border hover:bg-surface"
+                      }`}
+                    >
+                      <Icon className="size-6" />
+                      {t.runner.ways[i].title}
+                    </button>
+                  ))}
+                </div>
+                <FieldError text={errors.vehicle} />
+              </div>
+            ) : null}
           </Section>
 
           {driver ? (
@@ -252,20 +312,51 @@ function ApplyFor({ role }: { role: ApplyRole }) {
                   }}
                 />
                 <div className="grid gap-5 sm:grid-cols-2">
-                  <Text label={a.vehicleModel} value={form.vehicleModel} onChange={(v) => set("vehicleModel", v)} error={errors.vehicleModel} max={40} placeholder={a.vehicleModelPh} />
-                  <Text label={a.vehicleColor} value={form.vehicleColor} onChange={(v) => set("vehicleColor", v)} error={errors.vehicleColor} max={20} placeholder={a.vehicleColorPh} />
-                  <Text label={a.plate} value={form.plate} onChange={(v) => set("plate", v.toUpperCase())} error={errors.plate} max={12} placeholder={a.platePh} />
+                  <Text
+                    label={a.vehicleModel}
+                    value={form.vehicleModel}
+                    onChange={(v) => set("vehicleModel", v)}
+                    error={errors.vehicleModel}
+                    max={40}
+                    placeholder={a.vehicleModelPh}
+                  />
+                  <Text
+                    label={a.vehicleColor}
+                    value={form.vehicleColor}
+                    onChange={(v) => set("vehicleColor", v)}
+                    error={errors.vehicleColor}
+                    max={20}
+                    placeholder={a.vehicleColorPh}
+                  />
+                  <Text
+                    label={a.plate}
+                    value={form.plate}
+                    onChange={(v) => set("plate", v.toUpperCase())}
+                    error={errors.plate}
+                    max={12}
+                    placeholder={a.platePh}
+                  />
                   {form.vehicleType === "car" ? (
                     <label className="block">
                       <span className="t-label">{a.seats}</span>
-                      <select className={`${field} mt-1.5`} value={form.seats} onChange={(e) => set("seats", e.target.value)}>
+                      <select
+                        className={`${field} mt-1.5`}
+                        value={form.seats}
+                        onChange={(e) => set("seats", e.target.value)}
+                      >
                         {[1, 2, 3, 4, 5, 6, 7].map((n) => (
                           <option key={n}>{n}</option>
                         ))}
                       </select>
                     </label>
                   ) : null}
-                  <DateField label={a.roadTaxExpiry} value={form.roadTaxExpiry} min={day(0)} onChange={(v) => set("roadTaxExpiry", v)} error={errors.roadTaxExpiry} />
+                  <DateField
+                    label={a.roadTaxExpiry}
+                    value={form.roadTaxExpiry}
+                    min={day(0)}
+                    onChange={(v) => set("roadTaxExpiry", v)}
+                    error={errors.roadTaxExpiry}
+                  />
                 </div>
                 <Check checked={form.insured} onChange={(v) => set("insured", v)} error={errors.insured}>
                   {a.insured}
@@ -283,8 +374,14 @@ function ApplyFor({ role }: { role: ApplyRole }) {
                   >
                     <option value="">—</option>
                     {(form.vehicleType === "motorcycle"
-                      ? ([["B2", a.classB2], ["B", a.classB]] as const)
-                      : ([["D", a.classD], ["DA", a.classDA]] as const)
+                      ? ([
+                          ["B2", a.classB2],
+                          ["B", a.classB],
+                        ] as const)
+                      : ([
+                          ["D", a.classD],
+                          ["DA", a.classDA],
+                        ] as const)
                     ).map(([v, l]) => (
                       <option key={v} value={v}>
                         {l}
@@ -303,7 +400,13 @@ function ApplyFor({ role }: { role: ApplyRole }) {
                     ]}
                     onChange={(v) => set("licenseType", v)}
                   />
-                  <DateField label={a.licenseExpiry} value={form.licenseExpiry} min={day(30)} onChange={(v) => set("licenseExpiry", v)} error={errors.licenseExpiry} />
+                  <DateField
+                    label={a.licenseExpiry}
+                    value={form.licenseExpiry}
+                    min={day(30)}
+                    onChange={(v) => set("licenseExpiry", v)}
+                    error={errors.licenseExpiry}
+                  />
                 </div>
               </Section>
             </>
@@ -464,13 +567,7 @@ function Check(p: { checked: boolean; onChange: (v: boolean) => void; error?: st
   );
 }
 
-function PhotoPicker(p: {
-  label: string;
-  blob?: Blob;
-  error?: string;
-  onPick: (b: Blob) => void;
-  onFail: () => void;
-}) {
+function PhotoPicker(p: { label: string; blob?: Blob; error?: string; onPick: (b: Blob) => void; onFail: () => void }) {
   const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const url = useMemo(() => (p.blob ? URL.createObjectURL(p.blob) : null), [p.blob]);
@@ -483,7 +580,11 @@ function PhotoPicker(p: {
       }`}
     >
       <span className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-(--radius-control) bg-muted">
-        {url ? <img src={url} alt="" className="size-full object-cover" /> : <PlusIcon className="size-5 text-muted-foreground" />}
+        {url ? (
+          <img src={url} alt="" className="size-full object-cover" />
+        ) : (
+          <PlusIcon className="size-5 text-muted-foreground" />
+        )}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-[0.875rem] font-semibold">{p.label}</span>

@@ -39,7 +39,10 @@ export function Footer() {
     },
     {
       title: f.help,
-      links: [{ to: "/#faq", label: t.nav.faq }],
+      links: [
+        { to: "/#faq", label: t.nav.faq },
+        { to: "/help", label: t.help.nav },
+      ],
     },
   ];
 

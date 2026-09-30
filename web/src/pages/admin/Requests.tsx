@@ -8,6 +8,7 @@ import { PageTitle, panel } from "./AdminLayout";
 
 type Row = {
   id: number;
+  code: string;
   details: string;
   pickup: string;
   dropoff: string;
@@ -42,7 +43,7 @@ export default function Requests() {
   useLive(load);
 
   const cancel = async (r: Row) => {
-    if (!window.confirm(`Cancel request #${r.id}? Both sides will see it as cancelled.`)) return;
+    if (!window.confirm(`Cancel ${r.code}? Both sides will see it as cancelled.`)) return;
     try {
       await api(`/admin/requests/${r.id}/cancel`, { method: "POST" });
       load();
@@ -81,7 +82,8 @@ export default function Requests() {
             <li key={r.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:gap-4">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[0.9375rem] font-semibold">
-                  #{r.id} · {r.details}
+                  <span className="mr-2 font-mono text-[0.8125rem] text-muted-foreground">{r.code}</span>
+                  {r.details}
                 </p>
                 <p className="t-meta truncate">
                   {r.pickup} → {r.dropoff} · @{r.customer}

@@ -16,6 +16,7 @@ export async function adminStats() {
       active: number;
       delivered7d: number;
       suspended: number;
+      support: number;
     }[]
   >`
     select
@@ -26,7 +27,8 @@ export async function adminStats() {
       (select count(*)::int from orders where status = 'open') as open,
       (select count(*)::int from orders where status in ('accepted', 'on_the_way')) as active,
       (select count(*)::int from orders where status = 'delivered' and delivered_at > now() - interval '7 days') as "delivered7d",
-      (select count(*)::int from users where status = 'suspended') as suspended
+      (select count(*)::int from users where status = 'suspended') as suspended,
+      (select count(distinct user_id)::int from support_messages where not from_admin and read_at is null) as support
   `;
   return s;
 }
@@ -83,6 +85,7 @@ export async function listRequests(status: string | null) {
   return sql<
     {
       id: number;
+      code: string;
       details: string;
       pickup: string;
       dropoff: string;
@@ -93,7 +96,7 @@ export async function listRequests(status: string | null) {
       runner: string | null;
     }[]
   >`
-    select o.id::int as id, o.details, o.pickup, o.dropoff, o.tip_sen as "tipSen", o.status,
+    select o.id::int as id, o.code, o.details, o.pickup, o.dropoff, o.tip_sen as "tipSen", o.status,
            o.created_at as "createdAt", c.username::text as customer, r.username::text as runner
     from orders o
     join users c on c.id = o.customer_id
@@ -107,12 +110,13 @@ export async function listRequests(status: string | null) {
 /** Moderation: cancel any request that is not finished yet. */
 export async function adminCancelRequest(adminId: string, id: number): Promise<boolean> {
   return sql.begin(async (tx) => {
-    const rows = await tx`
+    const [row] = await tx<{ code: string }[]>`
       update orders set status = 'cancelled', cancelled_at = now()
       where id = ${id} and status in ('open', 'accepted', 'on_the_way')
+      returning code
     `;
-    if (rows.count !== 1) return false;
-    await tx`insert into audit_log (actor_id, action, target) values (${adminId}, 'request.cancel', ${String(id)})`;
+    if (!row) return false;
+    await tx`insert into audit_log (actor_id, action, target) values (${adminId}, 'request.cancel', ${row.code})`;
     return true;
   });
 }

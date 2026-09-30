@@ -38,10 +38,11 @@ check("post without WhatsApp = need_whatsapp", r.status === 409 && r.body.error 
 await profile(A, "ali", "+60 13-333 3333");
 check("post without login = 401", (await call("/requests", null, "POST", req)).status === 401);
 check("tip out of range rejected", (await call("/requests", A, "POST", { ...req, tip: -1 })).status === 400);
+check("fee below RM1 rejected", (await call("/requests", A, "POST", { ...req, tip: 0.5 })).status === 400);
 check("extra field rejected", (await call("/requests", A, "POST", { ...req, customerId: "x" })).status === 400);
 r = await call("/requests", A, "POST", req);
-check("post ok", r.status === 201 && r.body.id > 0);
-const id = r.body.id;
+check("post ok with a UM- code", r.status === 201 && /^UM-[2-9A-HJ-NP-Z]{6}$/.test(r.body.code), JSON.stringify(r.body));
+const id = r.body.code;
 await new Promise((s) => setTimeout(s, 700));
 check("live stream announced a change", events.join("").includes("event: change"), JSON.stringify(events));
 
@@ -76,7 +77,7 @@ check("runner profile shows the run and rating", pub.stats.runs === 1 && pub.sta
 check("delivered request gone from board", (await call("/requests", null)).body.length === 0);
 
 // release & cancel
-r = await call("/requests", A, "POST", req); const id2 = r.body.id;
+r = await call("/requests", A, "POST", req); const id2 = r.body.code;
 await call(`/requests/${id2}/accept`, B, "POST");
 check("runner can release before setting off", (await call(`/requests/${id2}/release`, B, "POST")).status === 200);
 check("released request is open again", (await call(`/requests/${id2}`, null)).body.status === "open");
@@ -84,7 +85,10 @@ check("stranger cannot cancel", (await call(`/requests/${id2}/cancel`, B, "POST"
 check("customer cancels open request", (await call(`/requests/${id2}/cancel`, A, "POST")).status === 200);
 
 // limits
-r = await call("/requests", B, "POST", req); const own = r.body.id;
+r = await call("/requests", B, "POST", req); const own = r.body.code;
+check("numeric id no longer works", (await call("/requests/1", null)).status === 404);
+check("unknown code 404", (await call("/requests/UM-AAAAAA", null)).status === 404);
+check("lowercase code in link works", (await call(`/requests/${own.toLowerCase()}`, null)).status === 200);
 check("runner cannot take own request", (await call(`/requests/${own}/accept`, B, "POST")).body.error === "gone");
 for (let i = 0; i < 3; i++) await call("/requests", A, "POST", req);
 check("max 3 active requests per customer", (await call("/requests", A, "POST", req)).body.error === "too_many");

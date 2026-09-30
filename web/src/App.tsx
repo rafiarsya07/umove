@@ -12,6 +12,8 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import AdminOverview from "./pages/admin/Overview";
 import AdminRequests from "./pages/admin/Requests";
 import AdminUsers from "./pages/admin/Users";
+import AdminSupport from "./pages/admin/Support";
+import Help from "./pages/Help";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import NewRequest from "./pages/NewRequest";
@@ -48,6 +50,7 @@ export default function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminOverview />} />
             <Route path="applications" element={<AdminApplications />} />
+            <Route path="support" element={<AdminSupport />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="requests" element={<AdminRequests />} />
             <Route path="audit" element={<AdminAudit />} />
@@ -69,7 +72,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/runner" element={<Runner />} />
           <Route path="/requests" element={<Requests />} />
-          <Route path="/requests/:id" element={<RequestDetail />} />
+          <Route path="/requests/:code" element={<RequestDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/u/:username" element={<Profile />} />
@@ -77,6 +80,7 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/requests/new" element={<NewRequest />} />
             <Route path="/apply/:role" element={<Apply />} />
+            <Route path="/help" element={<Help />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

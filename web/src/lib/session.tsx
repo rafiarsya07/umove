@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { ApiError, api } from "./api";
+import { resetLive } from "./live";
 
 /**
  * The signed-in user, loaded from the API (GET /api/me). Sign-in happens on
@@ -53,6 +54,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     await api("/auth/logout", { method: "POST" }).catch(() => {});
     setUserState(null);
+    resetLive();
   }, []);
 
   return (

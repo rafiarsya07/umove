@@ -12,7 +12,7 @@ import {
   requestForViewer,
 } from "../../repo/requests.js";
 import type { AppEnv } from "../../types.js";
-import { idParam, rateSchema, requestSchema, statusSchema } from "../../validation.js";
+import { codeParam, rateSchema, requestSchema, statusSchema } from "../../validation.js";
 import { requireUser } from "../guards.js";
 
 /** Delivery requests: the board, posting, taking, status, rating. */
@@ -34,8 +34,8 @@ requests.post("/", requireUser, async (c) => {
   return c.json(result, 201);
 });
 
-requests.get("/:id", async (c) => {
-  const id = idParam.safeParse(c.req.param("id"));
+requests.get("/:code", async (c) => {
+  const id = codeParam.safeParse(c.req.param("code"));
   if (!id.success) return c.json({ error: "not_found" }, 404);
   const r = await requestForViewer(id.data, c.get("user")?.id ?? null);
   return r ? c.json(r) : c.json({ error: "not_found" }, 404);
@@ -50,37 +50,37 @@ async function change(ok: boolean | string) {
   return { status: 409 as const, body: { error: typeof ok === "string" ? ok : "not_allowed" } };
 }
 
-requests.post("/:id/accept", requireUser, async (c) => {
-  const id = idParam.safeParse(c.req.param("id"));
+requests.post("/:code/accept", requireUser, async (c) => {
+  const id = codeParam.safeParse(c.req.param("code"));
   if (!id.success) return c.json({ error: "not_found" }, 404);
   const r = await change(await acceptRequest(id.data, c.get("user")!.id));
   return c.json(r.body, r.status);
 });
 
-requests.post("/:id/status", requireUser, async (c) => {
-  const id = idParam.safeParse(c.req.param("id"));
+requests.post("/:code/status", requireUser, async (c) => {
+  const id = codeParam.safeParse(c.req.param("code"));
   const body = statusSchema.safeParse(await c.req.json().catch(() => null));
   if (!id.success || !body.success) return c.json(invalid(["status"]), 400);
   const r = await change(await advanceRequest(id.data, c.get("user")!.id, body.data.status));
   return c.json(r.body, r.status);
 });
 
-requests.post("/:id/release", requireUser, async (c) => {
-  const id = idParam.safeParse(c.req.param("id"));
+requests.post("/:code/release", requireUser, async (c) => {
+  const id = codeParam.safeParse(c.req.param("code"));
   if (!id.success) return c.json({ error: "not_found" }, 404);
   const r = await change(await releaseRequest(id.data, c.get("user")!.id));
   return c.json(r.body, r.status);
 });
 
-requests.post("/:id/cancel", requireUser, async (c) => {
-  const id = idParam.safeParse(c.req.param("id"));
+requests.post("/:code/cancel", requireUser, async (c) => {
+  const id = codeParam.safeParse(c.req.param("code"));
   if (!id.success) return c.json({ error: "not_found" }, 404);
   const r = await change(await cancelRequest(id.data, c.get("user")!.id));
   return c.json(r.body, r.status);
 });
 
-requests.post("/:id/rate", requireUser, async (c) => {
-  const id = idParam.safeParse(c.req.param("id"));
+requests.post("/:code/rate", requireUser, async (c) => {
+  const id = codeParam.safeParse(c.req.param("code"));
   const body = rateSchema.safeParse(await c.req.json().catch(() => null));
   if (!id.success || !body.success) return c.json(invalid(["stars"]), 400);
   const ok = await rateRequest(id.data, c.get("user")!.id, body.data.stars, body.data.body);

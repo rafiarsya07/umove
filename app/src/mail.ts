@@ -87,3 +87,25 @@ export function mailDecision(
     "— UMOVE",
   ].join("\n"));
 }
+
+export function mailSupportToAdmins(name: string, username: string, preview: string) {
+  sendMail(
+    [...config.adminEmails],
+    `Help chat: new message from ${name}`,
+    [
+      `${name} (@${username}) wrote in the UMOVE help chat:`,
+      "",
+      preview.length > 300 ? `${preview.slice(0, 300)}…` : preview,
+      "",
+      `Reply: ${config.publicOrigin}/admin/support`,
+    ].join("\n"),
+  );
+}
+
+export function mailSupportReply(to: string, name: string) {
+  sendMail(
+    [to],
+    "UMOVE replied to your message",
+    [`Hi ${name},`, "", "The UMOVE team replied in your help chat:", `${config.publicOrigin}/help`, "", "— UMOVE"].join("\n"),
+  );
+}

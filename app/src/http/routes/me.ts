@@ -1,5 +1,7 @@
 import { Hono } from "hono";
-import { mailNewApplication } from "../../mail.js";
+import { announceSupport } from "../../live.js";
+import { mailNewApplication, mailSupportToAdmins } from "../../mail.js";
+import { markRead, post as postSupport, thread, unreadForMember } from "../../repo/support.js";
 import { myApplications, submitApplication, withdrawApplication, type Upload } from "../../repo/applications.js";
 import { getMe, updateProfile } from "../../repo/users.js";
 import type { AppEnv } from "../../types.js";
@@ -10,6 +12,7 @@ import {
   REQUIRED_FILES,
   roleParam,
   runnerApplicationSchema,
+  supportSchema,
 } from "../../validation.js";
 import { requireUser } from "../guards.js";
 
@@ -112,4 +115,29 @@ me.delete("/roles/:role", async (c) => {
   if (!role.success) return c.json({ error: "not_found" }, 404);
   const ok = await withdrawApplication(c.get("user")!.id, role.data);
   return ok ? c.json({ ok: true }) : c.json({ error: "not_pending" }, 409);
+});
+
+/* ---- Help chat with the admins ------------------------------------------- */
+
+me.get("/support", async (c) => {
+  const user = c.get("user")!;
+  const messages = await thread(user.id);
+  await markRead(user.id, false);
+  return c.json(messages);
+});
+
+me.get("/support/unread", async (c) => c.json({ unread: await unreadForMember(c.get("user")!.id) }));
+
+me.post("/support", async (c) => {
+  const user = c.get("user")!;
+  const parsed = supportSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ error: "invalid", fields: ["body"] }, 400);
+  const r = await postSupport(user.id, false, user.id, parsed.data.body);
+  if (!r.ok) return c.json({ error: r.error }, 429);
+  announceSupport(user.id);
+  if (r.firstUnread) {
+    const me = await getMe(user.id);
+    if (me) mailSupportToAdmins(me.name, me.username, parsed.data.body);
+  }
+  return c.json(r.message, 201);
 });

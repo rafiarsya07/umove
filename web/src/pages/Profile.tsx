@@ -15,6 +15,7 @@ type PublicProfile = {
   bio: string;
   joined: string;
   verifiedRunner: boolean;
+  runnerVehicle: "walk" | "bicycle" | "motorcycle" | "car" | null;
   stats: { requests: number; runs: number; rating: number | null; ratingCount: number };
   reviews: { id: number; by: string; stars: number; body: string; when: string }[];
 };
@@ -82,6 +83,13 @@ export default function Profile() {
           <span className="inline-flex items-center gap-1.5 rounded-full border border-border py-1 pr-3 pl-1.5 text-[0.8125rem] font-semibold">
             <VerifiedMark className="size-4" />
             {p.verified}
+          </span>
+        ) : null}
+        {profile.runnerVehicle ? (
+          <span className="rounded-full border border-border px-3 py-1 text-[0.8125rem]">
+            {fmt(p.deliversBy, {
+              way: t.runner.ways[["walk", "bicycle", "motorcycle", "car"].indexOf(profile.runnerVehicle)].title,
+            })}
           </span>
         ) : null}
         {profile.stats.rating !== null ? (

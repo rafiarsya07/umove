@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router";
 import { Container } from "../components/Container";
-import { CheckIcon, StarIcon } from "../components/Icon";
+import { ConfirmDialog } from "../components/ConfirmDialog";
+import { CheckIcon, DropoffIcon, PickupIcon, StarIcon } from "../components/Icon";
 import { btn } from "../components/ui";
 import { fmt, useI18n } from "../i18n";
 import { ApiError, api } from "../lib/api";
@@ -13,21 +14,31 @@ import NotFound from "./NotFound";
 
 const STEPS: RequestStatus[] = ["open", "accepted", "on_the_way", "delivered"];
 
+type Action = "take" | "onTheWay" | "delivered" | "release" | "cancel";
+const ACTIONS: Record<Action, [string, unknown?]> = {
+  take: ["accept"],
+  onTheWay: ["status", { status: "on_the_way" }],
+  delivered: ["status", { status: "delivered" }],
+  release: ["release"],
+  cancel: ["cancel"],
+};
+
 /** One request: its route, progress, the WhatsApp hand-off, and actions for whoever is looking. */
 export default function RequestDetail() {
-  const { id = "" } = useParams();
+  const { code = "" } = useParams();
   const { t, locale } = useI18n();
   const { user } = useSession();
   const r = t.requests;
   const [data, setData] = useState<Detail | null | "missing">(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [asking, setAsking] = useState<Action | null>(null);
 
   const load = useCallback(() => {
-    api<Detail>(`/requests/${encodeURIComponent(id)}`)
+    api<Detail>(`/requests/${encodeURIComponent(code)}`)
       .then(setData)
       .catch((err) => setData(err instanceof ApiError && err.status === 404 ? "missing" : null));
-  }, [id]);
+  }, [code]);
   useEffect(load, [load, user?.username]);
   useLive(load);
 
@@ -40,11 +51,13 @@ export default function RequestDetail() {
     );
   }
 
-  const act = async (path: string, body?: unknown) => {
+  const act = async (action: Action) => {
+    const [path, body] = ACTIONS[action];
     setBusy(true);
     setError(null);
     try {
-      await api(`/requests/${data.id}/${path}`, { method: "POST", body });
+      await api(`/requests/${data.code}/${path}`, { method: "POST", body });
+      setAsking(null);
       load();
     } catch (err) {
       const code = err instanceof ApiError ? err.code : "";
@@ -57,17 +70,22 @@ export default function RequestDetail() {
               ? r.errNotRunner
               : r.errGeneric,
       );
+      setAsking(null);
       load();
     } finally {
       setBusy(false);
     }
+  };
+  const ask = (a: Action) => {
+    setError(null);
+    setAsking(a);
   };
 
   const stepIndex = STEPS.indexOf(data.status);
   const counterpart =
     data.viewerRole === "customer" ? data.runner : data.viewerRole === "runner" ? data.customer : null;
   const waText = fmt(data.viewerRole === "runner" ? r.waFromRunner : r.waFromCustomer, {
-    id: data.id,
+    id: data.code,
     details: data.details,
   });
 
@@ -80,8 +98,12 @@ export default function RequestDetail() {
       <div className="mt-4 rounded-(--radius-surface) border border-border p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="t-meta text-[0.75rem]">
-              #{data.id} · {fmt(r.by, { name: data.customer.name })} · {timeAgo(data.createdAt, locale)}
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.75rem] text-muted-foreground">
+              <span className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[0.75rem] font-semibold tracking-wide text-foreground">
+                {data.code}
+              </span>
+              <span>{fmt(r.by, { name: data.customer.name })}</span>
+              <span>{timeAgo(data.createdAt, locale)}</span>
             </p>
             <h1 className="mt-1 font-display text-[1.375rem] leading-snug font-bold tracking-tight">{data.details}</h1>
           </div>
@@ -91,13 +113,13 @@ export default function RequestDetail() {
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 text-[0.9375rem]">
-          <span className="mt-2 size-2.5 rounded-full border-2 border-foreground-secondary" aria-hidden="true" />
+        <div className="mt-5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-3 text-[0.9375rem]">
+          <PickupIcon className="mt-3 size-5" />
           <span>
             <span className="t-meta block text-[0.75rem]">{r.pickup}</span>
             {data.pickup}
           </span>
-          <span className="mt-2 size-2.5 rounded-full bg-primary" aria-hidden="true" />
+          <DropoffIcon className="mt-3 size-5" />
           <span>
             <span className="t-meta block text-[0.75rem]">{r.dropoff}</span>
             <span className="font-medium">{data.dropoff}</span>
@@ -128,6 +150,16 @@ export default function RequestDetail() {
         )}
       </div>
 
+      {/* How payment works, for the two people involved (and for runners deciding) */}
+      {data.status !== "cancelled" && data.status !== "delivered" ? (
+        <div className="mt-4 rounded-(--radius-surface) border border-border bg-surface px-4 py-3.5">
+          <p className="text-[0.875rem] font-semibold">{r.payTitle}</p>
+          <p className="t-meta mt-0.5 leading-relaxed">
+            {data.viewerRole === "customer" ? r.payBody : r.payRunner} {r.handover}
+          </p>
+        </div>
+      ) : null}
+
       {/* The other person, once matched */}
       {counterpart && data.contact ? (
         <div className="mt-4 flex flex-col gap-3 rounded-(--radius-surface) border border-border p-4 sm:flex-row sm:items-center">
@@ -152,17 +184,17 @@ export default function RequestDetail() {
       <div className="mt-5 flex flex-wrap gap-2">
         {data.status === "open" && data.viewerRole === null ? (
           !user ? (
-            <Link to={`/login?next=/requests/${data.id}`} className={btn.primary}>
+            <Link to={`/login?next=/requests/${data.code}`} className={btn.primary}>
               {r.signInToTake}
             </Link>
           ) : data.canAccept ? (
             <button
               type="button"
               disabled={busy}
-              onClick={() => act("accept")}
+              onClick={() => ask("take")}
               className={`${btn.primary} disabled:opacity-60`}
             >
-              {busy ? r.working : r.take}
+              {r.take}
             </button>
           ) : (
             <Link to="/runner" className={btn.outline}>
@@ -175,7 +207,7 @@ export default function RequestDetail() {
           <button
             type="button"
             disabled={busy}
-            onClick={() => act("cancel")}
+            onClick={() => ask("cancel")}
             className={`${btn.outline} disabled:opacity-60`}
           >
             {r.cancel}
@@ -187,7 +219,7 @@ export default function RequestDetail() {
             <button
               type="button"
               disabled={busy}
-              onClick={() => act("status", { status: "on_the_way" })}
+              onClick={() => ask("onTheWay")}
               className={`${btn.primary} disabled:opacity-60`}
             >
               {r.onTheWay}
@@ -195,7 +227,7 @@ export default function RequestDetail() {
             <button
               type="button"
               disabled={busy}
-              onClick={() => act("release")}
+              onClick={() => ask("release")}
               className={`${btn.outline} disabled:opacity-60`}
             >
               {r.release}
@@ -207,7 +239,7 @@ export default function RequestDetail() {
           <button
             type="button"
             disabled={busy}
-            onClick={() => act("status", { status: "delivered" })}
+            onClick={() => ask("delivered")}
             className={`${btn.primary} disabled:opacity-60`}
           >
             <CheckIcon className="size-4" />
@@ -222,12 +254,31 @@ export default function RequestDetail() {
         </p>
       ) : null}
 
-      {data.canRate ? <RateForm id={data.id} role={data.viewerRole} onDone={load} /> : null}
+      {data.canRate ? <RateForm code={data.code} role={data.viewerRole} onDone={load} /> : null}
+
+      {asking ? (
+        <ConfirmDialog
+          open
+          title={r.confirm[asking].title}
+          body={
+            <>
+              {r.confirm[asking].body}
+              {error ? <span className="mt-2 block font-medium text-danger">{error}</span> : null}
+            </>
+          }
+          confirm={busy ? r.working : r.confirm[asking].ok}
+          cancel={r.confirm.back}
+          tone={asking === "cancel" || asking === "release" ? "danger" : "primary"}
+          busy={busy}
+          onConfirm={() => act(asking)}
+          onClose={() => !busy && setAsking(null)}
+        />
+      ) : null}
     </Container>
   );
 }
 
-function RateForm({ id, role, onDone }: { id: number; role: Detail["viewerRole"]; onDone: () => void }) {
+function RateForm({ code, role, onDone }: { code: string; role: Detail["viewerRole"]; onDone: () => void }) {
   const { t } = useI18n();
   const r = t.requests;
   const [stars, setStars] = useState(5);
@@ -238,7 +289,7 @@ function RateForm({ id, role, onDone }: { id: number; role: Detail["viewerRole"]
     e.preventDefault();
     setState("busy");
     try {
-      await api(`/requests/${id}/rate`, { method: "POST", body: { stars, body } });
+      await api(`/requests/${code}/rate`, { method: "POST", body: { stars, body } });
       setState("done");
       onDone();
     } catch {

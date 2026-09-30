@@ -215,3 +215,69 @@ export const PinIcon = ({ className = "size-4" }: IconProps) => (
     <circle cx="12" cy="10.5" r="2.6" fill="var(--primary-foreground)" />
   </svg>
 );
+
+/* ---- Route markers (pick-up and drop-off) ------------------------------ */
+
+/** Pick-up: a small shop front in ink, with an accent awning. */
+export const PickupIcon = ({ className = "size-4" }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...line}>
+    <path d="M5 10v9.5h14V10" />
+    <path d="M10 19.5v-4.5h4v4.5" />
+    <path d="M3.5 5.5h17l-1 4.5h-15z" fill="var(--primary)" stroke="var(--primary)" />
+  </svg>
+);
+
+/** Drop-off: the accent pin. */
+export const DropoffIcon = PinIcon;
+
+/* ---- Ways to get around (runner page) ----------------------------------- */
+
+export const WalkIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="13" cy="4.5" r="1.8" {...accent} />
+    <path d="M9.5 21l2.2-6.2M14.8 21l-1.9-4.8-1.2-2.7.9-4.1-3.3 1.4-1 3.4M12.6 9.4l2 3.1 3 .9" />
+  </Svg>
+);
+
+export const BikeIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="6" cy="16.5" r="3.5" />
+    <circle cx="18" cy="16.5" r="3.5" />
+    <path d="M6 16.5l3.8-7h6.4L18 16.5M9.8 9.5L12 16.5h1.5l2.7-7M8.5 6.5h3" />
+    <circle cx="12" cy="16.5" r="1.4" {...accent} />
+  </Svg>
+);
+
+export const MotorIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="5.5" cy="16.5" r="3" />
+    <circle cx="18.5" cy="16.5" r="3" />
+    <path d="M8.5 16.5h6l2.5-6h-4l-2 3H7.5M15.5 6.5h2l1.5 4" />
+    <path d="M9 10.5h4l-1.6 3H8z" {...accent} />
+  </Svg>
+);
+
+export const CarIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M3.5 16.5v-4l2-5h13l2 5v4z" />
+    <path d="M6.5 12h11l-1.3-3H7.8z" {...accent} />
+    <circle cx="7.5" cy="16.5" r="1.8" />
+    <circle cx="16.5" cy="16.5" r="1.8" />
+  </Svg>
+);
+
+export const ShieldIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.4-7.5 9.5-4.3-1.1-7.5-4.9-7.5-9.5V6z" />
+    <path d="M8.8 12.2l2.2 2.2 4.3-4.6" stroke="var(--primary)" />
+  </Svg>
+);
+
+export const ChatIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 5.5h16v10.5H10l-4.5 3.5V16H4z" />
+    <circle cx="9" cy="10.8" r="1.1" {...accent} />
+    <circle cx="12" cy="10.8" r="1.1" {...accent} />
+    <circle cx="15" cy="10.8" r="1.1" {...accent} />
+  </Svg>
+);
