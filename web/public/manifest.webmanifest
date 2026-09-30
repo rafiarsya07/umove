@@ -1,0 +1,17 @@
+{
+  "name": "UMove",
+  "short_name": "UMove",
+  "description": "Kirim makanan, cari tumpangan, jual-beli barang sesama siswa UM.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

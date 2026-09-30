@@ -1,0 +1,102 @@
+# UMove on the mini PC: web + API (app), database (db), Cloudflare Tunnel (tunnel).
+#
+#   Start / update:  docker compose up -d --build
+#   Logs:            docker compose logs -f app
+#   Status:          docker compose ps
+#   Stop:            docker compose down
+#
+# Security layout:
+#   - `db` is on an INTERNAL network only: no internet, no ports on the host.
+#   - `app` talks to `db` (internal) and to Telegram (egress). Its port is
+#     published on 127.0.0.1 only, so it is not reachable from your LAN.
+#   - `tunnel` is the ONLY way in from the internet, via Cloudflare.
+#   - Every container: read-only filesystem, no Linux capabilities,
+#     no privilege escalation, memory and process limits, rotated logs.
+
+x-hardening: &hardening
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  db:
+    <<: *hardening
+    image: postgres:16-alpine
+    # Postgres needs a few capabilities to switch to its own user at start.
+    cap_add: [CHOWN, SETUID, SETGID, DAC_OVERRIDE, FOWNER]
+    environment:
+      POSTGRES_USER: umove
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: umove
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    networks: [internal]
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    shm_size: 128mb
+    mem_limit: 512m
+    pids_limit: 200
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U umove -d umove"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    <<: *hardening
+    build: .
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://umove_app:${APP_DB_PASSWORD}@db:5432/umove
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-https://umove.rafiarsya.com}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?set GOOGLE_CLIENT_ID in .env}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?set GOOGLE_CLIENT_SECRET in .env}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      RATE_LIMIT_SITE: ${RATE_LIMIT_SITE:-600}
+      RATE_LIMIT_API: ${RATE_LIMIT_API:-120}
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks: [internal, egress]
+    read_only: true
+    tmpfs: [/tmp]
+    mem_limit: 512m
+    pids_limit: 200
+    depends_on:
+      db:
+        condition: service_healthy
+
+  tunnel:
+    <<: *hardening
+    image: cloudflare/cloudflared:latest
+    # The token is read from the environment, so it never appears in `ps`.
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN in .env}
+    networks: [egress]
+    read_only: true
+    mem_limit: 256m
+    pids_limit: 100
+    depends_on:
+      app:
+        condition: service_healthy
+
+networks:
+  internal:
+    internal: true
+  egress: {}
+
+volumes:
+  db-data:

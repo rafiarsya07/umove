@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dist-dev/
+app/public/
+.env
+.env.*
+!.env.example
+backups/
+*.log
+Claude outputs/

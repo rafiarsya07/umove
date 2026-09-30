@@ -1,0 +1,185 @@
+@import "tailwindcss";
+
+/* ===========================================================================
+   UMove design system (revision 3)
+
+   Black, white and one accent.
+   - Ink carries every piece of text and the secondary actions.
+   - White carries everything behind it (UMove is light only). The
+     greys are NEUTRAL, not warm: surfaces, borders and muted text all come
+     from one grey ramp, so nothing looks beige next to something else.
+   - UMove Orange is a fill for the primary action, the active state and the
+     logo pin. Ink text sits on it (5.9:1); white never does. Orange TEXT on
+     white uses --primary-strong (#c2410c, 5.2:1).
+
+   Motion is restrained on purpose: colour transitions on hover and a 1px
+   press. Nothing floats, reveals or animates on its own.
+   =========================================================================== */
+
+:root {
+  --background: #ffffff;
+  --foreground: #111113;
+  --foreground-secondary: #45454b;
+
+  --surface: #f6f6f7;
+  --surface-strong: #eeeef0;
+  --card: #ffffff;
+  --muted: #f1f1f3;
+  --muted-foreground: #5f5f68; /* 6.3:1 on white, 5.6:1 on muted */
+
+  --border: #e6e6e9;
+  --border-strong: #cfcfd5;
+  --border-input: #8b8b94; /* form control edge, 3.4:1 (WCAG 1.4.11) */
+
+  --primary: #ff5a1f;
+  --primary-hover: #f04d12;
+  --primary-foreground: #111113;
+  --primary-strong: #c2410c;
+  --primary-soft: #fff2ec;
+  --primary-border: #ffd6c4;
+
+  --success: #067647;
+  --success-soft: #ecfdf3;
+  --warning: #b54708;
+  --warning-soft: #fffaeb;
+  --danger: #b42318;
+  --star: #d97706; /* 3.2:1, stars always sit next to the number */
+
+  --focus: #c2410c;
+  --chat-out: #d9fdd3;
+  --chat-out-foreground: #111b21;
+  --tg-bg: #eef1f5;
+
+  /* "only" opts out of the browser's automatic dark mode (Chrome's
+     "Auto Dark Mode for Web Contents"), which otherwise darkens the page
+     background behind a light theme and leaves dark text on dark. */
+  color-scheme: only light;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-foreground-secondary: var(--foreground-secondary);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-input: var(--border-input);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-border: var(--primary-border);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-star: var(--star);
+}
+
+@theme {
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --radius-control: 0.625rem;
+  --radius-surface: 0.875rem;
+}
+
+@layer base {
+  html {
+    background-color: var(--background);
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 5rem;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  ::selection {
+    background: var(--primary-border);
+    color: var(--foreground);
+  }
+}
+
+/* ---- Typography ------------------------------------------------------- */
+.t-hero {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 1.45rem + 2.4vw, 3.25rem);
+  line-height: 1.04;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+.t-page-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.t-section-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+@utility t-body {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+@utility t-meta {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+}
+@utility t-label {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  font-weight: 600;
+  color: var(--foreground-secondary);
+}
+
+/* ---- Motion: colour on hover, 1px on press. That is all. -------------- */
+@utility motion-interactive {
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    opacity 120ms ease;
+}
+@utility motion-pressable {
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+.motion-pressable:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+  .motion-pressable:active:not(:disabled) {
+    transform: none;
+  }
+}

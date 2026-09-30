@@ -1,0 +1,40 @@
+import { serve } from "@hono/node-server";
+import { startSessionCleanup } from "./auth/session.js";
+import { createBot } from "./bot/index.js";
+import { config } from "./config.js";
+import { sql } from "./db.js";
+import { createApp } from "./http/app.js";
+import { log } from "./log.js";
+
+const app = createApp();
+
+const server = serve({ fetch: app.fetch, port: config.port, hostname: "0.0.0.0" }, (info) =>
+  log.info("http listening", { port: info.port, origin: config.publicOrigin }),
+);
+
+startSessionCleanup();
+
+const bot = createBot();
+bot
+  ?.start({
+    drop_pending_updates: true,
+    allowed_updates: ["message"],
+    onStart: (me) => log.info("bot polling", { username: me.username }),
+  })
+  .catch((err: unknown) => log.error("bot stopped", { err }));
+
+let stopping = false;
+async function shutdown(signal: string) {
+  if (stopping) return;
+  stopping = true;
+  log.info("shutting down", { signal });
+  const force = setTimeout(() => process.exit(1), 10_000);
+  force.unref();
+  await bot?.stop().catch(() => {});
+  server.close();
+  await sql.end({ timeout: 5 }).catch(() => {});
+  process.exit(0);
+}
+process.on("SIGINT", () => void shutdown("SIGINT"));
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
+process.on("unhandledRejection", (err) => log.error("unhandled rejection", { err }));

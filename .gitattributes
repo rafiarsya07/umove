@@ -1,0 +1,4 @@
+# Keep Linux line endings for everything that runs on the mini PC.
+* text=auto eol=lf
+*.png binary
+*.woff2 binary

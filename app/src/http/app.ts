@@ -1,0 +1,76 @@
+import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
+import { HTTPException } from "hono/http-exception";
+import { requestId } from "hono/request-id";
+import { timeout } from "hono/timeout";
+import { loadSession } from "../auth/session.js";
+import { config } from "../config.js";
+import { dbHealthy } from "../db.js";
+import { log } from "../log.js";
+import type { AppEnv } from "../types.js";
+import { clientIp } from "./client-ip.js";
+import { sameOrigin } from "./guards.js";
+import { rateLimit } from "./rate-limit.js";
+import { admin } from "./routes/admin.js";
+import { auth } from "./routes/auth.js";
+import { me } from "./routes/me.js";
+import { users } from "./routes/users.js";
+import { securityHeaders } from "./security.js";
+import { mountWeb } from "./static.js";
+
+/**
+ * The whole HTTP surface of UMove: the web app and /api on ONE origin.
+ * Same origin means no CORS to configure and cookies that never leave
+ * umove.rafiarsya.com.
+ */
+export function createApp() {
+  const app = new Hono<AppEnv>();
+
+  app.use("*", requestId());
+  app.use("*", securityHeaders);
+  app.use("*", rateLimit("site", config.rateLimit.site));
+  app.use("*", async (c, next) => {
+    if (!["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"].includes(c.req.method)) {
+      return c.text("Method not allowed", 405);
+    }
+    return next();
+  });
+
+  const api = new Hono<AppEnv>();
+  api.use("*", bodyLimit({ maxSize: 32 * 1024, onError: (c) => c.json({ error: "payload_too_large" }, 413) }));
+  api.use("*", timeout(15_000));
+  api.use("*", rateLimit("api", config.rateLimit.api));
+  api.use("*", sameOrigin);
+  api.use("/auth/*", rateLimit("auth", 20));
+  // Writes get their own, tighter budget.
+  const writes = rateLimit("writes", 30);
+  api.use("*", async (c, next) => (c.req.method === "GET" || c.req.method === "HEAD" ? next() : writes(c, next)));
+  api.use("*", loadSession);
+  api.use("*", async (c, next) => {
+    await next();
+    c.header("Cache-Control", "no-store");
+  });
+
+  api.get("/health", async (c) => {
+    const db = await dbHealthy();
+    return c.json({ status: db ? "ok" : "degraded" }, db ? 200 : 503);
+  });
+  api.route("/auth", auth);
+  api.route("/me", me);
+  api.route("/users", users);
+  api.route("/admin", admin);
+
+  api.notFound((c) => c.json({ error: "not_found" }, 404));
+  app.route("/api", api);
+
+  mountWeb(app);
+
+  app.onError((err, c) => {
+    if (err instanceof HTTPException) return err.getResponse();
+    const id = c.get("requestId");
+    log.error("request failed", { id, method: c.req.method, path: c.req.path, ip: clientIp(c), err });
+    return c.json({ error: "internal_error", requestId: id }, 500);
+  });
+
+  return app;
+}

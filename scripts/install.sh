@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# UMove: first-time setup on the mini PC.
+#
+#   cd ~/umove && bash scripts/install.sh
+#
+# Creates .env (random database passwords + the keys you paste in),
+# builds and starts everything, and waits until UMove is healthy.
+# Safe to run again: an existing .env is kept.
+set -euo pipefail
+umask 077
+cd "$(dirname "$0")/.."
+
+say()  { printf '\n\033[1m%s\033[0m\n' "$*"; }
+fail() { printf '\n\033[31m%s\033[0m\n' "$*" >&2; exit 1; }
+
+[ -f docker-compose.yml ] || fail "Run this from the UMove folder."
+[ "$(id -u)" -ne 0 ] || fail "Run as your normal user, not root."
+
+# --- Docker ---------------------------------------------------------------
+if ! command -v docker >/dev/null 2>&1; then
+  say "Docker is not installed. Installing it (needs your sudo password)..."
+  curl -fsSL https://get.docker.com | sudo sh
+  sudo usermod -aG docker "$USER"
+  fail "Docker installed. Log out and back in, then run this script again."
+fi
+docker info >/dev/null 2>&1 || fail "Can't talk to Docker. Log out and back in (or run: newgrp docker), then try again."
+docker compose version >/dev/null 2>&1 || fail "Docker Compose plugin missing: sudo apt install docker-compose-plugin"
+
+# --- .env -----------------------------------------------------------------
+gen() { head -c 48 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 40; }
+
+ask() { # ask VAR "Question" [secret] [optional]
+  local var=$1 q=$2 secret=${3:-} optional=${4:-} val=""
+  while :; do
+    if [ -n "$secret" ]; then read -rsp "$q: " val; echo; else read -rp "$q: " val; fi
+    val=$(printf '%s' "$val" | tr -d '[:space:]')
+    [ -n "$val" ] || [ -n "$optional" ] && break
+    echo "  (required)"
+  done
+  printf -v "$var" '%s' "$val"
+}
+
+if [ -f .env ]; then
+  say "Keeping your existing .env"
+else
+  say "Creating .env: paste each value and press Enter (secret values stay hidden)"
+  ask TUNNEL_TOKEN "Cloudflare Tunnel token" secret
+  ask GOOGLE_CLIENT_ID "Google Client ID (…apps.googleusercontent.com)"
+  ask GOOGLE_CLIENT_SECRET "Google Client secret" secret
+  ask ADMIN_EMAILS "Admin Google email(s), comma-separated"
+  ask TELEGRAM_BOT_TOKEN "Telegram bot token (optional, Enter to skip)" secret optional
+
+  case "$GOOGLE_CLIENT_ID" in *.apps.googleusercontent.com) ;; *) fail "That Client ID doesn't end with .apps.googleusercontent.com";; esac
+
+  cat > .env <<ENV
+POSTGRES_PASSWORD=$(gen)
+APP_DB_PASSWORD=$(gen)
+TUNNEL_TOKEN=$TUNNEL_TOKEN
+GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
+ADMIN_EMAILS=$ADMIN_EMAILS
+TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN
+PUBLIC_ORIGIN=https://umove.rafiarsya.com
+RATE_LIMIT_SITE=600
+RATE_LIMIT_API=120
+ENV
+  chmod 600 .env
+  echo "  .env written (readable by you only)."
+fi
+
+# --- Build and start ------------------------------------------------------
+say "Building and starting UMove (the first build takes a few minutes)..."
+docker compose up -d --build
+
+say "Waiting for UMove to become healthy..."
+for _ in $(seq 1 60); do
+  if curl -fsS http://127.0.0.1:3000/api/health >/dev/null 2>&1; then
+    docker compose ps
+    say "UMove is running."
+    echo "  Local check:  curl http://127.0.0.1:3000/api/health"
+    echo "  Public:       https://umove.rafiarsya.com"
+    echo "  Logs:         docker compose logs -f app"
+    exit 0
+  fi
+  sleep 3
+done
+docker compose ps
+fail "UMove didn't become healthy in 3 minutes. Check: docker compose logs app db"
