@@ -15,6 +15,7 @@ export const en = {
     runner: "Become a runner",
     how: "How it works",
     faq: "FAQ",
+    feedback: "Feedback",
     post: "Post a request",
     settings: "Settings",
     signIn: "Sign in",

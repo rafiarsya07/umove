@@ -12,6 +12,7 @@ export const id: Dict = {
     runner: "Jadi runner",
     how: "Cara kerja",
     faq: "FAQ",
+    feedback: "Kirim masukan",
     post: "Pasang permintaan",
     settings: "Pengaturan",
     signIn: "Masuk",

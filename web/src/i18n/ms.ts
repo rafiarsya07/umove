@@ -12,6 +12,7 @@ export const ms: Dict = {
     runner: "Jadi runner",
     how: "Cara guna",
     faq: "Soalan lazim",
+    feedback: "Maklum balas",
     post: "Buat permintaan",
     settings: "Tetapan",
     signIn: "Log masuk",

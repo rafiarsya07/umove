@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { FEEDBACK_URL } from "../lib/links";
 import { useI18n } from "../i18n";
 import { useSession } from "../lib/session";
 import { Container } from "./Container";
@@ -42,6 +43,7 @@ export function Footer() {
       links: [
         { to: "/faq", label: t.nav.faq },
         { to: "/help", label: t.help.nav },
+        { to: FEEDBACK_URL, label: t.nav.feedback, external: true },
       ],
     },
   ];
@@ -63,12 +65,24 @@ export function Footer() {
                 <ul className="mt-3 space-y-2.5">
                   {col.links.map((link) => (
                     <li key={link.to}>
-                      <Link
-                        to={link.to}
-                        className="text-[0.875rem] font-medium text-foreground-secondary motion-interactive hover:text-foreground"
-                      >
-                        {link.label}
-                      </Link>
+                      {"external" in link ? (
+                        <a
+                          href={link.to}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[0.875rem] font-medium text-foreground-secondary motion-interactive hover:text-foreground"
+                        >
+                          {link.label}
+                          <span aria-hidden="true">↗</span>
+                        </a>
+                      ) : (
+                        <Link
+                          to={link.to}
+                          className="text-[0.875rem] font-medium text-foreground-secondary motion-interactive hover:text-foreground"
+                        >
+                          {link.label}
+                        </Link>
+                      )}
                     </li>
                   ))}
                 </ul>
