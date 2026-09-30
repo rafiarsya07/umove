@@ -15,6 +15,7 @@ export type Stats = {
   delivered7d: number;
   suspended: number;
   support: number;
+  supportPending: number;
 };
 
 /**

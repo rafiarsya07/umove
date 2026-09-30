@@ -88,17 +88,45 @@ export function mailDecision(
   ].join("\n"));
 }
 
-export function mailSupportToAdmins(name: string, username: string, preview: string) {
+const TOPIC = {
+  order: "An order",
+  account: "My account",
+  application: "Runner/Driver application",
+  report: "Reporting someone",
+  other: "Something else",
+} as const;
+
+export function mailSupportToAdmins(name: string, username: string, topic: keyof typeof TOPIC, preview: string) {
   sendMail(
     [...config.adminEmails],
-    `Help chat: new message from ${name}`,
+    `Help request from ${name}: ${TOPIC[topic]}`,
     [
-      `${name} (@${username}) wrote in the UMOVE help chat:`,
+      `${name} (@${username}) sent a help request (${TOPIC[topic]}):`,
       "",
       preview.length > 300 ? `${preview.slice(0, 300)}…` : preview,
       "",
-      `Reply: ${config.publicOrigin}/admin/support`,
+      `Review it: ${config.publicOrigin}/admin/support`,
     ].join("\n"),
+  );
+}
+
+export function mailSupportDecision(to: string, name: string, decision: "approve" | "decline", reason: string | null) {
+  sendMail(
+    [to],
+    decision === "approve" ? "Your UMOVE help chat is open" : "About your UMOVE help request",
+    (decision === "approve"
+      ? [`Hi ${name},`, "", "We've reviewed your request and opened the chat. Continue here:", `${config.publicOrigin}/help`]
+      : [
+          `Hi ${name},`,
+          "",
+          "We reviewed your help request and won't open a chat for it.",
+          `Reason: ${reason ?? "-"}`,
+          "",
+          `You can send a new request any time: ${config.publicOrigin}/help`,
+        ]
+    )
+      .concat(["", "— UMOVE"])
+      .join("\n"),
   );
 }
 

@@ -120,6 +120,25 @@ export const requestSchema = z
 
 export const supportSchema = z.object({ body: text(1000).pipe(z.string().min(1)) }).strict();
 
+/** A new help request: what it's about, an optional order code, and the first message. */
+export const supportStartSchema = z
+  .object({
+    topic: z.enum(["order", "account", "application", "report", "other"]),
+    orderCode: z
+      .string()
+      .max(12)
+      .transform((s) => s.trim().toUpperCase())
+      .pipe(z.union([z.literal(""), z.string().regex(/^UM-[2-9A-HJ-NP-Z]{6}$/)]))
+      .optional(),
+    body: text(1000).pipe(z.string().min(10)),
+  })
+  .strict();
+
+export const supportDecisionSchema = z
+  .object({ decision: z.enum(["approve", "decline"]), reason: text(300).optional() })
+  .strict()
+  .refine((d) => d.decision === "approve" || (d.reason?.length ?? 0) >= 5, { path: ["reason"] });
+
 export const statusSchema = z.object({ status: z.enum(["on_the_way", "delivered"]) }).strict();
 
 export const rateSchema = z

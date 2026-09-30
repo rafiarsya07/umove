@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { announceSupport } from "../../live.js";
 import { mailNewApplication, mailSupportToAdmins } from "../../mail.js";
-import { markRead, post as postSupport, thread, unreadForMember } from "../../repo/support.js";
+import { myLatest, postMessage, startThread, unreadForMember, withdraw } from "../../repo/support.js";
 import { myApplications, submitApplication, withdrawApplication, type Upload } from "../../repo/applications.js";
 import { getMe, updateProfile } from "../../repo/users.js";
 import type { AppEnv } from "../../types.js";
@@ -13,6 +13,7 @@ import {
   roleParam,
   runnerApplicationSchema,
   supportSchema,
+  supportStartSchema,
 } from "../../validation.js";
 import { requireUser } from "../guards.js";
 
@@ -117,27 +118,43 @@ me.delete("/roles/:role", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "not_pending" }, 409);
 });
 
-/* ---- Help chat with the admins ------------------------------------------- */
+/* ---- Help chat (reviewed by an admin before it opens) ----------------------- */
 
-me.get("/support", async (c) => {
-  const user = c.get("user")!;
-  const messages = await thread(user.id);
-  await markRead(user.id, false);
-  return c.json(messages);
-});
+me.get("/support", async (c) => c.json(await myLatest(c.get("user")!.id)));
 
 me.get("/support/unread", async (c) => c.json({ unread: await unreadForMember(c.get("user")!.id) }));
 
+/** Send a help request; it stays "under review" until an admin opens it. */
+me.post("/support/threads", async (c) => {
+  const user = c.get("user")!;
+  const parsed = supportStartSchema.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) {
+    return c.json({ error: "invalid", fields: [...new Set(parsed.error.issues.map((i) => String(i.path[0])))] }, 400);
+  }
+  const { topic, orderCode, body } = parsed.data;
+  const r = await startThread(user.id, topic, orderCode || null, body);
+  if (!r.ok) return c.json({ error: r.error }, r.error === "too_many" ? 429 : 409);
+  announceSupport(user.id);
+  const me = await getMe(user.id);
+  if (me) mailSupportToAdmins(me.name, me.username, topic, body);
+  return c.json(r.thread, 201);
+});
+
+/** Withdraw a request that is still under review. */
+me.delete("/support/threads/current", async (c) => {
+  const ok = await withdraw(c.get("user")!.id);
+  if (!ok) return c.json({ error: "not_pending" }, 409);
+  announceSupport(c.get("user")!.id);
+  return c.json({ ok: true });
+});
+
+/** A message in my open chat. */
 me.post("/support", async (c) => {
   const user = c.get("user")!;
   const parsed = supportSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ error: "invalid", fields: ["body"] }, 400);
-  const r = await postSupport(user.id, false, user.id, parsed.data.body);
-  if (!r.ok) return c.json({ error: r.error }, 429);
+  const r = await postMessage({ member: user.id }, parsed.data.body);
+  if (!r.ok) return c.json({ error: r.error }, r.error === "too_fast" ? 429 : 409);
   announceSupport(user.id);
-  if (r.firstUnread) {
-    const me = await getMe(user.id);
-    if (me) mailSupportToAdmins(me.name, me.username, parsed.data.body);
-  }
   return c.json(r.message, 201);
 });

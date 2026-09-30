@@ -17,6 +17,7 @@ export async function adminStats() {
       delivered7d: number;
       suspended: number;
       support: number;
+      supportPending: number;
     }[]
   >`
     select
@@ -28,7 +29,10 @@ export async function adminStats() {
       (select count(*)::int from orders where status in ('accepted', 'on_the_way')) as active,
       (select count(*)::int from orders where status = 'delivered' and delivered_at > now() - interval '7 days') as "delivered7d",
       (select count(*)::int from users where status = 'suspended') as suspended,
-      (select count(distinct user_id)::int from support_messages where not from_admin and read_at is null) as support
+      (select count(*)::int from support_threads where status = 'pending') as "supportPending",
+      (select count(*)::int from support_threads where status = 'pending')
+        + (select count(distinct m.thread_id)::int from support_messages m join support_threads t on t.id = m.thread_id
+            where t.status = 'open' and not m.from_admin and m.read_at is null) as support
   `;
   return s;
 }

@@ -5,6 +5,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 git pull --ff-only
 PORT_LOCAL=$(grep -s '^UMOVE_PORT=' .env | cut -d= -f2 || true); PORT_LOCAL=${PORT_LOCAL:-3100}
+# Keep the tunnel connector current (Cloudflare retires very old versions).
+docker compose pull --quiet tunnel || true
 docker compose up -d --wait db
 bash scripts/migrate.sh
 docker compose up -d --build

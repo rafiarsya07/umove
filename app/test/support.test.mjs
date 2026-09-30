@@ -26,40 +26,76 @@ async function liveEvents(sid, ms) {
 const A = await signIn("a", "admin@x.com", "Ali Admin");
 const M = await signIn("m", "m@x.com", "Mira Student");
 const N = await signIn("n", "n@x.com", "Nadia Other");
+const start = (sid, o = {}) => call("/me/support/threads", sid, "POST", { topic: "order", orderCode: "um-abc234", body: "My order UM-ABC234 wasn't delivered yet", ...o });
 
-check("visitor cannot read help chat", (await call("/me/support", null)).status === 401);
-check("empty thread", (await call("/me/support", M)).body.length === 0);
-check("empty body rejected", (await call("/me/support", M, "POST", { body: "   " })).status === 400);
-check("too long rejected", (await call("/me/support", M, "POST", { body: "x".repeat(1001) })).status === 400);
-check("extra field rejected", (await call("/me/support", M, "POST", { body: "hi", fromAdmin: true })).status === 400);
+check("visitor cannot use help", (await call("/me/support", null)).status === 401);
+check("no thread yet", (await call("/me/support", M)).body.thread === null);
+check("cannot chat before a request", (await call("/me/support", M, "POST", { body: "hello" })).body.error === "not_open");
+check("message too short", (await start(M, { body: "hi" })).body?.fields?.includes("body"));
+check("bad topic", (await start(M, { topic: "love" })).body?.fields?.includes("topic"));
+check("bad order code", (await start(M, { orderCode: "12345" })).body?.fields?.includes("orderCode"));
+check("extra field rejected", (await start(M, { status: "open" })).status === 400);
 
 const liveM = await liveEvents(M, 1500), liveN = await liveEvents(N, 1500), liveA = await liveEvents(A, 1500);
 await new Promise((r) => setTimeout(r, 200));
-let r = await call("/me/support", M, "POST", { body: "Hi admin, my order UM-ABC234 wasn't delivered" });
-check("member sends message", r.status === 201 && r.body.fromAdmin === false);
+let r = await start(M);
+check("request sent, under review", r.status === 201 && r.body.status === "pending" && r.body.orderCode === "UM-ABC234", JSON.stringify(r.body));
 const [em, en, ea] = await Promise.all([liveM.stop(), liveN.stop(), liveA.stop()]);
-check("member gets live support event", em.includes("data: support"), em);
-check("admin gets live support event", ea.includes("data: support"));
-check("other member does NOT get it", !en.includes("data: support"));
+check("admin gets live event", ea.includes("data: support"));
+check("member gets live event", em.includes("data: support"));
+check("other member does NOT", !en.includes("data: support"));
 
-check("stats shows unread thread", (await call("/admin/stats", A)).body.support === 1);
+check("one active request at a time", (await start(M)).body.error === "already_open");
+check("cannot chat while under review", (await call("/me/support", M, "POST", { body: "hello?" })).body.error === "not_open");
+let mine = (await call("/me/support", M)).body;
+check("member sees pending + own message", mine.thread.status === "pending" && mine.messages.length === 1);
+
+check("stats counts pending", (await call("/admin/stats", A)).body.supportPending === 1 && (await call("/admin/stats", A)).body.support === 1);
 check("member cannot open admin inbox", (await call("/admin/support", M)).status === 403);
-let inbox = (await call("/admin/support", A)).body;
-check("inbox lists thread", inbox.length === 1 && inbox[0].email === "m@x.com" && inbox[0].unread === 1, JSON.stringify(inbox));
-const t = (await call(`/admin/support/${inbox[0].userId}`, A)).body;
-check("admin reads thread", t.messages.length === 1 && t.member.email === "m@x.com");
-check("opening marks read", (await call("/admin/stats", A)).body.support === 0);
-r = await call(`/admin/support/${inbox[0].userId}`, A, "POST", { body: "Sorry! Checking now." });
-check("admin replies", r.status === 201 && r.body.fromAdmin === true);
-check("member has 1 unread", (await call("/me/support/unread", M)).body.unread === 1);
-const mine = (await call("/me/support", M)).body;
-check("member sees reply with admin first name", mine.length === 2 && mine[1].fromAdmin && mine[1].author === "Ali", JSON.stringify(mine));
-check("reading clears unread", (await call("/me/support/unread", M)).body.unread === 0);
-check("other member sees nothing", (await call("/me/support", N)).body.length === 0);
-check("bad user id 404", (await call("/admin/support/not-a-uuid", A)).status === 404);
-check("unknown user 404", (await call("/admin/support/00000000-0000-4000-8000-000000000000", A, "POST", { body: "x" })).status === 404);
+let q = (await call("/admin/support", A)).body;
+check("pending queue lists it", q.length === 1 && q[0].status === "pending" && q[0].email === "m@x.com" && q[0].topic === "order", JSON.stringify(q));
+const tid = q[0].id;
+check("admin cannot chat before approving", (await call(`/admin/support/${tid}`, A, "POST", { body: "hi" })).body.error === "not_open");
+check("decline needs a reason", (await call(`/admin/support/${tid}/decision`, A, "POST", { decision: "decline" })).status === 400);
+check("approve", (await call(`/admin/support/${tid}/decision`, A, "POST", { decision: "approve" })).status === 200);
+check("approve twice = 409", (await call(`/admin/support/${tid}/decision`, A, "POST", { decision: "approve" })).status === 409);
+check("member now open", (await call("/me/support", M)).body.thread.status === "open");
 
-for (let i = 0; i < 19; i++) await call("/me/support", M, "POST", { body: `msg ${i}` });
-check("flood limited (20 per 10 min)", (await call("/me/support", M, "POST", { body: "one more" })).status === 429);
-check("CSRF blocked", (await fetch(`${BASE}/api/me/support`, { method: "POST", headers: { cookie: M, origin: "https://evil.example", "content-type": "application/json" }, body: JSON.stringify({ body: "x" }) })).status === 403);
+r = await call(`/admin/support/${tid}`, A, "POST", { body: "Hi Mira, checking now." });
+check("admin replies", r.status === 201 && r.body.fromAdmin);
+check("member has 1 unread", (await call("/me/support/unread", M)).body.unread === 1);
+mine = (await call("/me/support", M)).body;
+check("member sees reply with admin first name", mine.messages.length === 2 && mine.messages[1].author === "Ali");
+check("reading clears unread", (await call("/me/support/unread", M)).body.unread === 0);
+check("member replies", (await call("/me/support", M, "POST", { body: "Thanks!" })).status === 201);
+check("stats counts unread open chat", (await call("/admin/stats", A)).body.support === 1);
+const view = (await call(`/admin/support/${tid}`, A)).body;
+check("admin view has member + messages", view.member.email === "m@x.com" && view.messages.length === 3 && view.thread.status === "open");
+check("opening clears admin unread", (await call("/admin/stats", A)).body.support === 0);
+check("other member sees nothing", (await call("/me/support", N)).body.thread === null);
+
+check("close chat", (await call(`/admin/support/${tid}/close`, A, "POST")).status === 200);
+check("member sees closed", (await call("/me/support", M)).body.thread.status === "closed");
+check("cannot chat after close", (await call("/me/support", M, "POST", { body: "one more" })).body.error === "not_open");
+check("closed list", (await call("/admin/support?status=closed", A)).body.some((x) => x.id === tid));
+
+r = await start(M, { topic: "account", orderCode: "", body: "Please change my college to KK12" });
+check("new request after close", r.status === 201);
+check("member withdraws pending", (await call("/me/support/threads/current", M, "DELETE")).status === 200);
+r = await start(M, { topic: "other", body: "Third request of the day here" });
+const t3 = (await call("/admin/support", A)).body[0].id;
+check("decline with reason", (await call(`/admin/support/${t3}/decision`, A, "POST", { decision: "decline", reason: "Please use the FAQ for this" })).status === 200);
+mine = (await call("/me/support", M)).body;
+check("member sees reason", mine.thread.status === "declined" && mine.thread.reason === "Please use the FAQ for this");
+check("max 3 requests per day", (await start(M, { body: "Fourth request of the day" })).status === 429);
+const audit = (await call("/admin/audit", A)).body.map((a) => a.action);
+check("audited", ["support.approve", "support.decline", "support.close"].every((x) => audit.includes(x)), JSON.stringify(audit));
+
+// flood limit in an open chat
+r = await start(N, { body: "Need help with my account" });
+const tn = (await call("/admin/support", A)).body.find((x) => x.email === "n@x.com").id;
+await call(`/admin/support/${tn}/decision`, A, "POST", { decision: "approve" });
+for (let i = 0; i < 19; i++) await call("/me/support", N, "POST", { body: `msg ${i}` });
+check("flood limited", (await call("/me/support", N, "POST", { body: "one more" })).status === 429);
+check("CSRF blocked", (await fetch(`${BASE}/api/me/support/threads`, { method: "POST", headers: { cookie: N, origin: "https://evil.example", "content-type": "application/json" }, body: JSON.stringify({ topic: "other", body: "xxxxxxxxxxxx" }) })).status === 403);
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

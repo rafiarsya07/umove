@@ -4,11 +4,11 @@ import { config } from "../../config.js";
 import { announceChange } from "../../live.js";
 import { adminCancelRequest, adminStats, auditLog, listRequests, listUsers, setUserStatus } from "../../repo/admin.js";
 import { announceSupport } from "../../live.js";
-import { mailDecision, mailSupportReply } from "../../mail.js";
-import { inbox, markRead, member, post as postSupport, thread } from "../../repo/support.js";
+import { mailDecision, mailSupportDecision, mailSupportReply } from "../../mail.js";
+import { adminThread, closeThread, decide, inbox, postMessage } from "../../repo/support.js";
 import { applicationFile, decideApplication, listApplications } from "../../repo/applications.js";
 import type { AppEnv } from "../../types.js";
-import { decisionSchema, fileKindParam, idParam, supportSchema } from "../../validation.js";
+import { decisionSchema, fileKindParam, idParam, supportDecisionSchema, supportSchema } from "../../validation.js";
 import { requireAdmin } from "../guards.js";
 import { SANDBOX_HEADER } from "../security.js";
 
@@ -97,33 +97,56 @@ admin.post("/requests/:id/cancel", async (c) => {
 
 admin.get("/audit", async (c) => c.json(await auditLog()));
 
-/* ---- Help chat inbox ------------------------------------------------------ */
+/* ---- Help chat: review requests, chat, close --------------------------------- */
 
-admin.get("/support", async (c) => c.json(await inbox()));
-
-admin.get("/support/:userId", async (c) => {
-  const userId = z.uuid().safeParse(c.req.param("userId"));
-  if (!userId.success) return c.json({ error: "not_found" }, 404);
-  const who = await member(userId.data);
-  if (!who) return c.json({ error: "not_found" }, 404);
-  const messages = await thread(userId.data);
-  await markRead(userId.data, true);
-  announceSupport(userId.data);
-  return c.json({ member: who, messages });
+admin.get("/support", async (c) => {
+  const status = z.enum(["pending", "open", "closed"]).catch("pending").parse(c.req.query("status"));
+  return c.json(await inbox(status));
 });
 
-admin.post("/support/:userId", async (c) => {
-  const userId = z.uuid().safeParse(c.req.param("userId"));
+admin.get("/support/:id", async (c) => {
+  const id = idParam.safeParse(c.req.param("id"));
+  if (!id.success) return c.json({ error: "not_found" }, 404);
+  const t = await adminThread(id.data);
+  if (!t) return c.json({ error: "not_found" }, 404);
+  announceSupport(t.member.userId);
+  return c.json(t);
+});
+
+admin.post("/support/:id/decision", async (c) => {
+  const id = idParam.safeParse(c.req.param("id"));
+  const body = supportDecisionSchema.safeParse(await c.req.json().catch(() => null));
+  if (!id.success) return c.json({ error: "not_found" }, 404);
+  if (!body.success) return c.json({ error: "invalid", fields: ["reason"] }, 400);
+  const reason = body.data.reason || null;
+  const r = await decide(c.get("user")!.id, id.data, body.data.decision, reason);
+  if (!r.ok) return c.json({ error: "not_pending" }, 409);
+  announceSupport(r.userId);
+  mailSupportDecision(r.email, r.name, body.data.decision, reason);
+  return c.json({ ok: true });
+});
+
+admin.post("/support/:id/close", async (c) => {
+  const id = idParam.safeParse(c.req.param("id"));
+  if (!id.success) return c.json({ error: "not_found" }, 404);
+  const userId = await closeThread(c.get("user")!.id, id.data);
+  if (!userId) return c.json({ error: "not_open" }, 409);
+  announceSupport(userId);
+  return c.json({ ok: true });
+});
+
+admin.post("/support/:id", async (c) => {
+  const id = idParam.safeParse(c.req.param("id"));
   const parsed = supportSchema.safeParse(await c.req.json().catch(() => null));
-  if (!userId.success) return c.json({ error: "not_found" }, 404);
+  if (!id.success) return c.json({ error: "not_found" }, 404);
   if (!parsed.success) return c.json({ error: "invalid", fields: ["body"] }, 400);
-  const who = await member(userId.data);
-  if (!who) return c.json({ error: "not_found" }, 404);
-  const r = await postSupport(userId.data, true, c.get("user")!.id, parsed.data.body);
-  if (!r.ok) return c.json({ error: r.error }, 429);
-  await markRead(userId.data, true);
-  announceSupport(userId.data);
-  // One e-mail per burst of replies: only if the member hasn't been sent one in the last 30 minutes.
-  if (r.lastAdminReplyAgoMin === null || r.lastAdminReplyAgoMin > 30) mailSupportReply(who.email, who.name);
+  const r = await postMessage({ admin: c.get("user")!.id, threadId: id.data }, parsed.data.body);
+  if (!r.ok) return c.json({ error: r.error }, r.error === "not_found" ? 404 : 409);
+  announceSupport(r.userId);
+  // One e-mail per burst of replies: only if the member hasn't had one in the last 30 minutes.
+  if (r.lastAdminReplyAgoMin === null || r.lastAdminReplyAgoMin > 30) {
+    const t = await adminThread(id.data);
+    if (t) mailSupportReply(t.member.email, t.member.name);
+  }
   return c.json(r.message, 201);
 });
