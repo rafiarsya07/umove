@@ -21,7 +21,9 @@ const norm = (s: string) =>
 export default function Faq() {
   const { t } = useI18n();
   const f = t.faq;
-  const categories = useFaq();
+  const faq = useFaq();
+  const ready = faq !== null;
+  const categories = useMemo(() => faq ?? [], [faq]);
   const { hash } = useLocation();
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState<string>("all");
@@ -29,11 +31,11 @@ export default function Faq() {
 
   // A deep link to one question should always be visible, whatever the filters.
   useEffect(() => {
-    if (!openId) return;
+    if (!openId || !ready) return;
     setQuery("");
     setCat("all");
     requestAnimationFrame(() => document.getElementById(`q-${openId}`)?.scrollIntoView({ block: "start" }));
-  }, [openId]);
+  }, [openId, ready]);
 
   const q = norm(query.trim());
   const shown = useMemo(
@@ -80,7 +82,7 @@ export default function Faq() {
       </div>
 
       <p className="t-meta mt-4" aria-live="polite">
-        {total === 0 ? fmt(f.noResults, { q: query.trim() }) : fmt(f.count, { n: total })}
+        {!ready ? t.common.loading : total === 0 ? fmt(f.noResults, { q: query.trim() }) : fmt(f.count, { n: total })}
       </p>
 
       <div className="mt-2 space-y-10">

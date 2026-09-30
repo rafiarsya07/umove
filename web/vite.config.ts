@@ -27,5 +27,13 @@ export default defineConfig({
     // Never inline assets as data: URIs; the Content Security Policy only
     // allows fonts and scripts from UMove itself.
     assetsInlineLimit: 0,
+    rollupOptions: {
+      output: {
+        // React and the router change rarely: a separate file stays cached across UMOVE updates.
+        manualChunks(id) {
+          if (/node_modules[\\/](react|react-dom|scheduler|react-router)[\\/]/.test(id)) return "vendor";
+        },
+      },
+    },
   },
 });

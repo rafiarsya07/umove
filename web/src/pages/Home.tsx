@@ -84,7 +84,7 @@ export default function Home() {
         {/* 4. QUESTIONS */}
         <section id="faq" className="scroll-mt-20 pt-16 sm:pt-24">
           <SectionHeading icon={QuestionIcon} title={t.faq.title} />
-          <FaqList items={core} />
+          {core ? <FaqList items={core} /> : <div className="h-[21rem] border-y border-border" aria-hidden="true" />}
           <Link to="/faq" className={`${btn.outline} mt-6`}>
             {t.faq.seeAll}
             <ArrowRightIcon />

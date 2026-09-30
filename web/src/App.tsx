@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Route, Routes, useLocation } from "react-router";
 import { BottomNav } from "./components/BottomNav";
 import { Footer } from "./components/Footer";
@@ -6,30 +6,32 @@ import { Header } from "./components/Header";
 import { AdminMaintenanceNotice, BroadcastBar, MaintenanceScreen } from "./components/SiteNotices";
 import { useSession } from "./lib/session";
 import { useStatus } from "./lib/status";
-import AdminBroadcasts from "./pages/admin/Broadcasts";
-import AdminMaintenance from "./pages/admin/Maintenance";
-import AdminPlaces from "./pages/admin/Places";
-import AccountLayout from "./pages/AccountLayout";
-import Apply from "./pages/Apply";
-import Dashboard from "./pages/Dashboard";
-import AdminApplications from "./pages/admin/Applications";
-import AdminAudit from "./pages/admin/Audit";
-import AdminLayout from "./pages/admin/AdminLayout";
-import AdminOverview from "./pages/admin/Overview";
-import AdminRequests from "./pages/admin/Requests";
-import AdminUsers from "./pages/admin/Users";
-import AdminSupport from "./pages/admin/Support";
-import Faq from "./pages/Faq";
-import Help from "./pages/Help";
 import Home from "./pages/Home";
-import Login from "./pages/Login";
-import NewRequest from "./pages/NewRequest";
-import RequestDetail from "./pages/RequestDetail";
-import Requests from "./pages/Requests";
-import NotFound from "./pages/NotFound";
-import Profile from "./pages/Profile";
-import Runner from "./pages/Runner";
-import Settings from "./pages/Settings";
+
+// Pages load on demand; only the home page ships in the first bundle.
+const AdminBroadcasts = lazy(() => import("./pages/admin/Broadcasts"));
+const AdminMaintenance = lazy(() => import("./pages/admin/Maintenance"));
+const AdminPlaces = lazy(() => import("./pages/admin/Places"));
+const AccountLayout = lazy(() => import("./pages/AccountLayout"));
+const Apply = lazy(() => import("./pages/Apply"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const AdminApplications = lazy(() => import("./pages/admin/Applications"));
+const AdminAudit = lazy(() => import("./pages/admin/Audit"));
+const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const AdminOverview = lazy(() => import("./pages/admin/Overview"));
+const AdminRequests = lazy(() => import("./pages/admin/Requests"));
+const AdminUsers = lazy(() => import("./pages/admin/Users"));
+const AdminSupport = lazy(() => import("./pages/admin/Support"));
+const Faq = lazy(() => import("./pages/Faq"));
+const Help = lazy(() => import("./pages/Help"));
+const Login = lazy(() => import("./pages/Login"));
+const NewRequest = lazy(() => import("./pages/NewRequest"));
+const RequestDetail = lazy(() => import("./pages/RequestDetail"));
+const Requests = lazy(() => import("./pages/Requests"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Runner = lazy(() => import("./pages/Runner"));
+const Settings = lazy(() => import("./pages/Settings"));
 
 /** Top of the page on navigation; to the anchor when the link has one. */
 function ScrollManager() {
@@ -55,19 +57,21 @@ export default function App() {
     return (
       <>
         <ScrollManager />
-        <Routes>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminOverview />} />
-            <Route path="applications" element={<AdminApplications />} />
-            <Route path="support" element={<AdminSupport />} />
-            <Route path="broadcasts" element={<AdminBroadcasts />} />
-            <Route path="places" element={<AdminPlaces />} />
-            <Route path="maintenance" element={<AdminMaintenance />} />
-            <Route path="users" element={<AdminUsers />} />
-            <Route path="requests" element={<AdminRequests />} />
-            <Route path="audit" element={<AdminAudit />} />
-          </Route>
-        </Routes>
+        <Suspense fallback={<PageLoading />}>
+          <Routes>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminOverview />} />
+              <Route path="applications" element={<AdminApplications />} />
+              <Route path="support" element={<AdminSupport />} />
+              <Route path="broadcasts" element={<AdminBroadcasts />} />
+              <Route path="places" element={<AdminPlaces />} />
+              <Route path="maintenance" element={<AdminMaintenance />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="requests" element={<AdminRequests />} />
+              <Route path="audit" element={<AdminAudit />} />
+            </Route>
+          </Routes>
+        </Suspense>
       </>
     );
   }
@@ -88,26 +92,37 @@ export default function App() {
       <Header />
       <BroadcastBar />
       <main className="flex-1">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/runner" element={<Runner />} />
-          <Route path="/faq" element={<Faq />} />
-          <Route path="/requests" element={<Requests />} />
-          <Route path="/requests/:code" element={<RequestDetail />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/u/:username" element={<Profile />} />
-          <Route element={<AccountLayout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/requests/new" element={<NewRequest />} />
-            <Route path="/apply/:role" element={<Apply />} />
-            <Route path="/help" element={<Help />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<PageLoading />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/runner" element={<Runner />} />
+            <Route path="/faq" element={<Faq />} />
+            <Route path="/requests" element={<Requests />} />
+            <Route path="/requests/:code" element={<RequestDetail />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/u/:username" element={<Profile />} />
+            <Route element={<AccountLayout />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/requests/new" element={<NewRequest />} />
+              <Route path="/apply/:role" element={<Apply />} />
+              <Route path="/help" element={<Help />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </main>
       <Footer />
       <BottomNav />
+    </div>
+  );
+}
+
+/** Shown for a moment while a page's code loads; quiet on purpose. */
+function PageLoading() {
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center" role="status" aria-label="Loading">
+      <span className="size-5 animate-spin rounded-full border-2 border-border border-t-primary" />
     </div>
   );
 }
