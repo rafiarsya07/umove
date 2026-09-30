@@ -2,7 +2,7 @@ import type { ComponentType } from "react";
 import { NavLink } from "react-router";
 import { useI18n } from "../i18n";
 import { useSession } from "../lib/session";
-import { HomeIcon, PlusIcon, RunnerIcon, SettingsIcon, UserIcon } from "./Icon";
+import { HomeIcon, PlusIcon, RequestsIcon, SettingsIcon, UserIcon } from "./Icon";
 
 type Item = { to: string; label: string; Icon: ComponentType<{ className?: string }>; end?: boolean; accent?: boolean };
 
@@ -13,8 +13,8 @@ export function BottomNav() {
 
   const items: Item[] = [
     { to: "/", label: t.nav.home, Icon: HomeIcon, end: true },
-    { to: "/runner", label: t.nav.tabRunner, Icon: RunnerIcon },
-    { to: user ? "/dashboard" : "/login", label: t.nav.tabPost, Icon: PlusIcon, accent: true, end: true },
+    { to: "/requests", label: t.nav.requests, Icon: RequestsIcon, end: true },
+    { to: "/requests/new", label: t.nav.tabPost, Icon: PlusIcon, accent: true, end: true },
     { to: user ? "/dashboard" : "/login", label: t.nav.account, Icon: UserIcon, end: !user },
     { to: "/settings", label: t.nav.settings, Icon: SettingsIcon },
   ];

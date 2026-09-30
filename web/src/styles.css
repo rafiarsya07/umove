@@ -8,9 +8,9 @@
    - White carries everything behind it (UMove is light only). The
      greys are NEUTRAL, not warm: surfaces, borders and muted text all come
      from one grey ramp, so nothing looks beige next to something else.
-   - UMove Orange is a fill for the primary action, the active state and the
-     logo pin. Ink text sits on it (5.9:1); white never does. Orange TEXT on
-     white uses --primary-strong (#c2410c, 5.2:1).
+   - UMove Blue (#1d4ed8) marks the primary action, the active state and the
+     logo pin. White text on it measures 6.7:1, and it reads as text on white
+     at the same 6.7:1, so one token serves both.
 
    Motion is restrained on purpose: colour transitions on hover and a 1px
    press. Nothing floats, reveals or animates on its own.
@@ -31,12 +31,12 @@
   --border-strong: #cfcfd5;
   --border-input: #8b8b94; /* form control edge, 3.4:1 (WCAG 1.4.11) */
 
-  --primary: #ff5a1f;
-  --primary-hover: #f04d12;
-  --primary-foreground: #111113;
-  --primary-strong: #c2410c;
-  --primary-soft: #fff2ec;
-  --primary-border: #ffd6c4;
+  --primary: #1d4ed8;
+  --primary-hover: #1e40af;
+  --primary-foreground: #ffffff;
+  --primary-strong: #1d4ed8;
+  --primary-soft: #eff4ff;
+  --primary-border: #c7d7fe;
 
   --success: #067647;
   --success-soft: #ecfdf3;
@@ -45,7 +45,7 @@
   --danger: #b42318;
   --star: #d97706; /* 3.2:1, stars always sit next to the number */
 
-  --focus: #c2410c;
+  --focus: #1d4ed8;
   --chat-out: #d9fdd3;
   --chat-out-foreground: #111b21;
   --tg-bg: #eef1f5;
@@ -118,7 +118,7 @@
 /* ---- Typography ------------------------------------------------------- */
 .t-hero {
   font-family: var(--font-display);
-  font-size: clamp(2rem, 1.45rem + 2.4vw, 3.25rem);
+  font-size: clamp(2.125rem, 1.5rem + 2.8vw, 3.5rem);
   line-height: 1.04;
   font-weight: 700;
   letter-spacing: -0.035em;

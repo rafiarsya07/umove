@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 /**
  * UMove icons. Drawn for UMove, not taken from a stock set:
- * a confident 1.75 ink line, plus ONE orange accent shape per icon
+ * a confident 1.75 ink line, plus ONE accent-colour shape per icon
  * (a handle, a wheel, a check). The accent always uses --primary, so the
  * icons carry the brand even at 20px.
  *
@@ -30,7 +30,7 @@ function Svg({ className = "size-6", children }: IconProps & { children: ReactNo
 
 /* ---- Services --------------------------------------------------------- */
 
-/** Runner: a takeaway bag with an orange handle tag and speed lines. */
+/** Runner: a takeaway bag with an accent handle tag and speed lines. */
 export const RunnerIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M9 9h11l-1.1 10.6a1.6 1.6 0 01-1.6 1.4h-5.6a1.6 1.6 0 01-1.6-1.4z" />
@@ -40,7 +40,7 @@ export const RunnerIcon = (p: IconProps) => (
   </Svg>
 );
 
-/** Ride: a small hatchback with orange wheels. */
+/** Ride: a small hatchback with accent wheels. */
 export const RideIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M3 16.5v-3.2c0-.7.4-1.3 1-1.6l2.2-1 2-3.2A2 2 0 019.9 6.6h4.6a2 2 0 011.6.8l2.6 3.4 1.9.6c.8.3 1.4 1 1.4 1.9v3.2" />
@@ -51,7 +51,7 @@ export const RideIcon = (p: IconProps) => (
   </Svg>
 );
 
-/** Market: a price tag with an orange eyelet. */
+/** Market: a price tag with an accent eyelet. */
 export const MarketIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M3.5 12.3V5a1.5 1.5 0 011.5-1.5h7.3l8.2 8.2a1.6 1.6 0 010 2.3l-6.9 6.9a1.6 1.6 0 01-2.3 0z" />
@@ -62,7 +62,7 @@ export const MarketIcon = (p: IconProps) => (
 
 /* ---- Runner perks ---------------------------------------------------- */
 
-/** Schedule: a clock with an orange hand. */
+/** Schedule: a clock with an accent hand. */
 export const ScheduleIcon = (p: IconProps) => (
   <Svg {...p}>
     <circle cx="12" cy="12" r="8.5" />
@@ -71,7 +71,7 @@ export const ScheduleIcon = (p: IconProps) => (
   </Svg>
 );
 
-/** Keep 100%: a wallet with an orange clasp. */
+/** Keep 100%: a wallet with an accent clasp. */
 export const KeepIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M18.5 7.5V6A1.5 1.5 0 0017 4.5H5.5a2 2 0 000 4" />
@@ -80,7 +80,7 @@ export const KeepIcon = (p: IconProps) => (
   </Svg>
 );
 
-/** Alerts: a bell with an orange ping. */
+/** Alerts: a bell with an accent ping. */
 export const AlertIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M6 16.5V11a6 6 0 0112 0v5.5l1.5 1.5h-15z" />
@@ -115,7 +115,7 @@ export const CheckIcon = ({ className = "size-4" }: IconProps) => (
   </Svg>
 );
 
-/** Steps: three stacked stops on a route, the last one orange. */
+/** Steps: three stacked stops on a route, the last one in the accent colour. */
 export const StepsIcon = (p: IconProps) => (
   <Svg {...p}>
     <circle cx="6" cy="6" r="2.2" />
@@ -125,12 +125,22 @@ export const StepsIcon = (p: IconProps) => (
   </Svg>
 );
 
-/** Question: a speech bubble with an orange dot under the mark. */
+/** Question: a speech bubble with an accent dot under the mark. */
 export const QuestionIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M20 11.5A7.5 7.5 0 018.8 18l-4.3 1.3 1.3-3.9A7.5 7.5 0 1120 11.5z" />
     <path d="M10.2 9.4a1.9 1.9 0 113 1.5c-.7.5-1.2.9-1.2 1.7" />
     <circle cx="12" cy="15" r="1.2" {...accent} />
+  </Svg>
+);
+
+/** Requests: a stack of cards with an accent tab. */
+export const RequestsIcon = ({ className = "size-[1.375rem]" }: IconProps) => (
+  <Svg className={className}>
+    <rect x="4" y="6.5" width="16" height="13" rx="2.5" />
+    <path d="M7 3.5h10" />
+    <path d="M8 11h8M8 14.5h5" />
+    <circle cx="17" cy="15" r="1.6" {...accent} />
   </Svg>
 );
 

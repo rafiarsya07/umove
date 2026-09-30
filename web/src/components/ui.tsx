@@ -147,3 +147,28 @@ export const btn = {
   small:
     "inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-border-strong px-3.5 text-[0.8125rem] font-semibold whitespace-nowrap motion-pressable hover:bg-surface",
 };
+
+/**
+ * One badge style for the whole app. "soon" is a quiet outline, "live" the
+ * accent, and the status tones match Settings and the admin panel.
+ */
+export type BadgeTone = "live" | "soon" | "success" | "warning" | "muted" | "danger";
+
+const badgeTone: Record<BadgeTone, string> = {
+  live: "bg-primary-soft text-primary-strong",
+  soon: "border border-border-strong text-muted-foreground",
+  success: "bg-success-soft text-success",
+  warning: "bg-warning-soft text-warning",
+  muted: "bg-muted text-muted-foreground",
+  danger: "bg-[#fef3f2] text-danger",
+};
+
+export function Badge({ tone, children }: { tone: BadgeTone; children: ReactNode }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[0.6875rem] leading-5 font-semibold whitespace-nowrap ${badgeTone[tone]}`}
+    >
+      {children}
+    </span>
+  );
+}

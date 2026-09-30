@@ -12,7 +12,7 @@ export default function Login() {
   const [params] = useSearchParams();
   const l = t.login;
 
-  if (!loading && user) return <Navigate to="/dashboard" replace />;
+  if (!loading && user) return <Navigate to={user.isAdmin ? "/admin" : "/dashboard"} replace />;
 
   const errorKey = params.get("error") as keyof typeof l.errors | null;
   const error = errorKey && errorKey in l.errors ? l.errors[errorKey] : null;

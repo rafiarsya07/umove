@@ -27,6 +27,11 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
   } catch {
     throw new ApiError(0, "network");
   }
+  // Anything that is not JSON (an error page, a misrouted request) is an error,
+  // never data: the app must not treat an HTML page as a user or a list.
+  if (!(res.headers.get("content-type") ?? "").includes("application/json")) {
+    throw new ApiError(res.ok ? 502 : res.status, "bad_response");
+  }
   const data = (await res.json().catch(() => ({}))) as { error?: string; fields?: string[] };
   if (!res.ok) throw new ApiError(res.status, data.error ?? "error", data.fields ?? []);
   return data as T;

@@ -20,8 +20,9 @@ export function Footer() {
     {
       title: f.product,
       links: [
-        { to: "/#how", label: t.nav.how },
+        { to: "/requests", label: t.nav.requests },
         { to: "/runner", label: t.nav.runner },
+        { to: "/#how", label: t.nav.how },
       ],
     },
     {
@@ -73,15 +74,14 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-border py-6 text-[0.8125rem] sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 border-t border-border pt-6 pb-8 text-[0.8125rem] sm:flex-row sm:items-center sm:justify-between">
           <p className="text-foreground-secondary">
-            © {year} <span className="font-semibold text-foreground">UMove</span>. {f.rights}
+            © {year} <span className="font-semibold text-foreground">UMOVE</span> · {f.rights}
           </p>
           <p className="text-foreground-secondary">
             {f.builtBy} <span className="font-semibold text-foreground">{AUTHOR}</span>
           </p>
         </div>
-        <p className="t-meta pb-8 text-[0.75rem]">{f.disclaimer}</p>
       </Container>
     </footer>
   );

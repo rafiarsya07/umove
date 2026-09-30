@@ -5,7 +5,6 @@ import { AccountMenu } from "./AccountMenu";
 import { Container } from "./Container";
 import { PlusIcon } from "./Icon";
 import { Logo } from "./Logo";
-import { useSession } from "../lib/session";
 
 const HIDE_AFTER = 120;
 const THRESHOLD = 6;
@@ -17,7 +16,6 @@ const THRESHOLD = 6;
  */
 export function Header() {
   const { t } = useI18n();
-  const { user } = useSession();
   const ref = useRef<HTMLElement | null>(null);
   const [hidden, setHidden] = useState(false);
 
@@ -48,8 +46,9 @@ export function Header() {
   }, []);
 
   const nav = [
-    { to: "/#how", label: t.nav.how, end: true },
+    { to: "/requests", label: t.nav.requests, end: false },
     { to: "/runner", label: t.nav.runner, end: false },
+    { to: "/#how", label: t.nav.how, end: true },
   ];
 
   return (
@@ -69,7 +68,7 @@ export function Header() {
                 to={link.to}
                 className={({ isActive }) =>
                   `rounded-full px-3 py-1.5 text-[0.875rem] font-medium motion-interactive hover:bg-surface hover:text-foreground ${
-                    isActive && link.to === "/runner" ? "text-foreground" : "text-foreground-secondary"
+                    isActive && !link.to.includes("#") ? "text-foreground" : "text-foreground-secondary"
                   }`
                 }
               >
@@ -81,7 +80,7 @@ export function Header() {
           <div className="ml-auto flex items-center gap-1.5">
             <AccountMenu />
             <Link
-              to={user ? "/dashboard" : "/login"}
+              to="/requests/new"
               className="hidden h-9 items-center gap-1.5 rounded-full bg-primary pr-4 pl-3 text-[0.875rem] font-semibold text-primary-foreground motion-pressable hover:bg-primary-hover sm:inline-flex"
             >
               <PlusIcon className="size-4" />

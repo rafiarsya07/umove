@@ -1,0 +1,29 @@
+// UMOVE web on Cloudflare Workers.
+//
+// - Static files (the built React app in ./dist) are served straight from
+//   Cloudflare's edge: fast everywhere, free and unlimited.
+// - Only /api/* runs the Worker, which forwards it to the API on the mini PC
+//   (through Cloudflare Tunnel at API_ORIGIN). The browser only ever talks to
+//   umove.rafiarsya.com, so cookies and the security model stay same-origin.
+//
+// Deploys automatically on every push to main (Cloudflare Workers Builds,
+// see docs/SETUP.md). Manual deploy: npm run deploy
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "umove",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "routes": [{ "pattern": "umove.rafiarsya.com", "custom_domain": true }],
+  "vars": {
+    "API_ORIGIN": "https://umove-api.rafiarsya.com"
+  },
+  // PROXY_SECRET is a secret, set in the Cloudflare dashboard (Worker →
+  // Settings → Variables and Secrets) or with: npx wrangler secret put PROXY_SECRET
+  "observability": { "enabled": true }
+}

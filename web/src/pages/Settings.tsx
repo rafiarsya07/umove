@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Container } from "../components/Container";
 import { CheckIcon } from "../components/Icon";
-import { Avatar, Segment, SettingsRow, VerifiedMark, btn, segmentClass } from "../components/ui";
+import { Avatar, Badge, Segment, SettingsRow, VerifiedMark, btn, segmentClass } from "../components/ui";
 import { LANGS, useI18n } from "../i18n";
 import { ApiError, api } from "../lib/api";
 import { useSession, type Me, type RoleStatus } from "../lib/session";
@@ -318,14 +318,12 @@ function RoleControl({
 }) {
   const { t } = useI18n();
   const s = t.settings;
-  const pill = "rounded-full px-2.5 py-1 text-[0.75rem] font-semibold whitespace-nowrap";
-
-  if (status === "soon") return <span className={`${pill} bg-muted text-muted-foreground`}>{s.statusSoon}</span>;
-  if (status === "active") return <span className={`${pill} bg-success-soft text-success`}>{s.statusActive}</span>;
+  if (status === "soon") return <Badge tone="soon">{t.services.soon}</Badge>;
+  if (status === "active") return <Badge tone="success">{s.statusActive}</Badge>;
   if (status === "pending")
     return (
       <span className="flex items-center gap-2">
-        <span className={`${pill} bg-warning-soft text-warning`}>{s.statusPending}</span>
+        <Badge tone="warning">{s.statusPending}</Badge>
         {onWithdraw ? (
           <button
             type="button"
@@ -340,9 +338,7 @@ function RoleControl({
     );
   return (
     <span className="flex items-center gap-2">
-      {status === "rejected" ? (
-        <span className={`${pill} bg-muted text-muted-foreground`}>{s.statusRejected}</span>
-      ) : null}
+      {status === "rejected" ? <Badge tone="muted">{s.statusRejected}</Badge> : null}
       <button type="button" onClick={onApply} disabled={busy} className={`${btn.small} disabled:opacity-60`}>
         {status === "rejected" ? s.applyAgain : s.apply}
       </button>

@@ -1,5 +1,10 @@
 import type { ComponentType } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
+import { api } from "../lib/api";
+import { ringgit, timeAgo } from "../lib/format";
+import { useLive } from "../lib/live";
+import type { MyRequest } from "../lib/requests";
 import { AlertIcon, ChevronRightIcon, PlusIcon, RunnerIcon, StarIcon } from "../components/Icon";
 import { Avatar, VerifiedMark } from "../components/ui";
 import { fmt, useI18n } from "../i18n";
@@ -61,15 +66,18 @@ export default function Dashboard() {
           </span>
           <span className="text-[0.8125rem] font-semibold text-primary-strong">{t.settings.viewProfile}</span>
         </Link>
-        <div className="flex items-center gap-3 rounded-(--radius-surface) border border-border p-4 opacity-70">
+        <Link
+          to="/requests/new"
+          className="group flex items-center gap-3 rounded-(--radius-surface) border border-border p-4 motion-interactive hover:border-border-strong hover:bg-surface"
+        >
           <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <PlusIcon />
           </span>
           <span className="min-w-0">
             <span className="block text-[0.9375rem] font-semibold">{d.quickPost}</span>
-            <span className="t-meta block">{d.quickPostBody}</span>
+            <span className="t-meta block">{t.requests.newLead}</span>
           </span>
-        </div>
+        </Link>
         <Link
           to="/settings#roles"
           className="group flex items-center gap-3 rounded-(--radius-surface) border border-border p-4 motion-interactive hover:border-border-strong hover:bg-surface"
@@ -84,6 +92,61 @@ export default function Dashboard() {
           <ChevronRightIcon className="size-4 text-muted-foreground" />
         </Link>
       </div>
+
+      <MyActivity />
+    </div>
+  );
+}
+
+/** The user's own requests and runs, active ones first, updated live. */
+function MyActivity() {
+  const { t, locale } = useI18n();
+  const r = t.requests;
+  const [rows, setRows] = useState<MyRequest[] | null>(null);
+  const load = useCallback(() => {
+    api<MyRequest[]>("/requests/mine")
+      .then(setRows)
+      .catch(() => setRows([]));
+  }, []);
+  useEffect(load, [load]);
+  useLive(load);
+
+  const groups: { title: string; items: MyRequest[] }[] = [
+    { title: r.mine, items: (rows ?? []).filter((x) => x.mine === "customer") },
+    { title: r.myRuns, items: (rows ?? []).filter((x) => x.mine === "runner") },
+  ];
+
+  return (
+    <div className="grid gap-8 md:grid-cols-2">
+      {groups.map((g) => (
+        <section key={g.title}>
+          <h2 className="t-section-title mb-3">{g.title}</h2>
+          {rows === null ? (
+            <p className="t-meta">{t.common.loading}</p>
+          ) : g.items.length === 0 ? (
+            <p className="t-meta">{r.nothingYet}</p>
+          ) : (
+            <ul className="divide-y divide-border rounded-(--radius-surface) border border-border">
+              {g.items.slice(0, 8).map((x) => (
+                <li key={x.id}>
+                  <Link
+                    to={`/requests/${x.id}`}
+                    className="flex items-center gap-3 px-4 py-3 motion-interactive hover:bg-surface"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[0.9375rem] font-medium">{x.details}</span>
+                      <span className="t-meta block text-[0.75rem]">
+                        {r.status[x.status]} · {timeAgo(x.createdAt, locale)}
+                      </span>
+                    </span>
+                    <span className="text-[0.875rem] font-semibold tabular-nums">{ringgit(x.tipSen)}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ))}
     </div>
   );
 }

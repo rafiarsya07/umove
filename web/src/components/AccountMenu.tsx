@@ -98,7 +98,7 @@ export function AccountMenu() {
                 onClick={() => setOpen(false)}
                 className={`${item} font-semibold text-primary-strong`}
               >
-                {t.nav.admin}
+                {t.nav.admin} panel
               </Link>
             ) : null}
           </div>

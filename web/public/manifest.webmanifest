@@ -1,6 +1,6 @@
 {
-  "name": "UMove",
-  "short_name": "UMove",
+  "name": "UMOVE",
+  "short_name": "UMOVE",
   "description": "Kirim makanan, cari tumpangan, jual-beli barang sesama siswa UM.",
   "start_url": "/",
   "display": "standalone",
