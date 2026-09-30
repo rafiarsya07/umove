@@ -552,7 +552,6 @@ export const id: Dict = {
     nav: "Bantuan",
   },
   site: {
-    demo: "DEMO: hanya untuk uji coba. Permintaan dan akun di sini tidak asli.",
     dismiss: "Tutup",
     learnMore: "Selengkapnya",
     maintTitle: "UMOVE sedang dalam pemeliharaan",

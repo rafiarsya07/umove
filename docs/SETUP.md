@@ -145,6 +145,16 @@ Mulai sekarang: **`git push` = web otomatis ter-deploy dalam ±1 menit**, dan AP
 
 ---
 
+## Rilis perubahan (satu perintah)
+
+Setelah commit di `E:\UMOVE` (branch `main`), jalankan di Git Bash:
+
+```
+bash scripts/release.sh
+```
+
+Script menampilkan daftar perubahan, minta konfirmasi `yes`, lalu push (web ter-deploy otomatis), backup database di mini PC, dan update API termasuk migrasi baru.
+
 ## Tempat pickup (Places)
 
 Admin → Places: daftar kantin/toko/tempat print di dalam UM. Saat membuat permintaan, member mencari dan memilih dari daftar ini (dikelompokkan per area, misalnya KK12). Kalau tempatnya belum ada, member tetap bisa mengetik sendiri; permintaan dari daftar diberi tanda centang supaya runner tahu itu tempat resmi. Isi awal: "Kafeteria" di KK1–KK13, silakan ganti/tambah sesuai nama asli. Jangan hapus, cukup "Hide". Tabelnya dibuat oleh `db/migrations/007-places.sql` lewat `scripts/update.sh`.

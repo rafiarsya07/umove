@@ -6,9 +6,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p backups
-# Follows whatever branch this copy is on: main (production) or demo.
-BRANCH=$(git rev-parse --abbrev-ref HEAD)
-git fetch --quiet origin "$BRANCH"
-if [ "$(git rev-parse HEAD)" = "$(git rev-parse "origin/$BRANCH")" ]; then exit 0; fi
-echo "$(date -Is) new $BRANCH version $(git rev-parse --short "origin/$BRANCH"), updating"
+git fetch --quiet origin main
+if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then exit 0; fi
+echo "$(date -Is) new version $(git rev-parse --short origin/main), updating"
 bash scripts/update.sh

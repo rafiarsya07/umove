@@ -554,7 +554,6 @@ export const en = {
     nav: "Help",
   },
   site: {
-    demo: "DEMO: for testing only. Requests and accounts here are not real.",
     dismiss: "Dismiss",
     learnMore: "Learn more",
     maintTitle: "UMOVE is under maintenance",

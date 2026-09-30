@@ -51,13 +51,7 @@ if [ -f .env ]; then
   fi
 else
   say "Creating .env: paste each value and press Enter (secret values stay hidden)"
-  # The demo copy (branch "demo") gets its own site, API host and local port.
-  if [ "$(git rev-parse --abbrev-ref HEAD 2>/dev/null)" = "demo" ]; then
-    SITE=https://umove-demo.rafiarsya.com; API_HOST=umove-demo-api.rafiarsya.com; PORT_LINE="UMOVE_PORT=38472"
-  else
-    SITE=https://umove.rafiarsya.com; API_HOST=umove-api.rafiarsya.com; PORT_LINE=""
-  fi
-  ask TUNNEL_TOKEN "Cloudflare Tunnel token (tunnel for $API_HOST)" secret
+  ask TUNNEL_TOKEN "Cloudflare Tunnel token (tunnel for umove-api.rafiarsya.com)" secret
   # Accept the whole "cloudflared ... --token eyJ..." command too: keep only the token.
   TUNNEL_TOKEN=$(printf '%s' "$TUNNEL_TOKEN" | grep -o 'eyJ[A-Za-z0-9._=+/-]*' | head -n1 || true)
   [ -n "$TUNNEL_TOKEN" ] || fail "That doesn't look like a Tunnel token (it starts with eyJ)."
@@ -77,10 +71,9 @@ GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
 GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
 ADMIN_EMAILS=$ADMIN_EMAILS
 TELEGRAM_BOT_TOKEN=$TELEGRAM_BOT_TOKEN
-PUBLIC_ORIGIN=$SITE
+PUBLIC_ORIGIN=https://umove.rafiarsya.com
 RATE_LIMIT_SITE=600
 RATE_LIMIT_API=120
-$PORT_LINE
 ENV
   chmod 600 .env
   echo "  .env written (readable by you only)."
@@ -100,12 +93,10 @@ for _ in $(seq 1 60); do
     say "UMOVE API is running."
     echo "  Local check:  curl http://127.0.0.1:$PORT_LOCAL/api/health"
     echo "  Logs:         docker compose logs -f app"
-    SITE_NOW=$(grep -s '^PUBLIC_ORIGIN=' .env | cut -d= -f2); SITE_NOW=${SITE_NOW:-https://umove.rafiarsya.com}
-    case "$SITE_NOW" in *demo*) WORKER=umove-demo ;; *) WORKER=umove ;; esac
-    say "Last step: give the web Worker this secret (Cloudflare → Workers → $WORKER → Settings → Variables and Secrets → Add → Secret):"
+    say "Last step: give the web Worker this secret (Cloudflare → Workers → umove → Settings → Variables and Secrets → Add → Secret):"
     echo "  Name:  PROXY_SECRET"
     echo "  Value: $(grep '^PROXY_SECRET=' .env | cut -d= -f2)"
-    echo "Then open $SITE_NOW"
+    echo "Then open https://umove.rafiarsya.com"
     exit 0
   fi
   sleep 3

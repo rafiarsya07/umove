@@ -553,7 +553,6 @@ export const ms: Dict = {
     nav: "Bantuan",
   },
   site: {
-    demo: "DEMO: untuk ujian sahaja. Permintaan dan akaun di sini bukan sebenar.",
     dismiss: "Tutup",
     learnMore: "Ketahui lanjut",
     maintTitle: "UMOVE sedang diselenggara",

@@ -23,20 +23,6 @@ const TONE: Record<Broadcast["tone"], string> = {
 };
 
 /** Announcements from the UMOVE team, under the header. Each can be dismissed (remembered on this device). */
-/** True on the demo copy (umove-demo.rafiarsya.com), where changes are tried before release. */
-export const IS_DEMO = typeof location !== "undefined" && location.hostname.startsWith("umove-demo");
-
-/** A strip on every page of the demo copy, so nobody mistakes it for the real UMOVE. */
-export function DemoBanner() {
-  const { t } = useI18n();
-  if (!IS_DEMO) return null;
-  return (
-    <div role="note" className="bg-foreground px-4 py-1.5 text-center text-[0.75rem] font-semibold text-background">
-      {t.site.demo}
-    </div>
-  );
-}
-
 export function BroadcastBar() {
   const { t } = useI18n();
   const { status } = useStatus();
