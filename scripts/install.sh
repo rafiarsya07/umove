@@ -52,6 +52,9 @@ if [ -f .env ]; then
 else
   say "Creating .env: paste each value and press Enter (secret values stay hidden)"
   ask TUNNEL_TOKEN "Cloudflare Tunnel token (tunnel for umove-api.rafiarsya.com)" secret
+  # Accept the whole "cloudflared ... --token eyJ..." command too: keep only the token.
+  TUNNEL_TOKEN=$(printf '%s' "$TUNNEL_TOKEN" | grep -o 'eyJ[A-Za-z0-9._=+/-]*' | head -n1 || true)
+  [ -n "$TUNNEL_TOKEN" ] || fail "That doesn't look like a Tunnel token (it starts with eyJ)."
   ask GOOGLE_CLIENT_ID "Google Client ID (…apps.googleusercontent.com)"
   ask GOOGLE_CLIENT_SECRET "Google Client secret" secret
   ask ADMIN_EMAILS "Admin Google email(s), comma-separated" "" "" "rafiarsya.work@gmail.com"
