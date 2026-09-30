@@ -62,6 +62,7 @@ Ikuti **docs/SETUP.md** (`bash scripts/install.sh`). Setelah itu, update cukup d
 bash scripts/update.sh
 ```
 
+
 ## Tahapan
 
 - [x] 1. Struktur, UI 3 bahasa, server yang diperkeras, setup mini PC
