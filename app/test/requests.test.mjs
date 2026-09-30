@@ -1,3 +1,4 @@
+import { apply } from "./apply-helper.mjs";
 const BASE = "http://localhost:3222";
 let pass = 0, fail = 0;
 const check = (n, c, x = "") => { c ? pass++ : fail++; console.log(`${c ? "PASS" : "FAIL"}  ${n} ${c ? "" : x}`); };
@@ -20,9 +21,9 @@ const B = await signIn("b", "b@x.com", "Budi Runner");
 const C = await signIn("c", "c@x.com", "Citra Runner");
 const D = await signIn("d", "d@x.com", "Dewi Visitor");
 await profile(B, "budi", "0111111111"); await profile(C, "citra", "0122222222"); await profile(D, "dewi", "");
-for (const [s] of [[B], [C]]) await call("/me/roles/runner", s, "POST");
+for (const s of [B, C]) await apply(s, "runner");
 const apps = (await call("/admin/applications", A)).body;
-for (const a of apps) await call(`/admin/applications/${a.userId}/runner`, A, "POST", { decision: "approve" });
+for (const a of apps) await call(`/admin/applications/${a.id}/decision`, A, "POST", { decision: "approve" });
 
 // live stream
 const ctrl = new AbortController();

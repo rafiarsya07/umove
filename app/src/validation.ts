@@ -36,9 +36,75 @@ export const profileSchema = z
   })
   .strict();
 
-export const decisionSchema = z.object({ decision: z.enum(["approve", "reject"]) }).strict();
+export const roleParam = z.enum(["runner", "driver"]);
+export type ApplyRole = z.infer<typeof roleParam>;
 
-export const roleParam = z.enum(["runner"]);
+/** Photos each role must upload with its application. */
+export const REQUIRED_FILES = {
+  runner: ["matric_card"],
+  driver: ["matric_card", "license", "vehicle", "selfie"],
+} as const;
+export type FileKind = (typeof REQUIRED_FILES)["driver"][number];
+export const fileKindParam = z.enum(["matric_card", "license", "vehicle", "selfie"]);
+
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const daysFromToday = (iso: string) => {
+  const today = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00Z").getTime();
+  return (Date.parse(iso + "T00:00:00Z") - today) / 86_400_000;
+};
+
+const identity = {
+  /** Full name exactly as on the matric card. */
+  fullName: text(60).pipe(z.string().min(3)),
+  matricNo: z
+    .string()
+    .max(20)
+    .transform((s) => s.replace(/\s/g, "").toUpperCase())
+    .pipe(z.string().regex(/^[A-Z0-9/-]{5,20}$/)),
+  faculty: text(60).pipe(z.string().min(2)),
+  agree: z.literal(true),
+};
+
+export const runnerApplicationSchema = z.object(identity).strict();
+
+export const driverApplicationSchema = z
+  .object({
+    ...identity,
+    licenseClass: z.enum(["B2", "B", "D", "DA"]),
+    licenseType: z.enum(["competent", "probationary"]),
+    licenseExpiry: isoDate,
+    vehicleType: z.enum(["car", "motorcycle"]),
+    vehicleModel: text(40).pipe(z.string().min(2)),
+    vehicleColor: text(20).pipe(z.string().min(2)),
+    plate: z
+      .string()
+      .max(12)
+      .transform((s) => s.replace(/\s/g, "").toUpperCase())
+      .pipe(z.string().regex(/^[A-Z0-9]{2,10}$/)),
+    seats: z.number().int().min(1).max(7),
+    roadTaxExpiry: isoDate,
+    insured: z.literal(true),
+  })
+  .strict()
+  .superRefine((d, ctx) => {
+    // Licence must still be valid for at least 30 days, road tax must be current.
+    if (!(daysFromToday(d.licenseExpiry) >= 30)) ctx.addIssue({ code: "custom", path: ["licenseExpiry"], message: "expiring" });
+    if (!(daysFromToday(d.roadTaxExpiry) >= 0)) ctx.addIssue({ code: "custom", path: ["roadTaxExpiry"], message: "expired" });
+    const bike = d.vehicleType === "motorcycle";
+    if (bike !== (d.licenseClass === "B" || d.licenseClass === "B2")) {
+      ctx.addIssue({ code: "custom", path: ["licenseClass"], message: "does not match vehicle" });
+    }
+    if (bike && d.seats !== 1) ctx.addIssue({ code: "custom", path: ["seats"], message: "a motorcycle takes one passenger" });
+  });
+
+export const decisionSchema = z
+  .object({
+    decision: z.enum(["approve", "reject"]),
+    /** Shown to the applicant; required when rejecting. */
+    reason: text(300).optional(),
+  })
+  .strict()
+  .refine((d) => d.decision === "approve" || (d.reason?.length ?? 0) >= 5, { path: ["reason"] });
 
 export const requestSchema = z
   .object({

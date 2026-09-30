@@ -15,7 +15,7 @@ export default function Overview() {
   useLive(load);
 
   const tiles: { label: string; value: number | undefined; to: string; hint?: string }[] = [
-    { label: "Pending runner applications", value: s?.pending, to: "/admin/applications" },
+    { label: "Pending applications", value: s?.pending, to: "/admin/applications" },
     { label: "Open requests", value: s?.open, to: "/admin/requests?status=open" },
     { label: "Requests in progress", value: s?.active, to: "/admin/requests?status=on_the_way" },
     { label: "Delivered (7 days)", value: s?.delivered7d, to: "/admin/requests?status=delivered" },

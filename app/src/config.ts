@@ -31,6 +31,13 @@ const schema = z
     SESSION_DAYS: z.coerce.number().int().min(1).max(90).default(30),
     /** Shared with the Cloudflare Worker that forwards /api (web/worker). */
     PROXY_SECRET: z.string().min(32).optional().or(z.literal("")),
+    /**
+     * Optional e-mail (e.g. Gmail with an App Password):
+     *   SMTP_URL=smtps://you%40gmail.com:app-password@smtp.gmail.com:465
+     * Used to tell admins about new applications and applicants about the decision.
+     */
+    SMTP_URL: z.string().regex(/^smtps?:\/\//, "SMTP_URL must start with smtp:// or smtps://").optional().or(z.literal("")),
+    MAIL_FROM: z.string().max(120).optional().or(z.literal("")),
     /** Test-only overrides for the Google endpoints (ignored in production). */
     GOOGLE_AUTH_URL: z.string().url().optional(),
     GOOGLE_TOKEN_URL: z.string().url().optional(),
@@ -67,6 +74,8 @@ function load() {
     logLevel: env.LOG_LEVEL,
     sessionDays: env.SESSION_DAYS,
     proxySecret: env.PROXY_SECRET || null,
+    smtpUrl: env.SMTP_URL || null,
+    mailFrom: env.MAIL_FROM || null,
     adminEmails: new Set(
       env.ADMIN_EMAILS.split(",")
         .map((e) => e.trim().toLowerCase())

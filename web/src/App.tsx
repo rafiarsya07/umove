@@ -4,6 +4,7 @@ import { BottomNav } from "./components/BottomNav";
 import { Footer } from "./components/Footer";
 import { Header } from "./components/Header";
 import AccountLayout from "./pages/AccountLayout";
+import Apply from "./pages/Apply";
 import Dashboard from "./pages/Dashboard";
 import AdminApplications from "./pages/admin/Applications";
 import AdminAudit from "./pages/admin/Audit";
@@ -75,6 +76,7 @@ export default function App() {
           <Route element={<AccountLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/requests/new" element={<NewRequest />} />
+            <Route path="/apply/:role" element={<Apply />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

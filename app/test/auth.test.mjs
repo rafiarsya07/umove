@@ -1,3 +1,4 @@
+import { apply } from "./apply-helper.mjs";
 const BASE = "http://localhost:3222", ORIGIN = BASE;
 let pass = 0, fail = 0;
 const check = (name, cond, extra = "") => { cond ? pass++ : fail++; console.log(`${cond ? "PASS" : "FAIL"}  ${name} ${cond ? "" : extra}`); };
@@ -56,21 +57,21 @@ check("invalid phone rejected", r.status === 400);
 const b = await signIn({ sub: "g-budi", email: "budi@student.um.edu.my", name: "Budi" });
 r = await call("/me", b.sid, { method: "PATCH", body: JSON.stringify({ name: "Budi", username: "rafi", whatsapp: "", college: "", bio: "" }) });
 check("username taken = 409", r.status === 409 && (await j(r)).error === "username_taken");
-r = await call("/me/roles/runner", b.sid, { method: "POST" });
-check("apply runner without WhatsApp = need_whatsapp", r.status === 409 && (await j(r)).error === "need_whatsapp");
+let ap = await apply(b.sid, "runner");
+check("apply runner without WhatsApp = need_whatsapp", ap.status === 409 && ap.body.error === "need_whatsapp", JSON.stringify(ap));
 await call("/me", b.sid, { method: "PATCH", body: JSON.stringify({ name: "Budi", username: "budi", whatsapp: "+62 812 3456 7890", college: "KK12", bio: "" }) });
-r = await call("/me/roles/runner", b.sid, { method: "POST" });
-check("apply runner ok", r.status === 200);
-check("apply twice = already_applied", (await call("/me/roles/runner", b.sid, { method: "POST" })).status === 409);
+ap = await apply(b.sid, "runner");
+check("apply runner ok", ap.status === 200, JSON.stringify(ap));
+check("apply twice = already_applied", (await apply(b.sid, "runner")).status === 409);
 check("unknown role = 404", (await call("/me/roles/admin", b.sid, { method: "POST" })).status === 404);
 
 // --- admin
 check("non-admin blocked from admin", (await call("/admin/applications", b.sid)).status === 403);
 const apps = await j(await call("/admin/applications", a.sid));
 check("admin sees application", apps.length === 1 && apps[0].username === "budi" && apps[0].whatsapp === "+6281234567890", JSON.stringify(apps));
-r = await call(`/admin/applications/${apps[0].userId}/runner`, a.sid, { method: "POST", body: JSON.stringify({ decision: "approve" }) });
+r = await call(`/admin/applications/${apps[0].id}/decision`, a.sid, { method: "POST", body: JSON.stringify({ decision: "approve" }) });
 check("admin approves", r.status === 200);
-check("approve twice = 409", (await call(`/admin/applications/${apps[0].userId}/runner`, a.sid, { method: "POST", body: JSON.stringify({ decision: "approve" }) })).status === 409);
+check("approve twice = 409", (await call(`/admin/applications/${apps[0].id}/decision`, a.sid, { method: "POST", body: JSON.stringify({ decision: "approve" }) })).status === 409);
 
 // --- public profile
 const pub = await j(await fetch(`${BASE}/api/users/budi`));

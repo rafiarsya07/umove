@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
@@ -17,7 +17,7 @@ import { me } from "./routes/me.js";
 import { requests } from "./routes/requests.js";
 import { users } from "./routes/users.js";
 import { liveHandler } from "../live.js";
-import { securityHeaders } from "./security.js";
+import { SANDBOX_HEADER, securityHeaders } from "./security.js";
 import { mountWeb } from "./static.js";
 
 /**
@@ -29,6 +29,15 @@ export function createApp() {
   const app = new Hono<AppEnv>();
 
   app.use("*", requestId());
+  // Registered before the security headers so it runs after them: a response
+  // marked as a private file (document photos) gets a CSP that forbids everything.
+  app.use("*", async (c, next) => {
+    await next();
+    if (c.res.headers.get(SANDBOX_HEADER)) {
+      c.res.headers.delete(SANDBOX_HEADER);
+      c.res.headers.set("Content-Security-Policy", "default-src 'none'; sandbox");
+    }
+  });
   app.use("*", securityHeaders);
   app.use("*", rateLimit("site", config.rateLimit.site));
   app.use("*", async (c, next) => {
@@ -46,10 +55,20 @@ export function createApp() {
     if (config.proxySecret && !viaWorker(c) && !isLocal(c)) return c.json({ error: "forbidden" }, 403);
     return next();
   });
-  api.use("*", bodyLimit({ maxSize: 32 * 1024, onError: (c) => c.json({ error: "payload_too_large" }, 413) }));
-  // Every API call has a deadline, except the long-lived live stream.
+  // Small JSON bodies everywhere, except role applications (document photos).
+  const tooLarge = { onError: (c: Context) => c.json({ error: "payload_too_large" }, 413) };
+  const smallBody = bodyLimit({ maxSize: 32 * 1024, ...tooLarge });
+  const uploadBody = bodyLimit({ maxSize: 13 * 1024 * 1024, ...tooLarge });
+  const isApplication = (c: { req: { method: string; path: string } }) =>
+    c.req.method === "POST" && /^\/api\/me\/roles\/[a-z]+$/.test(c.req.path);
+  api.use("*", async (c, next) => (isApplication(c) ? uploadBody(c, next) : smallBody(c, next)));
+  // Every API call has a deadline (longer for uploads), except the long-lived live stream.
   const deadline = timeout(15_000);
-  api.use("*", async (c, next) => (c.req.path.endsWith("/api/live") ? next() : deadline(c, next)));
+  const uploadDeadline = timeout(90_000);
+  api.use("*", async (c, next) => {
+    if (c.req.path.endsWith("/api/live")) return next();
+    return isApplication(c) ? uploadDeadline(c, next) : deadline(c, next);
+  });
   api.use("*", rateLimit("api", config.rateLimit.api));
   api.use("*", sameOrigin);
   api.use("/auth/*", rateLimit("auth", 20));

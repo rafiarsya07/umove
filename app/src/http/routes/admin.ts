@@ -3,10 +3,12 @@ import { z } from "zod";
 import { config } from "../../config.js";
 import { announceChange } from "../../live.js";
 import { adminCancelRequest, adminStats, auditLog, listRequests, listUsers, setUserStatus } from "../../repo/admin.js";
-import { decideApplication, pendingApplications } from "../../repo/users.js";
+import { mailDecision } from "../../mail.js";
+import { applicationFile, decideApplication, listApplications } from "../../repo/applications.js";
 import type { AppEnv } from "../../types.js";
-import { decisionSchema, idParam, roleParam } from "../../validation.js";
+import { decisionSchema, fileKindParam, idParam } from "../../validation.js";
 import { requireAdmin } from "../guards.js";
+import { SANDBOX_HEADER } from "../security.js";
 
 /** Admin area. Admins come from ADMIN_EMAILS only; every change is audited. */
 export const admin = new Hono<AppEnv>();
@@ -14,15 +16,36 @@ admin.use("*", requireAdmin);
 
 admin.get("/stats", async (c) => c.json(await adminStats()));
 
-admin.get("/applications", async (c) => c.json(await pendingApplications()));
+admin.get("/applications", async (c) => {
+  const status = z.enum(["pending", "approved", "rejected"]).catch("pending").parse(c.req.query("status"));
+  return c.json(await listApplications(status));
+});
 
-admin.post("/applications/:userId/:role", async (c) => {
-  const userId = z.uuid().safeParse(c.req.param("userId"));
-  const role = roleParam.safeParse(c.req.param("role"));
+/** A document photo. Served only to admins, never cached, never run as a page. */
+admin.get("/applications/:id/files/:kind", async (c) => {
+  const id = idParam.safeParse(c.req.param("id"));
+  const kind = fileKindParam.safeParse(c.req.param("kind"));
+  if (!id.success || !kind.success) return c.json({ error: "not_found" }, 404);
+  const file = await applicationFile(id.data, kind.data);
+  if (!file) return c.json({ error: "not_found" }, 404);
+  return c.body(new Uint8Array(file.data), 200, {
+    "Content-Type": file.mime,
+    "Content-Disposition": "inline",
+    [SANDBOX_HEADER]: "1",
+    "Cache-Control": "private, no-store",
+  });
+});
+
+admin.post("/applications/:id/decision", async (c) => {
+  const id = idParam.safeParse(c.req.param("id"));
   const body = decisionSchema.safeParse(await c.req.json().catch(() => null));
-  if (!userId.success || !role.success || !body.success) return c.json({ error: "invalid" }, 400);
-  const ok = await decideApplication(c.get("user")!.id, userId.data, role.data, body.data.decision);
-  return ok ? c.json({ ok: true }) : c.json({ error: "not_pending" }, 409);
+  if (!id.success) return c.json({ error: "not_found" }, 404);
+  if (!body.success) return c.json({ error: "invalid", fields: ["reason"] }, 400);
+  const reason = body.data.reason ? body.data.reason : null;
+  const r = await decideApplication(c.get("user")!.id, id.data, body.data.decision, reason);
+  if (!r.ok) return c.json({ error: "not_pending" }, 409);
+  mailDecision(r.email, r.name, r.role, body.data.decision, reason);
+  return c.json({ ok: true });
 });
 
 admin.get("/users", async (c) => {

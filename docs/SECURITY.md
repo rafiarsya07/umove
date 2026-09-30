@@ -75,3 +75,11 @@ jalan sebagai user `node` tanpa hak istimewa dan tidak bisa mengubah kodenya sen
 - Jalankan `npm run audit` di `app/` dan `web/` sebelum deploy.
 - `apt upgrade` sudah otomatis (unattended-upgrades); rebuild image tiap
   bulan untuk base image terbaru: `docker compose build --pull && docker compose up -d`.
+
+## Dokumen pendaftaran Runner/Driver
+
+- Foto (kartu matrik, SIM, kendaraan, selfie) disimpan di Postgres, tidak pernah di disk atau URL publik.
+- Hanya admin yang bisa membukanya (`/api/admin/applications/:id/files/:kind`), dengan `Cache-Control: no-store` dan CSP sandbox (`default-src 'none'; sandbox`), jadi file jahat tidak bisa jalan sebagai halaman.
+- Server memeriksa jenis file dari byte awalnya (hanya JPEG/PNG/WebP, maks. 3 MB per foto); browser mengubah foto ke JPEG dulu, sekaligus menghapus data EXIF seperti lokasi GPS.
+- Foto otomatis dihapus 30 hari setelah diputuskan. Email tidak pernah berisi dokumen, hanya nama pendaftar.
+- Isian divalidasi ketat (kelas SIM harus cocok dengan kendaraan, SIM berlaku ≥ 30 hari, road tax masih berlaku), dan setiap keputusan tercatat di audit log.

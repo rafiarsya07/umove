@@ -5,6 +5,7 @@ import { config } from "./config.js";
 import { sql } from "./db.js";
 import { createApp } from "./http/app.js";
 import { log } from "./log.js";
+import { startFilePurge } from "./repo/applications.js";
 
 const app = createApp();
 
@@ -13,6 +14,7 @@ const server = serve({ fetch: app.fetch, port: config.port, hostname: "0.0.0.0" 
 );
 
 startSessionCleanup();
+startFilePurge();
 
 const bot = createBot();
 bot

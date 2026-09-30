@@ -5,6 +5,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 git pull --ff-only
 PORT_LOCAL=$(grep -s '^UMOVE_PORT=' .env | cut -d= -f2 || true); PORT_LOCAL=${PORT_LOCAL:-3100}
+docker compose up -d --wait db
+bash scripts/migrate.sh
 docker compose up -d --build
 docker image prune -f >/dev/null
 for _ in $(seq 1 40); do

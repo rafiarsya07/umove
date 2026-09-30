@@ -82,6 +82,8 @@ fi
 # --- Build and start ------------------------------------------------------
 PORT_LOCAL=$(grep -s '^UMOVE_PORT=' .env | cut -d= -f2 || true); PORT_LOCAL=${PORT_LOCAL:-3100}
 say "Building and starting UMOVE (the first build takes a few minutes)..."
+docker compose up -d --wait db
+bash scripts/migrate.sh
 docker compose up -d --build
 
 say "Waiting for UMOVE to become healthy..."

@@ -16,7 +16,7 @@ export default function Runner() {
   const r = t.runner;
   const perkIcons: IconType[] = [ScheduleIcon, KeepIcon, AlertIcon];
 
-  const applyTo = site.runnerSignupUrl || (user ? "/settings#roles" : "/login");
+  const applyTo = site.runnerSignupUrl || (user ? "/apply/runner" : "/login?next=/apply/runner");
   const external = Boolean(site.runnerSignupUrl);
   const Apply = ({ className = "" }: { className?: string }) =>
     external ? (

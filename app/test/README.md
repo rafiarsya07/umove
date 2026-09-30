@@ -20,3 +20,13 @@ node test/auth.test.mjs
 The Google overrides are ignored when NODE_ENV=production.
 
 For the requests flow, restart the app on a fresh database with `ADMIN_EMAILS=admin@x.com`, then run `node test/requests.test.mjs` (post, race to accept, WhatsApp privacy, status, rating, live stream).
+
+All suites need `db/migrations/*.sql` applied after `db/init` (the app itself cannot change the schema).
+
+Role applications (Runner/Driver forms, photos, review, 24-hour cooldown, photo purge) on a fresh database with `ADMIN_EMAILS=admin@x.com`:
+
+```bash
+NODE_ENV=test PUBLIC_ORIGIN=http://localhost:3222 \
+DATABASE_URL=postgres://umove_app:pw123@localhost:5432/umove \
+DATABASE_URL_ADMIN=postgres://postgres@localhost:5432/umove node test/applications.test.mjs
+```

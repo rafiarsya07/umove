@@ -3,8 +3,9 @@ import { Link, useSearchParams } from "react-router";
 import { Container } from "../components/Container";
 import { CheckIcon } from "../components/Icon";
 import { Avatar, Badge, Segment, SettingsRow, VerifiedMark, btn, segmentClass } from "../components/ui";
-import { LANGS, useI18n } from "../i18n";
+import { LANGS, fmt, useI18n } from "../i18n";
 import { ApiError, api } from "../lib/api";
+import { formatWhen, useMyApplications, type ApplyRole } from "../lib/applications";
 import { useSession, type Me, type RoleStatus } from "../lib/session";
 
 /**
@@ -249,52 +250,67 @@ function FieldError({ text }: { text?: string }) {
 }
 
 function RolesPanel({ user }: { user: Me }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { refresh } = useSession();
+  const { apps, reload } = useMyApplications();
   const s = t.settings;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const act = async (method: "POST" | "DELETE") => {
+  const withdraw = async (role: ApplyRole) => {
     setBusy(true);
     setError(null);
     try {
-      await api("/me/roles/runner", { method });
+      await api(`/me/roles/${role}`, { method: "DELETE" });
       await refresh();
-    } catch (err) {
-      setError(err instanceof ApiError && err.code === "need_whatsapp" ? s.errNeedWhatsapp : s.errGeneric);
+      reload();
+    } catch {
+      setError(s.errGeneric);
     } finally {
       setBusy(false);
     }
   };
 
-  const rows: { key: string; title: string; body: string; status: RoleStatus | "soon"; own: boolean }[] = [
-    { key: "customer", title: s.roleCustomer, body: s.roleCustomerBody, status: "active", own: false },
-    { key: "runner", title: s.roleRunner, body: s.roleRunnerBody, status: user.roles.runner, own: true },
-    { key: "driver", title: s.roleDriver, body: s.roleDriverBody, status: "soon", own: false },
-    { key: "seller", title: s.roleSeller, body: s.roleSellerBody, status: "soon", own: false },
+  const rows: { key: string; title: string; body: string; status: RoleStatus | "soon"; role?: ApplyRole }[] = [
+    { key: "customer", title: s.roleCustomer, body: s.roleCustomerBody, status: "active" },
+    { key: "runner", title: s.roleRunner, body: s.roleRunnerBody, status: user.roles.runner, role: "runner" },
+    { key: "driver", title: s.roleDriver, body: s.roleDriverBody, status: user.roles.driver, role: "driver" },
+    { key: "seller", title: s.roleSeller, body: s.roleSellerBody, status: "soon" },
   ];
 
   return (
     <div>
       <ul className="divide-y divide-border rounded-(--radius-surface) border border-border">
-        {rows.map((r) => (
-          <li key={r.key} className="flex items-center gap-4 px-4 py-3.5">
-            <div className="min-w-0 flex-1">
-              <p className="flex items-center gap-1.5 text-[0.9375rem] font-semibold">
-                {r.title}
-                {r.key === "runner" && r.status === "active" ? <VerifiedMark className="size-3.5" /> : null}
-              </p>
-              <p className="t-meta">{r.body}</p>
-            </div>
-            <RoleControl
-              status={r.status}
-              busy={busy}
-              onApply={r.own ? () => act("POST") : undefined}
-              onWithdraw={r.own ? () => act("DELETE") : undefined}
-            />
-          </li>
-        ))}
+        {rows.map((r) => {
+          const app = r.role ? apps?.find((x) => x.role === r.role) : undefined;
+          const note =
+            r.status === "pending"
+              ? s.reviewNote
+              : r.status === "rejected" && app?.reason
+                ? fmt(s.reasonShort, { reason: app.reason })
+                : null;
+          const waitUntil =
+            r.status === "rejected" && app?.reapplyAt && new Date(app.reapplyAt) > new Date() ? app.reapplyAt : null;
+          return (
+            <li key={r.key} className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:gap-4">
+              <div className="min-w-0 flex-1">
+                <p className="flex items-center gap-1.5 text-[0.9375rem] font-semibold">
+                  {r.title}
+                  {r.role && r.status === "active" ? <VerifiedMark className="size-3.5" /> : null}
+                </p>
+                <p className="t-meta">{r.body}</p>
+                {note ? <p className="mt-1 text-[0.75rem] font-medium text-foreground-secondary">{note}</p> : null}
+              </div>
+              <RoleControl
+                status={r.status}
+                busy={busy}
+                applyTo={r.role ? `/apply/${r.role}` : undefined}
+                waitUntil={waitUntil ? fmt(s.reapplyFrom, { time: formatWhen(waitUntil, locale) }) : null}
+                onWithdraw={r.role ? () => withdraw(r.role!) : undefined}
+              />
+            </li>
+          );
+        })}
       </ul>
       {error ? (
         <p role="alert" className="mt-3 text-[0.875rem] text-danger">
@@ -308,12 +324,14 @@ function RolesPanel({ user }: { user: Me }) {
 function RoleControl({
   status,
   busy,
-  onApply,
+  applyTo,
+  waitUntil,
   onWithdraw,
 }: {
   status: RoleStatus | "soon";
   busy: boolean;
-  onApply?: () => void;
+  applyTo?: string;
+  waitUntil: string | null;
   onWithdraw?: () => void;
 }) {
   const { t } = useI18n();
@@ -337,11 +355,15 @@ function RoleControl({
       </span>
     );
   return (
-    <span className="flex items-center gap-2">
+    <span className="flex flex-wrap items-center gap-2">
       {status === "rejected" ? <Badge tone="muted">{s.statusRejected}</Badge> : null}
-      <button type="button" onClick={onApply} disabled={busy} className={`${btn.small} disabled:opacity-60`}>
-        {status === "rejected" ? s.applyAgain : s.apply}
-      </button>
+      {waitUntil ? (
+        <span className="t-meta text-[0.75rem]">{waitUntil}</span>
+      ) : applyTo ? (
+        <Link to={applyTo} className={btn.small}>
+          {status === "rejected" ? s.applyAgain : s.apply}
+        </Link>
+      ) : null}
     </span>
   );
 }

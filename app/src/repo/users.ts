@@ -112,29 +112,6 @@ export async function updateProfile(userId: string, p: ProfileUpdate): Promise<"
   }
 }
 
-/** Apply for a role. Needs a WhatsApp number so the admin can verify. */
-export async function applyForRole(userId: string, role: "runner"): Promise<"ok" | "need_whatsapp" | "exists"> {
-  const rows = await sql`
-    insert into user_roles (user_id, role, status)
-    select ${userId}, ${role}, 'pending'
-    from users where id = ${userId} and phone_wa is not null
-    on conflict (user_id, role) do update
-      set status = 'pending', reviewed_by = null, reviewed_at = null, created_at = now()
-      where user_roles.status = 'rejected'
-  `;
-  if (rows.count === 1) return "ok";
-  const [u] = await sql<{ has: boolean }[]>`select phone_wa is not null as has from users where id = ${userId}`;
-  return u?.has ? "exists" : "need_whatsapp";
-}
-
-/** Withdraw a pending application (an approved role stays). */
-export async function withdrawRole(userId: string, role: "runner"): Promise<boolean> {
-  const rows = await sql`
-    delete from user_roles where user_id = ${userId} and role = ${role} and status = 'pending'
-  `;
-  return rows.count === 1;
-}
-
 /** Anyone's public profile. Never includes email or WhatsApp. */
 export async function publicProfile(username: string) {
   const [u] = await sql<{ id: string; name: string; username: string; college: string; bio: string; joined: Date }[]>`
@@ -157,50 +134,4 @@ export async function publicProfile(username: string) {
     stats: await statsOf(u.id),
     reviews,
   };
-}
-
-/** Admin: role applications waiting for a decision. */
-export async function pendingApplications() {
-  return sql<
-    {
-      userId: string;
-      role: string;
-      name: string;
-      username: string;
-      email: string;
-      whatsapp: string | null;
-      college: string;
-      applied: Date;
-    }[]
-  >`
-    select r.user_id as "userId", r.role, u.name, u.username::text as username, u.email::text as email,
-           u.phone_wa as whatsapp, u.college, r.created_at as applied
-    from user_roles r join users u on u.id = r.user_id
-    where r.status = 'pending'
-    order by r.created_at
-    limit 200
-  `;
-}
-
-/** Admin: approve or reject one pending application, and record it. */
-export async function decideApplication(
-  adminId: string,
-  userId: string,
-  role: "runner",
-  decision: "approve" | "reject",
-): Promise<boolean> {
-  const status = decision === "approve" ? "active" : "rejected";
-  return sql.begin(async (tx) => {
-    const rows = await tx`
-      update user_roles
-      set status = ${status}, reviewed_by = ${adminId}, reviewed_at = now()
-      where user_id = ${userId} and role = ${role} and status = 'pending'
-    `;
-    if (rows.count !== 1) return false;
-    await tx`
-      insert into audit_log (actor_id, action, target)
-      values (${adminId}, ${`role.${role}.${decision}`}, ${userId})
-    `;
-    return true;
-  });
 }

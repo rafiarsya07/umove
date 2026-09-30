@@ -38,7 +38,7 @@ export default function AdminLayout() {
 
   const items = [
     { to: "/admin", label: "Overview", end: true },
-    { to: "/admin/applications", label: "Runner applications", count: pending },
+    { to: "/admin/applications", label: "Applications", count: pending },
     { to: "/admin/users", label: "Users" },
     { to: "/admin/requests", label: "Requests" },
     { to: "/admin/audit", label: "Audit log" },

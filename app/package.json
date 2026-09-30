@@ -17,11 +17,13 @@
     "grammy": "^1.46.0",
     "hono": "^4.13.11",
     "jose": "^6.2.12",
+    "nodemailer": "^10.0.12",
     "postgres": "^3.4.9",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "@types/nodemailer": "^8.0.2",
     "prettier": "^3.9.9",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"

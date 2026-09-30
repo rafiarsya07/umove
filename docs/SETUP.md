@@ -78,7 +78,7 @@ bash scripts/install.sh
 Script menanyakan token Tunnel, Google Client ID & secret, email admin, dan token bot (opsional),
 lalu menyalakan semuanya. Email admin default: `rafiarsya.work@gmail.com` (tekan Enter). Di akhir dia menampilkan **PROXY_SECRET**. Salin, dipakai di langkah 5.
 
-Login pakai email admin → langsung masuk **panel admin** (`/admin`): ringkasan, persetujuan runner, pengguna (suspend/pulihkan), semua permintaan (batalkan yang melanggar), dan audit log. Akun lain masuk ke dashboard pengguna biasa.
+Login pakai email admin → langsung masuk **panel admin** (`/admin`): ringkasan, persetujuan Runner & Driver, pengguna (suspend/pulihkan), semua permintaan (batalkan yang melanggar), dan audit log. Akun lain masuk ke dashboard pengguna biasa.
 
 Update otomatis (API ikut update setiap kali kamu push):
 
@@ -92,6 +92,31 @@ Tambahkan (ganti `USER`):
 */5 * * * * cd /home/USER/umove && bash scripts/auto-update.sh >> backups/auto-update.log 2>&1
 0 4 * * * cd /home/USER/umove && bash scripts/backup.sh >> backups/backup.log 2>&1
 ```
+
+### Pendaftaran Runner & Driver
+
+- **Runner**: isi nama sesuai kartu matrik, nomor matrik, fakultas/kolej + foto kartu matrik.
+- **Driver** (lebih ketat): data di atas + SIM (kelas cocok dengan kendaraan, masih berlaku ≥ 30 hari),
+  kendaraan (model, warna, plat, kursi), road tax masih berlaku, asuransi, dan 4 foto:
+  kartu matrik, SIM, kendaraan (plat terlihat), selfie memegang kartu matrik.
+- Admin meninjau di **/admin/applications** (target 24 jam; lewat 24 jam ditandai merah "Over 24h").
+  Tolak wajib dengan alasan → pendaftar melihat alasannya dan baru bisa daftar lagi setelah 24 jam
+  (maks. 5 kali per 30 hari).
+- Foto dokumen hanya bisa dibuka admin dan **otomatis dihapus 30 hari** setelah diputuskan.
+- Perubahan database dijalankan otomatis oleh `scripts/update.sh` (via `scripts/migrate.sh`).
+
+Email notifikasi (opsional, disarankan): admin dapat email tiap ada pendaftar baru, pendaftar dapat
+email hasilnya. Pakai Gmail:
+
+1. myaccount.google.com → Security → aktifkan **2-Step Verification**
+2. myaccount.google.com/apppasswords → buat App Password (16 huruf)
+3. Di mini PC, tambahkan ke `.env` (tanda `@` ditulis `%40`, spasi App Password dihapus):
+
+```
+SMTP_URL=smtps://emailkamu%40gmail.com:abcdabcdabcdabcd@smtp.gmail.com:465
+```
+
+lalu `docker compose up -d app`.
 
 ## 5. Web di Cloudflare (Wrangler, auto deploy)
 

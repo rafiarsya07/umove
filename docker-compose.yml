@@ -69,6 +69,8 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       RATE_LIMIT_SITE: ${RATE_LIMIT_SITE:-600}
       RATE_LIMIT_API: ${RATE_LIMIT_API:-120}
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:-}
     ports:
       - "127.0.0.1:${UMOVE_PORT:-3100}:3000"
     networks: [internal, egress]

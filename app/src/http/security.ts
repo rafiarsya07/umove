@@ -13,7 +13,7 @@ export const securityHeaders = secureHeaders({
     defaultSrc: ["'self'"],
     scriptSrc: ["'self'"],
     styleSrc: ["'self'"],
-    imgSrc: ["'self'", "data:"],
+    imgSrc: ["'self'", "data:", "blob:"],
     fontSrc: ["'self'"],
     connectSrc: ["'self'"],
     manifestSrc: ["'self'"],
@@ -42,3 +42,6 @@ export const securityHeaders = secureHeaders({
     usb: [],
   },
 });
+
+/** Set on a response to serve it with a locked-down, sandboxed CSP (see app.ts). */
+export const SANDBOX_HEADER = "x-umove-sandbox";
