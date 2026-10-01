@@ -23,7 +23,9 @@ let cached: { value: Maintenance; at: number } | null = null;
 export async function maintenance(): Promise<Maintenance> {
   if (cached && Date.now() - cached.at < 15_000) return isOver(cached.value) ? OFF : cached.value;
   try {
-    const [row] = await sql<{ value: Partial<Maintenance> }[]>`select value from site_settings where key = 'maintenance'`;
+    const [row] = await sql<
+      { value: Partial<Maintenance> }[]
+    >`select value from site_settings where key = 'maintenance'`;
     const v = row?.value ?? {};
     const value: Maintenance = {
       on: v.on === true,
@@ -63,7 +65,9 @@ export async function setMaintenance(adminId: string, m: Maintenance): Promise<M
 export function startMaintenanceWatch() {
   const run = async () => {
     try {
-      const [row] = await sql<{ value: Partial<Maintenance> }[]>`select value from site_settings where key = 'maintenance'`;
+      const [row] = await sql<
+        { value: Partial<Maintenance> }[]
+      >`select value from site_settings where key = 'maintenance'`;
       const v = row?.value;
       if (!v?.on || !v.until || Date.parse(v.until) > Date.now()) return;
       const msg = (v.reopenMessage ?? "").trim();
@@ -143,7 +147,15 @@ export async function allBroadcasts() {
 
 export async function createBroadcast(
   adminId: string,
-  b: { title: string; body: string; tone: Tone; audience: Audience; linkPath: string | null; startsAt: Date | null; endsAt: Date | null },
+  b: {
+    title: string;
+    body: string;
+    tone: Tone;
+    audience: Audience;
+    linkPath: string | null;
+    startsAt: Date | null;
+    endsAt: Date | null;
+  },
 ): Promise<number> {
   return sql.begin(async (tx) => {
     const [row] = await tx<{ id: number }[]>`

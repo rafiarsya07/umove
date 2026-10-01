@@ -1,38 +1,93 @@
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect, type ReactNode } from "react";
 import { Route, Routes, useLocation } from "react-router";
 import { BottomNav } from "./components/BottomNav";
 import { Footer } from "./components/Footer";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { resilient } from "./lib/recover";
+import { useI18n } from "./i18n";
 import { Header } from "./components/Header";
 import { AdminMaintenanceNotice, BroadcastBar, MaintenanceScreen } from "./components/SiteNotices";
 import { useSession } from "./lib/session";
 import { useStatus } from "./lib/status";
 import Home from "./pages/Home";
 
-// Pages load on demand; only the home page ships in the first bundle.
-const AdminBroadcasts = lazy(() => import("./pages/admin/Broadcasts"));
-const AdminMaintenance = lazy(() => import("./pages/admin/Maintenance"));
-const AdminPlaces = lazy(() => import("./pages/admin/Places"));
-const AccountLayout = lazy(() => import("./pages/AccountLayout"));
-const Apply = lazy(() => import("./pages/Apply"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const AdminApplications = lazy(() => import("./pages/admin/Applications"));
-const AdminAudit = lazy(() => import("./pages/admin/Audit"));
-const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
-const AdminOverview = lazy(() => import("./pages/admin/Overview"));
-const AdminRequests = lazy(() => import("./pages/admin/Requests"));
-const AdminUsers = lazy(() => import("./pages/admin/Users"));
-const AdminSupport = lazy(() => import("./pages/admin/Support"));
-const Faq = lazy(() => import("./pages/Faq"));
-const Legal = lazy(() => import("./pages/Legal"));
-const Help = lazy(() => import("./pages/Help"));
-const Login = lazy(() => import("./pages/Login"));
-const NewRequest = lazy(() => import("./pages/NewRequest"));
-const RequestDetail = lazy(() => import("./pages/RequestDetail"));
-const Requests = lazy(() => import("./pages/Requests"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Runner = lazy(() => import("./pages/Runner"));
-const Settings = lazy(() => import("./pages/Settings"));
+// Pages load on demand so the first visit is light; right after the first
+// paint the browser fetches the rest in the background (prefetchPages), so
+// moving between pages is instant instead of waiting for code each time.
+const pages = {
+  AdminBroadcasts: () => import("./pages/admin/Broadcasts"),
+  AdminMaintenance: () => import("./pages/admin/Maintenance"),
+  AdminPlaces: () => import("./pages/admin/Places"),
+  AccountLayout: () => import("./pages/AccountLayout"),
+  Apply: () => import("./pages/Apply"),
+  Dashboard: () => import("./pages/Dashboard"),
+  AdminApplications: () => import("./pages/admin/Applications"),
+  AdminAudit: () => import("./pages/admin/Audit"),
+  AdminLayout: () => import("./pages/admin/AdminLayout"),
+  AdminOverview: () => import("./pages/admin/Overview"),
+  AdminRequests: () => import("./pages/admin/Requests"),
+  AdminUsers: () => import("./pages/admin/Users"),
+  AdminSupport: () => import("./pages/admin/Support"),
+  Faq: () => import("./pages/Faq"),
+  Legal: () => import("./pages/Legal"),
+  Help: () => import("./pages/Help"),
+  Login: () => import("./pages/Login"),
+  NewRequest: () => import("./pages/NewRequest"),
+  RequestDetail: () => import("./pages/RequestDetail"),
+  Requests: () => import("./pages/Requests"),
+  NotFound: () => import("./pages/NotFound"),
+  Profile: () => import("./pages/Profile"),
+  Runner: () => import("./pages/Runner"),
+  Settings: () => import("./pages/Settings"),
+};
+const AdminBroadcasts = lazy(resilient(pages.AdminBroadcasts));
+const AdminMaintenance = lazy(resilient(pages.AdminMaintenance));
+const AdminPlaces = lazy(resilient(pages.AdminPlaces));
+const AccountLayout = lazy(resilient(pages.AccountLayout));
+const Apply = lazy(resilient(pages.Apply));
+const Dashboard = lazy(resilient(pages.Dashboard));
+const AdminApplications = lazy(resilient(pages.AdminApplications));
+const AdminAudit = lazy(resilient(pages.AdminAudit));
+const AdminLayout = lazy(resilient(pages.AdminLayout));
+const AdminOverview = lazy(resilient(pages.AdminOverview));
+const AdminRequests = lazy(resilient(pages.AdminRequests));
+const AdminUsers = lazy(resilient(pages.AdminUsers));
+const AdminSupport = lazy(resilient(pages.AdminSupport));
+const Faq = lazy(resilient(pages.Faq));
+const Legal = lazy(resilient(pages.Legal));
+const Help = lazy(resilient(pages.Help));
+const Login = lazy(resilient(pages.Login));
+const NewRequest = lazy(resilient(pages.NewRequest));
+const RequestDetail = lazy(resilient(pages.RequestDetail));
+const Requests = lazy(resilient(pages.Requests));
+const NotFound = lazy(resilient(pages.NotFound));
+const Profile = lazy(resilient(pages.Profile));
+const Runner = lazy(resilient(pages.Runner));
+const Settings = lazy(resilient(pages.Settings));
+
+const MEMBER_PAGES = [
+  "Requests",
+  "RequestDetail",
+  "NewRequest",
+  "Dashboard",
+  "AccountLayout",
+  "Settings",
+  "Help",
+  "Faq",
+  "Runner",
+  "Profile",
+  "Login",
+  "Apply",
+  "Legal",
+] as const;
+const ADMIN_PAGES = (Object.keys(pages) as (keyof typeof pages)[]).filter((k) => k.startsWith("Admin"));
+
+function prefetchPages(isAdmin: boolean) {
+  const list = isAdmin ? [...MEMBER_PAGES, ...ADMIN_PAGES] : MEMBER_PAGES;
+  const run = () => list.forEach((k) => void pages[k]().catch(() => {}));
+  if ("requestIdleCallback" in window) window.requestIdleCallback(run, { timeout: 3000 });
+  else setTimeout(run, 1500);
+}
 
 /** Top of the page on navigation; to the anchor when the link has one. */
 function ScrollManager() {
@@ -50,29 +105,45 @@ function ScrollManager() {
   return null;
 }
 
+/** A crash in one page shows a reload card instead of a blank screen. */
+function Safe({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
+  const { pathname } = useLocation();
+  return (
+    <ErrorBoundary title={t.common.crashTitle} body={t.common.crashBody} action={t.common.reload} resetKey={pathname}>
+      {children}
+    </ErrorBoundary>
+  );
+}
+
 export default function App() {
   const { pathname } = useLocation();
   const { user, loading } = useSession();
   const { status } = useStatus();
+  useEffect(() => {
+    if (!loading) prefetchPages(Boolean(user?.isAdmin));
+  }, [loading, user?.isAdmin]);
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     return (
       <>
         <ScrollManager />
-        <Suspense fallback={<PageLoading />}>
-          <Routes>
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminOverview />} />
-              <Route path="applications" element={<AdminApplications />} />
-              <Route path="support" element={<AdminSupport />} />
-              <Route path="broadcasts" element={<AdminBroadcasts />} />
-              <Route path="places" element={<AdminPlaces />} />
-              <Route path="maintenance" element={<AdminMaintenance />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="requests" element={<AdminRequests />} />
-              <Route path="audit" element={<AdminAudit />} />
-            </Route>
-          </Routes>
-        </Suspense>
+        <Safe>
+          <Suspense fallback={<PageLoading />}>
+            <Routes>
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminOverview />} />
+                <Route path="applications" element={<AdminApplications />} />
+                <Route path="support" element={<AdminSupport />} />
+                <Route path="broadcasts" element={<AdminBroadcasts />} />
+                <Route path="places" element={<AdminPlaces />} />
+                <Route path="maintenance" element={<AdminMaintenance />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="requests" element={<AdminRequests />} />
+                <Route path="audit" element={<AdminAudit />} />
+              </Route>
+            </Routes>
+          </Suspense>
+        </Safe>
       </>
     );
   }
@@ -84,9 +155,11 @@ export default function App() {
     // Only the sign-in card while UMOVE is closed: the rest of the site isn't reachable anyway.
     return (
       <div className="flex min-h-dvh items-center bg-background text-foreground">
-        <Suspense fallback={<PageLoading />}>
-          <Login />
-        </Suspense>
+        <Safe>
+          <Suspense fallback={<PageLoading />}>
+            <Login />
+          </Suspense>
+        </Safe>
       </div>
     );
   }
@@ -101,27 +174,29 @@ export default function App() {
       <Header />
       <BroadcastBar />
       <main className="flex-1">
-        <Suspense fallback={<PageLoading />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/runner" element={<Runner />} />
-            <Route path="/faq" element={<Faq />} />
-            <Route path="/privacy" element={<Legal kind="privacy" />} />
-            <Route path="/terms" element={<Legal kind="terms" />} />
-            <Route path="/requests" element={<Requests />} />
-            <Route path="/requests/:code" element={<RequestDetail />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/u/:username" element={<Profile />} />
-            <Route element={<AccountLayout />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/requests/new" element={<NewRequest />} />
-              <Route path="/apply/:role" element={<Apply />} />
-              <Route path="/help" element={<Help />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
+        <Safe>
+          <Suspense fallback={<PageLoading />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/runner" element={<Runner />} />
+              <Route path="/faq" element={<Faq />} />
+              <Route path="/privacy" element={<Legal kind="privacy" />} />
+              <Route path="/terms" element={<Legal kind="terms" />} />
+              <Route path="/requests" element={<Requests />} />
+              <Route path="/requests/:code" element={<RequestDetail />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/u/:username" element={<Profile />} />
+              <Route element={<AccountLayout />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/requests/new" element={<NewRequest />} />
+                <Route path="/apply/:role" element={<Apply />} />
+                <Route path="/help" element={<Help />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </Safe>
       </main>
       <Footer />
       <BottomNav />

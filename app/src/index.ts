@@ -35,7 +35,7 @@ bot
   .catch((err: unknown) => log.error("bot stopped", { err }));
 
 let stopping = false;
-async function shutdown(signal: string) {
+async function shutdown(signal: string, code = 0) {
   if (stopping) return;
   stopping = true;
   log.info("shutting down", { signal });
@@ -44,8 +44,15 @@ async function shutdown(signal: string) {
   await bot?.stop().catch(() => {});
   server.close();
   await sql.end({ timeout: 5 }).catch(() => {});
-  process.exit(0);
+  process.exit(code);
 }
 process.on("SIGINT", () => void shutdown("SIGINT"));
 process.on("SIGTERM", () => void shutdown("SIGTERM"));
 process.on("unhandledRejection", (err) => log.error("unhandled rejection", { err }));
+// A bug that escapes every handler leaves the process in an unknown state.
+// Log it, close cleanly, and let Docker (restart: unless-stopped) start a
+// fresh copy within seconds; the web app reconnects and catches up by itself.
+process.on("uncaughtException", (err) => {
+  log.error("uncaught exception", { err });
+  void shutdown("uncaughtException", 1);
+});

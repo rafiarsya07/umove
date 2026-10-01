@@ -12,6 +12,7 @@ import {
   StarIcon,
   WalkIcon,
 } from "../components/Icon";
+import { StatusScene, RideTrack } from "../components/StatusScene";
 import { Stars, VerifiedMark, btn } from "../components/ui";
 import { fmt, useI18n } from "../i18n";
 import { ApiError, api } from "../lib/api";
@@ -144,12 +145,23 @@ export default function RequestDetail() {
           </span>
         </div>
 
+        {data.status !== "cancelled" ? (
+          <div className="mt-6 border-t border-border pt-5">
+            <StatusScene
+              status={data.status}
+              viewer={data.viewerRole}
+              runnerName={data.viewerRole === "customer" ? data.runner?.name.split(" ")[0] : undefined}
+            />
+            {data.status === "on_the_way" ? <RideTrack /> : null}
+          </div>
+        ) : null}
+
         {data.status === "cancelled" ? (
           <p className="mt-6 rounded-(--radius-control) bg-muted px-3 py-2 text-[0.875rem] font-medium">
             {r.status.cancelled}
           </p>
         ) : (
-          <ol className="mt-6 grid grid-cols-4 gap-1.5" aria-label={r.status[data.status]}>
+          <ol className="mt-5 grid grid-cols-4 gap-1.5" aria-label={r.status[data.status]}>
             {STEPS.map((s, i) => (
               <li key={s}>
                 <span
@@ -456,6 +468,7 @@ function RaiseFee({ code, tipSen, onDone }: { code: string; tipSen: number; onDo
   const r = t.requests;
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [pending, setPending] = useState<number | null>(null);
   const raise = async (add: number) => {
     setBusy(true);
     setNote(null);
@@ -467,6 +480,7 @@ function RaiseFee({ code, tipSen, onDone }: { code: string; tipSen: number; onDo
       setNote(r.errGeneric);
     } finally {
       setBusy(false);
+      setPending(null);
     }
   };
   return (
@@ -480,7 +494,7 @@ function RaiseFee({ code, tipSen, onDone }: { code: string; tipSen: number; onDo
               key={add}
               type="button"
               disabled={busy}
-              onClick={() => raise(add)}
+              onClick={() => setPending(add)}
               className={`${btn.small} tabular-nums`}
             >
               +RM{add}
@@ -489,6 +503,18 @@ function RaiseFee({ code, tipSen, onDone }: { code: string; tipSen: number; onDo
         )}
       </div>
       {note ? <p className="mt-2 text-[0.8125rem] font-medium text-success">{note}</p> : null}
+      {pending !== null ? (
+        <ConfirmDialog
+          open
+          title={r.raiseConfirmTitle}
+          body={fmt(r.raiseConfirmBody, { from: ringgit(tipSen), to: ringgit(tipSen + pending * 100) })}
+          confirm={busy ? r.working : fmt(r.raiseConfirmOk, { fee: ringgit(tipSen + pending * 100) })}
+          cancel={r.confirm.back}
+          busy={busy}
+          onConfirm={() => raise(pending)}
+          onClose={() => !busy && setPending(null)}
+        />
+      ) : null}
     </div>
   );
 }

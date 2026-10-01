@@ -86,7 +86,11 @@ export function createApp() {
     if (!m.on || c.get("user")?.isAdmin) return next();
     const p = c.req.path.slice(4); // strip "/api"
     const open =
-      p === "/health" || p === "/status" || p === "/live" || p.startsWith("/auth/") || (p === "/me" && c.req.method === "GET");
+      p === "/health" ||
+      p === "/status" ||
+      p === "/live" ||
+      p.startsWith("/auth/") ||
+      (p === "/me" && c.req.method === "GET");
     if (open) return next();
     return c.json({ error: "maintenance", message: m.message, until: m.until }, 503);
   });

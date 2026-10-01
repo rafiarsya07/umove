@@ -93,16 +93,32 @@ export async function getMe(userId: string) {
     from users where id = ${userId}
   `;
   if (!u) return null;
-  return { ...u, roles: await rolesOf(userId), stats: await statsOf(userId) };
+  return { ...u, busy: await inActiveOrder(userId), roles: await rolesOf(userId), stats: await statsOf(userId) };
 }
 
 export type ProfileUpdate = { name: string; username: string; whatsapp: string | null; college: string; bio: string };
 
 export const USERNAME_COOLDOWN_DAYS = 30;
 
+/**
+ * Matched with someone right now (as requester or runner, taken but not yet
+ * delivered). The other person is reaching this user by name and WhatsApp,
+ * so those stay put until the order is finished.
+ */
+export async function inActiveOrder(userId: string): Promise<boolean> {
+  const [r] = await sql<{ busy: boolean }[]>`
+    select exists (
+      select 1 from orders
+      where status in ('accepted', 'on_the_way') and (customer_id = ${userId} or runner_id = ${userId})
+    ) as busy
+  `;
+  return r.busy;
+}
+
 export type UpdateResult =
   | { ok: true }
   | { ok: false; error: "username_taken" | "phone_taken" | "name_locked" }
+  | { ok: false; error: "busy_locked"; fields: ("name" | "username" | "whatsapp")[] }
   | { ok: false; error: "username_cooldown"; until: Date };
 
 /**
@@ -110,16 +126,25 @@ export type UpdateResult =
  *   - a WhatsApp number belongs to one account only;
  *   - the username can change once every 30 days (the first change is free);
  *   - an approved runner's name is locked (requesters know them by name and
- *     face); an admin changes it on request.
+ *     face); an admin changes it on request;
+ *   - during a matched order, name, username and WhatsApp can't change at
+ *     all, so the other person can still find who they're dealing with.
  */
 export async function updateProfile(userId: string, p: ProfileUpdate): Promise<UpdateResult> {
-  const [cur] = await sql<{ name: string; username: string; changedAt: Date | null; runner: boolean }[]>`
-    select name, username::text as username, username_changed_at as "changedAt",
+  const [cur] = await sql<
+    { name: string; username: string; phone: string | null; changedAt: Date | null; runner: boolean }[]
+  >`
+    select name, username::text as username, phone_wa as phone, username_changed_at as "changedAt",
            exists (select 1 from user_roles r where r.user_id = u.id and r.role = 'runner' and r.status = 'active') as runner
     from users u where id = ${userId}
   `;
   if (!cur) throw new Error("profile update matched no row");
   const usernameChanged = cur.username.toLowerCase() !== p.username.toLowerCase();
+  const changed: ("name" | "username" | "whatsapp")[] = [];
+  if (cur.name !== p.name) changed.push("name");
+  if (cur.username !== p.username) changed.push("username");
+  if ((cur.phone ?? null) !== (p.whatsapp ?? null)) changed.push("whatsapp");
+  if (changed.length && (await inActiveOrder(userId))) return { ok: false, error: "busy_locked", fields: changed };
   if (usernameChanged && cur.changedAt) {
     const until = new Date(cur.changedAt.getTime() + USERNAME_COOLDOWN_DAYS * 86_400_000);
     if (until > new Date()) return { ok: false, error: "username_cooldown", until };

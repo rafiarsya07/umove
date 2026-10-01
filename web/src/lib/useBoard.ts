@@ -12,10 +12,12 @@ export function isOffline(e: unknown) {
 }
 
 const RETRY_MS = 8000;
+/** Last board seen in this tab: shown at once when you come back, then refreshed. */
+let lastBoard: BoardItem[] | null = null;
 
 /** The open requests, kept fresh by the live stream; retries while the server is unreachable. */
 export function useBoard() {
-  const [items, setItems] = useState<BoardItem[] | null>(null);
+  const [items, setItems] = useState<BoardItem[] | null>(lastBoard);
   const [error, setError] = useState<BoardError>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -23,6 +25,7 @@ export function useBoard() {
     clearTimeout(timer.current);
     api<BoardItem[]>("/requests")
       .then((rows) => {
+        lastBoard = rows;
         setItems(rows);
         setError(null);
       })

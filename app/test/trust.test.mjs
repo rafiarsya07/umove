@@ -84,6 +84,23 @@ check("others cannot change the fee", (await call(`/requests/${c2}/tip`, P, "POS
 await call(`/requests/${c2}/accept`, R, "POST");
 check("cannot raise once taken", (await call(`/requests/${c2}/tip`, Q, "POST", { tip: 5 })).body?.error === "gone");
 
+// --- name, username and WhatsApp hold still while matched in an order
+check("me says busy during an order", (await call("/me", Q)).body.busy === true && (await call("/me", P)).body.busy === false);
+r = await patch(Q, { name: "Qila", username: "qila", whatsapp: "+62 812 3456 7890" });
+check("requester cannot change number mid-order", r.status === 409 && r.body.error === "busy_locked" && r.body.fields.join() === "whatsapp", JSON.stringify(r.body));
+r = await patch(Q, { name: "Qila B", username: "qila", whatsapp: "0123456789" });
+check("requester cannot rename mid-order", r.status === 409 && r.body.error === "busy_locked" && r.body.fields.join() === "name");
+check("same number in another format still saves", (await patch(Q, { name: "Qila", username: "qila", whatsapp: "012-345 6789", bio: "busy" })).status === 200);
+r = await patch(R, { name: "Rudi Hartono", username: "rudi_x", whatsapp: "0133333333", bio: "KK12" });
+check("runner cannot change username mid-order", r.status === 409 && r.body.error === "busy_locked" && r.body.fields.join() === "username");
+check("runner can still edit bio mid-order", (await patch(R, { name: "Rudi Hartono", username: "rudi", whatsapp: "0133333333", bio: "KK12 C" })).status === 200);
+await call(`/requests/${c2}/status`, R, "POST", { status: "on_the_way" });
+await call(`/requests/${c2}/status`, R, "POST", { status: "delivered" });
+await call(`/requests/${code}/status`, S, "POST", { status: "delivered" });
+check("not busy after delivery", (await call("/me", Q)).body.busy === false);
+check("number changes after delivery", (await patch(Q, { name: "Qila", username: "qila", whatsapp: "+62 812 3456 7890" })).status === 200);
+check("stored as E.164", (await call("/me", Q)).body.whatsapp === "+6281234567890");
+
 // --- maintenance reopens by itself at the set time, with a broadcast
 const soon = new Date(Date.now() + 3000).toISOString();
 check("past reopening time refused", (await call("/admin/maintenance", A, "POST", { on: true, message: "x", until: new Date(Date.now() - 60000).toISOString() })).status === 400);

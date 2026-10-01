@@ -9,7 +9,7 @@ export const AUTHOR = "Muhammad Rafi Arsya";
 
 /**
  * Footer: brand and one line, three short link columns, then a bottom bar
- * with the copyright, the author and the independence note.
+ * with the copyright and the author.
  */
 export function Footer() {
   const { t } = useI18n();
@@ -44,6 +44,8 @@ export function Footer() {
         { to: "/faq", label: t.nav.faq },
         { to: "/help", label: t.help.nav },
         { to: FEEDBACK_URL, label: t.nav.feedback, external: true },
+        { to: "/privacy", label: t.nav.privacy },
+        { to: "/terms", label: t.nav.terms },
       ],
     },
   ];
@@ -92,16 +94,11 @@ export function Footer() {
         </div>
 
         <div className="flex flex-col gap-2 border-t border-border pt-6 pb-8 text-[0.8125rem] sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-foreground-secondary">
-            © {year} <span className="font-semibold text-foreground">UMOVE</span> · {f.rights}
-          </p>
-          <p className="flex gap-4 text-foreground-secondary">
-            <Link to="/privacy" className="hover:text-foreground">
-              {t.nav.privacy}
-            </Link>
-            <Link to="/terms" className="hover:text-foreground">
-              {t.nav.terms}
-            </Link>
+          <p className="flex flex-wrap gap-x-3 text-foreground-secondary">
+            <span>
+              © {year} <span className="font-semibold text-foreground">UMOVE</span>
+            </span>
+            <span>{f.rights}</span>
           </p>
           <p className="text-foreground-secondary">
             {f.builtBy} <span className="font-semibold text-foreground">{AUTHOR}</span>

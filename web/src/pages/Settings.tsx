@@ -1,3 +1,4 @@
+import { PhoneInput } from "../components/PhoneInput";
 import { useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Container } from "../components/Container";
@@ -133,6 +134,9 @@ function ProfileForm({ user }: { user: Me }) {
   const { t, locale } = useI18n();
   // Approved runners are known by name and face, so only an admin renames them.
   const nameLocked = user.roles.runner === "active";
+  // In the middle of an order: the other person reaches you by these, so they hold still.
+  const locked = Boolean(user.busy);
+  const lockedClass = "mt-1.5 cursor-not-allowed bg-muted text-foreground-secondary";
   const usernameWait =
     user.usernameChangeableAt && new Date(user.usernameChangeableAt) > new Date() ? user.usernameChangeableAt : null;
   const { setUser } = useSession();
@@ -174,6 +178,8 @@ function ProfileForm({ user }: { user: Me }) {
       if (err instanceof ApiError && err.code === "username_taken") setErrors({ username: s.errUsernameTaken });
       else if (err instanceof ApiError && err.code === "phone_taken") setErrors({ whatsapp: s.errPhoneTaken });
       else if (err instanceof ApiError && err.code === "name_locked") setErrors({ name: s.errNameLocked });
+      else if (err instanceof ApiError && err.code === "busy_locked")
+        setErrors(Object.fromEntries(err.fields.map((f) => [f, s.errBusyLocked])));
       else if (err instanceof ApiError && err.code === "username_cooldown")
         setErrors({ username: fmt(s.errUsernameCooldown, { time: formatWhen(err.until ?? "", locale) }) });
       else if (err instanceof ApiError && err.fields.length > 0)
@@ -184,6 +190,11 @@ function ProfileForm({ user }: { user: Me }) {
 
   return (
     <form onSubmit={submit} className="space-y-5" noValidate>
+      {locked ? (
+        <p className="rounded-(--radius-control) border border-primary-border bg-primary-soft px-3.5 py-2.5 text-[0.8125rem] leading-snug text-foreground-secondary">
+          {s.busyLockedHint}
+        </p>
+      ) : null}
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="block">
           <span className="t-label">{s.name}</span>
@@ -193,10 +204,14 @@ function ProfileForm({ user }: { user: Me }) {
             onChange={set("name")}
             maxLength={40}
             autoComplete="name"
-            readOnly={nameLocked}
+            readOnly={nameLocked || locked}
             aria-invalid={Boolean(errors.name)}
           />
-          {errors.name ? <FieldError text={errors.name} /> : nameLocked ? <Hint text={s.nameLockedHint} /> : null}
+          {errors.name ? (
+            <FieldError text={errors.name} />
+          ) : locked ? null : nameLocked ? (
+            <Hint text={s.nameLockedHint} />
+          ) : null}
         </label>
         <label className="block">
           <span className="t-label">{s.username}</span>
@@ -205,7 +220,8 @@ function ProfileForm({ user }: { user: Me }) {
               @
             </span>
             <input
-              className={`${field} pl-7`}
+              className={`${field} pl-7 read-only:cursor-not-allowed read-only:bg-muted read-only:text-foreground-secondary`}
+              readOnly={locked}
               value={form.username}
               onChange={set("username")}
               maxLength={24}
@@ -216,7 +232,7 @@ function ProfileForm({ user }: { user: Me }) {
           </span>
           {errors.username ? (
             <FieldError text={errors.username} />
-          ) : (
+          ) : locked ? null : (
             <Hint
               text={usernameWait ? fmt(s.usernameWaitHint, { time: formatWhen(usernameWait, locale) }) : s.usernameHint}
             />
@@ -227,16 +243,16 @@ function ProfileForm({ user }: { user: Me }) {
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="block">
           <span className="t-label">{s.whatsapp}</span>
-          <input
-            className={`${field} mt-1.5`}
-            value={form.whatsapp}
-            onChange={set("whatsapp")}
-            placeholder={s.whatsappPlaceholder}
-            inputMode="tel"
-            autoComplete="tel"
-            maxLength={20}
-            aria-invalid={Boolean(errors.whatsapp)}
-          />
+          {locked ? (
+            <input className={`${field} ${lockedClass}`} value={form.whatsapp} readOnly />
+          ) : (
+            <PhoneInput
+              className={field}
+              value={form.whatsapp}
+              onChange={(v) => set("whatsapp")({ target: { value: v } })}
+              invalid={Boolean(errors.whatsapp)}
+            />
+          )}
           {errors.whatsapp ? <FieldError text={errors.whatsapp} /> : <Hint text={s.whatsappHint} />}
         </label>
         <label className="block">

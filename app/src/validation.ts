@@ -105,13 +105,16 @@ export const driverApplicationSchema = z
   .strict()
   .superRefine((d, ctx) => {
     // Licence must still be valid for at least 30 days, road tax must be current.
-    if (!(daysFromToday(d.licenseExpiry) >= 30)) ctx.addIssue({ code: "custom", path: ["licenseExpiry"], message: "expiring" });
-    if (!(daysFromToday(d.roadTaxExpiry) >= 0)) ctx.addIssue({ code: "custom", path: ["roadTaxExpiry"], message: "expired" });
+    if (!(daysFromToday(d.licenseExpiry) >= 30))
+      ctx.addIssue({ code: "custom", path: ["licenseExpiry"], message: "expiring" });
+    if (!(daysFromToday(d.roadTaxExpiry) >= 0))
+      ctx.addIssue({ code: "custom", path: ["roadTaxExpiry"], message: "expired" });
     const bike = d.vehicleType === "motorcycle";
     if (bike !== (d.licenseClass === "B" || d.licenseClass === "B2")) {
       ctx.addIssue({ code: "custom", path: ["licenseClass"], message: "does not match vehicle" });
     }
-    if (bike && d.seats !== 1) ctx.addIssue({ code: "custom", path: ["seats"], message: "a motorcycle takes one passenger" });
+    if (bike && d.seats !== 1)
+      ctx.addIssue({ code: "custom", path: ["seats"], message: "a motorcycle takes one passenger" });
   });
 
 export const decisionSchema = z

@@ -73,9 +73,7 @@ export async function unreadForMember(userId: string): Promise<number> {
   return r.n;
 }
 
-export type StartResult =
-  | { ok: true; thread: Thread }
-  | { ok: false; error: "already_open" | "too_many" };
+export type StartResult = { ok: true; thread: Thread } | { ok: false; error: "already_open" | "too_many" };
 
 /** Send a new help request. It waits for an admin to review it. */
 export async function startThread(
@@ -222,7 +220,8 @@ export async function adminThread(threadId: number) {
   const messages = await messagesOf(threadId);
   let markedRead = 0;
   if (row.status === "open") {
-    const r = await sql`update support_messages set read_at = now() where thread_id = ${threadId} and not from_admin and read_at is null`;
+    const r =
+      await sql`update support_messages set read_at = now() where thread_id = ${threadId} and not from_admin and read_at is null`;
     markedRead = r.count;
   }
   const { userId, name, username, email, college, joined, ...thread } = row;

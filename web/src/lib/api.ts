@@ -21,6 +21,27 @@ export async function api<T>(
   path: string,
   init: { method?: string; body?: unknown; form?: FormData } = {},
 ): Promise<T> {
+  // Reads are safe to repeat: a blip (phone switching networks, the server
+  // restarting during an update) is retried quietly before anyone sees an
+  // error. Writes are never repeated, so nothing is ever posted twice.
+  const method = init.method ?? "GET";
+  if (method !== "GET") return once<T>(path, init);
+  for (const wait of [400, 1500]) {
+    try {
+      return await once<T>(path, init);
+    } catch (err) {
+      const transient =
+        err instanceof ApiError &&
+        (err.code === "network" ||
+          ((err.status === 502 || err.status === 503 || err.status === 504) && err.code !== "maintenance"));
+      if (!transient) throw err;
+      await new Promise((r) => setTimeout(r, wait));
+    }
+  }
+  return once<T>(path, init);
+}
+
+async function once<T>(path: string, init: { method?: string; body?: unknown; form?: FormData }): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${site.apiBase}${path}`, {

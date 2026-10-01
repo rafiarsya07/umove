@@ -13,7 +13,9 @@
      at the same 6.7:1, so one token serves both.
 
    Motion is restrained on purpose: colour transitions on hover and a 1px
-   press. Nothing floats, reveals or animates on its own.
+   press. The one exception is the order status scene (waiting, runner
+   found, on the way, delivered), which is pure CSS running on the phone,
+   costs the server nothing, and stops for people who prefer less motion.
    =========================================================================== */
 
 :root {
@@ -173,7 +175,163 @@
   transform: translateY(1px);
 }
 
+/* ---- Order status scene --------------------------------------------- */
+@keyframes um-ping {
+  0% {
+    transform: scale(0.35);
+    opacity: 0.55;
+  }
+  80%,
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+@keyframes um-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes um-burst {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+@keyframes um-ride {
+  0% {
+    left: 0%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+@keyframes um-bob {
+  0%,
+  100% {
+    transform: translate(-50%, -50%);
+  }
+  50% {
+    transform: translate(-50%, calc(-50% - 2px));
+  }
+}
+@keyframes um-hop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+@keyframes um-dash {
+  to {
+    background-position: 16px 0;
+  }
+}
+@keyframes um-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes um-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.2;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+@keyframes um-fly {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy)) scale(0.4);
+    opacity: 0;
+  }
+}
+.um-ping {
+  animation: um-ping 2.4s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+}
+.um-pop {
+  animation: um-pop 420ms cubic-bezier(0.2, 0.8, 0.3, 1.2) both;
+}
+.um-burst {
+  animation: um-burst 900ms ease-out both;
+}
+.um-ride {
+  animation: um-ride 3.2s ease-in-out infinite alternate;
+}
+.um-bob {
+  animation: um-bob 600ms ease-in-out infinite;
+}
+.um-hop {
+  animation: um-hop 600ms ease-in-out infinite;
+}
+.um-dash {
+  background-image: linear-gradient(90deg, var(--primary-border) 50%, transparent 50%);
+  background-size: 16px 2px;
+  animation: um-dash 700ms linear infinite;
+}
+.um-draw {
+  stroke-dasharray: 30;
+  stroke-dashoffset: 30;
+  animation: um-draw 500ms 200ms ease-out forwards;
+}
+.um-dot {
+  animation: um-dot 1.4s infinite;
+}
+.um-fly {
+  animation: um-fly 800ms 150ms ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .um-ping,
+  .um-burst,
+  .um-fly,
+  .um-dash,
+  .um-bob,
+  .um-hop {
+    animation: none;
+    opacity: 1;
+  }
+  .um-ping,
+  .um-burst,
+  .um-fly {
+    display: none;
+  }
+  .um-ride {
+    animation: none;
+    left: 50%;
+  }
+  .um-pop {
+    animation: none;
+  }
+  .um-draw {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .um-dot {
+    animation: none;
+    opacity: 1;
+  }
   *,
   *::before,
   *::after {

@@ -36,7 +36,11 @@ const schema = z
      *   SMTP_URL=smtps://you%40gmail.com:app-password@smtp.gmail.com:465
      * Used to tell admins about new applications and applicants about the decision.
      */
-    SMTP_URL: z.string().regex(/^smtps?:\/\//, "SMTP_URL must start with smtp:// or smtps://").optional().or(z.literal("")),
+    SMTP_URL: z
+      .string()
+      .regex(/^smtps?:\/\//, "SMTP_URL must start with smtp:// or smtps://")
+      .optional()
+      .or(z.literal("")),
     MAIL_FROM: z.string().max(120).optional().or(z.literal("")),
     /** Test-only overrides for the Google endpoints (ignored in production). */
     GOOGLE_AUTH_URL: z.string().url().optional(),

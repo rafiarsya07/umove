@@ -217,7 +217,11 @@ export async function sendAwayRunner(code: string, customerId: string): Promise<
  * The requester raises the delivery fee while nobody has taken the request
  * (it can only go up, so runners never see a fee drop under them).
  */
-export async function raiseTip(code: string, customerId: string, tipSen: number): Promise<"ok" | "not_higher" | "gone"> {
+export async function raiseTip(
+  code: string,
+  customerId: string,
+  tipSen: number,
+): Promise<"ok" | "not_higher" | "gone"> {
   const [o] = await sql<{ tipSen: number }[]>`
     select tip_sen as "tipSen" from orders where code = ${code} and customer_id = ${customerId} and status = 'open'
   `;

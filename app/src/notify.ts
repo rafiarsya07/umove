@@ -142,7 +142,9 @@ export function startUnclaimedWatch() {
 /** A test message to one admin (Admin → Telegram alerts → Send test). */
 export async function sendTest(userId: string): Promise<boolean> {
   if (!bot) return false;
-  const [r] = await sql<{ chat: string | null }[]>`select telegram_chat_id::text as chat from users where id = ${userId}`;
+  const [r] = await sql<
+    { chat: string | null }[]
+  >`select telegram_chat_id::text as chat from users where id = ${userId}`;
   if (!r?.chat) return false;
   try {
     await bot.api.sendMessage(Number(r.chat), "Tes dari UMOVE: notifikasi admin sudah berjalan.");

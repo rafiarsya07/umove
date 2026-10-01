@@ -221,8 +221,7 @@ export const id: Dict = {
     usernameHint: "3 sampai 24 huruf, angka, atau garis bawah.",
     whatsapp: "Nomor WhatsApp",
     whatsappPlaceholder: "012 345 6789 atau +62 812 3456 7890",
-    whatsappHint:
-      "Nomor Malaysia boleh diawali 01. Nomor lain pakai kode negara. Hanya dibagikan ke orang yang cocok denganmu.",
+    whatsappHint: "Pilih kode negara, lalu ketik nomormu. Hanya dibagikan ke orang yang cocok denganmu.",
     welcomeTitle: "Selamat datang di UMOVE!",
     welcomeBody:
       "Cek nama dan username-mu, lalu tambahkan nomor WhatsApp supaya runner dan pelanggan bisa menghubungimu.",
@@ -247,6 +246,11 @@ export const id: Dict = {
       "Nomor WhatsApp ini sudah dipakai akun UMOVE lain. Pakai nomormu sendiri, atau hubungi admin lewat Bantuan kalau itu memang nomormu.",
     errNameLocked: "Runner yang sudah disetujui tidak bisa mengganti nama. Minta ke admin lewat Bantuan.",
     errUsernameCooldown: "Kamu bisa mengganti username lagi mulai {time}.",
+    countryCode: "Kode negara",
+    countryOther: "Lainnya",
+    busyLockedHint:
+      "Nama, username, dan nomor WhatsApp dikunci selama ada pesanan berjalan, supaya orang yang terhubung denganmu tetap bisa menghubungimu.",
+    errBusyLocked: "Bisa diubah setelah pesananmu sekarang selesai atau dibatalkan.",
     nameLockedHint: "Pemesan mengenalmu dengan nama ini. Minta ke admin lewat Bantuan untuk menggantinya.",
     usernameWaitHint: "Bisa diganti lagi mulai {time}.",
     photo: "Foto runner",
@@ -292,6 +296,25 @@ export const id: Dict = {
     runnerPending: "Pendaftaranmu sedang ditinjau",
     runnerActive: "Kamu runner terverifikasi",
     manage: "Atur",
+    active: "Sedang berjalan",
+    viewProfile: "Profilmu",
+    seeAll: "Lihat semua",
+  },
+  scene: {
+    open: {
+      title: "Mencari runner",
+      body: "Permintaanmu sudah di papan. Halaman ini update sendiri saat ada yang mengambil.",
+    },
+    openOther: { title: "Menunggu runner", body: "Belum ada yang mengambil permintaan ini." },
+    found: { title: "Runner ditemukan", body: "Chat di WhatsApp dan sepakati harga sebelum runner membeli." },
+    foundRunner: {
+      title: "Kamu mengambil permintaan ini",
+      body: "Kabari pemesan, lalu tekan Aku sedang di jalan saat berangkat.",
+    },
+    way: { title: "Di jalan", body: "Runner sedang mengantar pesananmu." },
+    wayRunner: { title: "Kamu sedang di jalan", body: "Tekan Tandai sudah sampai setelah barang diserahkan." },
+    done: { title: "Sampai", body: "Bayar runner kalau belum, lalu beri rating." },
+    doneRunner: { title: "Sampai", body: "Mantap. Beri rating untuk pemesan." },
   },
   profile: {
     deliversBy: "Mengantar: {way}",
@@ -399,6 +422,9 @@ export const id: Dict = {
     raiseTitle: "Belum ada yang ambil?",
     raiseHint:
       "Upah antar yang lebih tinggi lebih cepat dilirik runner. Upah hanya bisa dinaikkan, tidak bisa diturunkan.",
+    raiseConfirmTitle: "Naikkan upah antar?",
+    raiseConfirmBody: "Dari {from} jadi {to}. Setelah itu tidak bisa diturunkan lagi.",
+    raiseConfirmOk: "Ya, jadi {fee}",
     raised: "Upah antar sekarang {fee}.",
     replaceRunner: "Cari runner lain",
     replaceHint: "Kurang nyaman? Kamu bisa minta runner lain selama dia belum berangkat.",
@@ -579,6 +605,9 @@ export const id: Dict = {
     adminSignIn: "Masuk admin",
   },
   common: {
+    crashTitle: "Halaman ini bermasalah",
+    crashBody: "Biasanya beres setelah dimuat ulang. Permintaan dan pesanmu tetap aman.",
+    reload: "Muat ulang",
     loading: "Memuat…",
     retry: "Coba lagi",
     error: "Terjadi kesalahan.",

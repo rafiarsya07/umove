@@ -41,6 +41,9 @@ me.patch("/", async (c) => {
   if (whatsapp === "invalid") return c.json({ error: "invalid", fields: ["whatsapp"] }, 400);
 
   const result = await updateProfile(user.id, { ...parsed.data, whatsapp });
+  if (!result.ok && result.error === "busy_locked") {
+    return c.json({ error: result.error, fields: result.fields, until: null }, 409);
+  }
   if (!result.ok) {
     const field = result.error === "phone_taken" ? "whatsapp" : result.error === "name_locked" ? "name" : "username";
     return c.json(
@@ -117,7 +120,10 @@ me.post("/roles/:role", async (c) => {
     return c.json({ error: result.error, until: result.until ?? null }, status);
   }
   mailNewApplication(role.data, result.name, result.username);
-  notifyAdmins(`Pendaftar ${role.data} baru: ${result.name} (@${result.username}). Tinjau dalam 24 jam.`, "/admin/applications");
+  notifyAdmins(
+    `Pendaftar ${role.data} baru: ${result.name} (@${result.username}). Tinjau dalam 24 jam.`,
+    "/admin/applications",
+  );
   return c.json({ ok: true, id: result.id });
 });
 
@@ -183,7 +189,10 @@ me.post("/support/threads", async (c) => {
   const me = await getMe(user.id);
   if (me) {
     mailSupportToAdmins(me.name, me.username, topic, body);
-    notifyAdmins(`Help chat baru dari ${me.name} (@${me.username}), topik ${topic}:\n${short(body, 140)}`, "/admin/support");
+    notifyAdmins(
+      `Help chat baru dari ${me.name} (@${me.username}), topik ${topic}:\n${short(body, 140)}`,
+      "/admin/support",
+    );
   }
   return c.json(r.thread, 201);
 });
@@ -205,6 +214,11 @@ me.post("/support", async (c) => {
   if (!r.ok) return c.json({ error: r.error }, r.error === "too_fast" ? 429 : 409);
   announceSupport(user.id);
   // One alert per member per 10 minutes, so a lively chat doesn't flood the admin's phone.
-  notifyAdminsThrottled(`chat:${user.id}`, 10 * 60_000, `Pesan baru di help chat: ${short(parsed.data.body, 140)}`, "/admin/support?tab=open");
+  notifyAdminsThrottled(
+    `chat:${user.id}`,
+    10 * 60_000,
+    `Pesan baru di help chat: ${short(parsed.data.body, 140)}`,
+    "/admin/support?tab=open",
+  );
   return c.json(r.message, 201);
 });

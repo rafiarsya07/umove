@@ -19,6 +19,8 @@ export type Me = {
   whatsapp: string | null;
   /** Set while the 30-day wait after a username change runs. */
   usernameChangeableAt?: string | null;
+  /** Matched in an order right now: name, username and WhatsApp are locked until it's done. */
+  busy?: boolean;
   joined: string;
   isAdmin: boolean;
   roles: Roles;
