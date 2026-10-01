@@ -50,6 +50,11 @@ export function announceSupport(userId: string) {
   for (const l of listeners) if (l.isAdmin || l.userId === userId) l.notify("support");
 }
 
+/** Tell only the member (e.g. their messages were read); admins are not notified. */
+export function announceSupportTo(userId: string) {
+  for (const l of listeners) if (l.userId === userId && !l.isAdmin) l.notify("support");
+}
+
 export function liveHandler(c: Context<AppEnv>) {
   const user = c.get("user");
   const ip = clientIp(c);

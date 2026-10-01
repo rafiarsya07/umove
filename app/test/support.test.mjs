@@ -97,5 +97,12 @@ const tn = (await call("/admin/support", A)).body.find((x) => x.email === "n@x.c
 await call(`/admin/support/${tn}/decision`, A, "POST", { decision: "approve" });
 for (let i = 0; i < 19; i++) await call("/me/support", N, "POST", { body: `msg ${i}` });
 check("flood limited", (await call("/me/support", N, "POST", { body: "one more" })).status === 429);
+// Opening a chat must not wake the admin's own page (that looped: open → event → refetch → event…).
+{
+  const la = await liveEvents(A, 1200);
+  await call(`/admin/support/${tn}`, A); await call(`/admin/support/${tn}`, A);
+  const ev = await la.stop();
+  check("admin reading a chat sends admins no event", !ev.includes("data: support"), ev);
+}
 check("CSRF blocked", (await fetch(`${BASE}/api/me/support/threads`, { method: "POST", headers: { cookie: N, origin: "https://evil.example", "content-type": "application/json" }, body: JSON.stringify({ topic: "other", body: "xxxxxxxxxxxx" }) })).status === 403);
 console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { config } from "../../config.js";
 import { announceChange } from "../../live.js";
 import { adminCancelRequest, adminStats, auditLog, listRequests, listUsers, setUserStatus } from "../../repo/admin.js";
-import { announceSite, announceSupport } from "../../live.js";
+import { announceSite, announceSupport, announceSupportTo } from "../../live.js";
 import { allPlaces, savePlace } from "../../repo/places.js";
 import { adminRename } from "../../repo/users.js";
 import { adminPhoto, decidePhoto, pendingPhotos } from "../../repo/photos.js";
@@ -123,8 +123,12 @@ admin.get("/support/:id", async (c) => {
   if (!id.success) return c.json({ error: "not_found" }, 404);
   const t = await adminThread(id.data);
   if (!t) return c.json({ error: "not_found" }, 404);
-  announceSupport(t.member.userId);
-  return c.json(t);
+  // Only when something was actually marked read, and only to the member:
+  // telling every admin would make their open chat refetch, mark nothing,
+  // announce again… an endless loop of requests that trips the rate limit.
+  const { markedRead, ...body } = t;
+  if (markedRead > 0) announceSupportTo(t.member.userId);
+  return c.json(body);
 });
 
 admin.post("/support/:id/decision", async (c) => {

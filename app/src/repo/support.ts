@@ -220,11 +220,13 @@ export async function adminThread(threadId: number) {
   `;
   if (!row) return null;
   const messages = await messagesOf(threadId);
+  let markedRead = 0;
   if (row.status === "open") {
-    await sql`update support_messages set read_at = now() where thread_id = ${threadId} and not from_admin and read_at is null`;
+    const r = await sql`update support_messages set read_at = now() where thread_id = ${threadId} and not from_admin and read_at is null`;
+    markedRead = r.count;
   }
   const { userId, name, username, email, college, joined, ...thread } = row;
-  return { thread, member: { userId, name, username, email, college, joined }, messages };
+  return { thread, member: { userId, name, username, email, college, joined }, messages, markedRead };
 }
 
 export type DecideResult = { ok: true; userId: string; email: string; name: string } | { ok: false };
