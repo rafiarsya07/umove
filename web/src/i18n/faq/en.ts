@@ -82,9 +82,14 @@ export const faq: FaqCategory[] = [
         a: "You can have up to 3 requests in progress and post up to 20 a day. This keeps the board fair for everyone.",
       },
       {
+        id: "held",
+        q: "Why is my request waiting for a check?",
+        a: "The board is public, so requests that look like they mention banned items, rude words, links or phone numbers wait for a quick look from UMOVE first. If it's fine, it goes on the board, usually within minutes. Share your number on WhatsApp after a runner takes it, not in the request.",
+      },
+      {
         id: "nobody",
         q: "What if nobody takes my request?",
-        a: "It stays on the board until you cancel it. If it's waiting a long time, a slightly higher fee or a clearer pick-up spot usually helps.",
+        a: "If nobody takes it within 3 hours, it closes by itself so the board stays fresh. While it waits, a slightly higher fee or a clearer pick-up spot usually helps, and you can post it again any time.",
       },
     ],
   },
@@ -159,9 +164,14 @@ export const faq: FaqCategory[] = [
         a: "Yes, before you tap I'm on my way. Let the customer know on WhatsApp. After you set off, finish the delivery or sort it out with the customer.",
       },
       {
+        id: "no-show",
+        q: "What if the requester doesn't show up or won't pay?",
+        a: "Always confirm on WhatsApp before you buy anything. If they still stop replying or don't take the order, wait at least 5 minutes after taking it, then tap Requester didn't show up on the request. It's cancelled and counted against them. If two different runners report the same person, they can't post until an admin checks.",
+      },
+      {
         id: "runner-rules",
         q: "What are the rules for runners?",
-        a: "Meet in public places, confirm prices before buying, keep receipts, follow traffic rules and be polite. Repeated no-shows or complaints can get your runner role removed.",
+        a: "Meet in public places, confirm prices before buying, keep receipts, follow traffic rules and be polite. Tap I'm on my way before you buy anything. If three different requesters have to swap you out or report that you never came, your runner role is paused until an admin checks.",
       },
     ],
   },

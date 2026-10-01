@@ -101,6 +101,45 @@ check("not busy after delivery", (await call("/me", Q)).body.busy === false);
 check("number changes after delivery", (await patch(Q, { name: "Qila", username: "qila", whatsapp: "+62 812 3456 7890" })).status === 200);
 check("stored as E.164", (await call("/me", Q)).body.whatsapp === "+6281234567890");
 
+// --- no-shows: two different runners' reports stop the requester posting
+const post = (sid, details) => call("/requests", sid, "POST", { details, pickup: "Kafe KK12", dropoff: "KK8 lobby", tip: 2 });
+const backdate = (code) => db`update orders set accepted_at = now() - interval '6 minutes' where code = ${code}`;
+r = await post(P, "Nasi goreng");
+let ns = r.body.code;
+await call(`/requests/${ns}/accept`, R, "POST");
+check("no-show too soon after taking it", (await call(`/requests/${ns}/no-show`, R, "POST")).body?.error === "too_soon");
+check("detail hides the button too soon", (await call(`/requests/${ns}`, R)).body.canReportNoShow === false);
+await backdate(ns);
+check("detail offers the button after 5 minutes", (await call(`/requests/${ns}`, R)).body.canReportNoShow === true);
+check("requester cannot report a no-show", (await call(`/requests/${ns}/no-show`, P, "POST")).status === 409);
+check("stranger cannot report a no-show", (await call(`/requests/${ns}/no-show`, S, "POST")).status === 409);
+check("runner reports no-show", (await call(`/requests/${ns}/no-show`, R, "POST")).status === 200);
+d = (await call(`/requests/${ns}`, P)).body;
+check("order cancelled and marked for requester", d.status === "cancelled" && d.noShow === true);
+check("no double report", (await call(`/requests/${ns}/no-show`, R, "POST")).status === 409);
+r = await post(P, "Roti canai");
+check("one report does not block", r.status === 201);
+ns = r.body.code;
+await call(`/requests/${ns}/accept`, R, "POST"); await backdate(ns);
+await call(`/requests/${ns}/no-show`, R, "POST");
+r = await post(P, "Teh tarik");
+check("same runner twice still does not block", r.status === 201);
+ns = r.body.code;
+await call(`/requests/${ns}/accept`, S, "POST"); await backdate(ns);
+await call(`/requests/${ns}/status`, S, "POST", { status: "on_the_way" });
+check("second runner reports while on the way", (await call(`/requests/${ns}/no-show`, S, "POST")).status === 200);
+r = await post(P, "Milo ais");
+check("two runners block posting", r.status === 409 && r.body.error === "blocked", JSON.stringify(r.body));
+const pu = (await call("/admin/users?q=putri", A)).body.find((u) => u.username === "putri2");
+check("admin sees block and count", pu?.postBlocked === true && pu?.noShows === 2, JSON.stringify(pu));
+check("member cannot unblock", (await call(`/admin/users/${pu.id}/unblock`, P, "POST")).status === 403);
+check("admin unblocks", (await call(`/admin/users/${pu.id}/unblock`, A, "POST")).status === 200);
+check("can post again", (await post(P, "Milo ais")).status === 201);
+const pu2 = (await call("/admin/users?q=putri", A)).body.find((u) => u.username === "putri2");
+check("count cleared after unblock", pu2.postBlocked === false && pu2.noShows === 0);
+const audit = JSON.stringify((await call("/admin/audit", A)).body);
+check("no-show audited", audit.includes("order.no_show") && audit.includes("user.post_blocked") && audit.includes("user.post_unblocked"));
+
 // --- maintenance reopens by itself at the set time, with a broadcast
 const soon = new Date(Date.now() + 3000).toISOString();
 check("past reopening time refused", (await call("/admin/maintenance", A, "POST", { on: true, message: "x", until: new Date(Date.now() - 60000).toISOString() })).status === 400);

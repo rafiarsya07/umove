@@ -34,6 +34,18 @@ export type RequestDetail = BoardItem & {
   /** This runner was sent away by the requester and cannot take it again. */
   skipped: boolean;
   canRate: boolean;
+  /** The runner reported that the requester didn't turn up or pay (only for those two). */
+  noShow: boolean;
+  /** This runner may report a no-show now. */
+  canReportNoShow: boolean;
+  /** Waiting for an admin check before it appears on the board (only the requester sees this). */
+  held: boolean;
+  /** Closed by itself because nobody took it in time. */
+  expired: boolean;
+  /** The requester reported that the runner never came. */
+  runnerMissing: boolean;
+  /** The requester may report that the runner never came. */
+  canReportRunner: boolean;
   /** The other side's WhatsApp number, only after a match. */
   contact: string | null;
 };

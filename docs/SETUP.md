@@ -80,18 +80,13 @@ lalu menyalakan semuanya. Email admin default: `rafiarsya.work@gmail.com` (tekan
 
 Login pakai email admin → langsung masuk **panel admin** (`/admin`): ringkasan, persetujuan Runner & Driver, pengguna (suspend/pulihkan), semua permintaan (batalkan yang melanggar), dan audit log. Akun lain masuk ke dashboard pengguna biasa.
 
-Update otomatis (API ikut update setiap kali kamu push):
+Otomatisasi (update, backup, perawatan, nyala lagi setelah mati listrik), sekali saja:
 
 ```bash
-crontab -e
+bash scripts/setup-automation.sh
 ```
 
-Tambahkan (ganti `USER`):
-
-```
-*/5 * * * * cd /home/USER/umove && bash scripts/auto-update.sh >> backups/auto-update.log 2>&1
-0 4 * * * cd /home/USER/umove && bash scripts/backup.sh >> backups/backup.log 2>&1
-```
+Lihat bagian **Server merawat dirinya sendiri** di bawah.
 
 ### Pendaftaran Runner & Driver
 
@@ -188,6 +183,41 @@ Tabel untuk fitur ini ada di `db/migrations/006-broadcasts-maintenance.sql`, dij
 - Hanya panggilan `/api/*` yang lewat Worker. Paket gratis Workers memberi 100.000 panggilan per hari,
   jauh di atas kebutuhan kampus. Kalau suatu saat terlewati, paket Workers Paid ($5/bulan) memberi 10 juta.
 - Database dan semua data tetap di mini PC kamu.
+
+## Server merawat dirinya sendiri
+
+Dipasang oleh `bash scripts/setup-automation.sh` (sekali, aman diulang):
+
+| Kapan | Apa | Script |
+|---|---|---|
+| Tiap 5 menit | Ambil kode baru dari GitHub dan update API | `auto-update.sh` |
+| Tiap malam 03:30 | Backup database, dicek utuh, simpan 14 hari + 8 minggu. Salinan **terenkripsi** dikirim ke Telegram admin | `backup.sh` |
+| Minggu 04:30 | **Tes pulihkan** backup terbaru ke database percobaan, lapor hasilnya ke Telegram | `backup-check.sh` |
+| Minggu 05:00 | VACUUM ANALYZE database, hapus image Docker lama, rapikan log, laporan mingguan + peringatan disk penuh | `maintenance.sh` |
+| Setiap menyala | Tunggu web sehat lalu kabari Telegram (atau kabari kalau gagal) | `on-boot.sh` |
+| Tiap hari | Update keamanan Ubuntu otomatis; kalau butuh restart, reboot sendiri jam 04:15 | unattended-upgrades |
+
+**BACKUP_PASSPHRASE** (di `.env`) membuka backup yang dikirim ke Telegram. Simpan di password manager. Tanpa itu, backup di Telegram tidak bisa dibuka (dan orang lain juga tidak bisa membacanya).
+
+**Pulihkan backup** (kalau data rusak atau hilang):
+
+```bash
+bash scripts/restore.sh backups/umove-20261001-0330.sql.gz
+# atau file .enc dari Telegram (salin dulu ke mini PC):
+bash scripts/restore.sh ~/umove-20261001-0330.sql.gz.enc
+```
+
+Keadaan sekarang dibackup dulu, jadi restore bisa dibatalkan dengan restore file itu lagi.
+
+**Mini PC pindah atau rusak total:** pasang Ubuntu + Docker, `git clone`, salin `.env` lama (simpan juga salinan `.env` di password manager), `bash scripts/install.sh`, lalu `bash scripts/restore.sh <backup.enc>`.
+
+**Nyala sendiri setelah mati listrik** (hanya bisa dari BIOS, sekali saja):
+1. Restart mini PC, tekan **Del** atau **F2** (kadang F7/F10/Esc) berulang kali saat logo muncul.
+2. Cari menu **Power**, **Advanced → Power Management**, atau **Chipset**.
+3. Set **Restore on AC Power Loss** / **AC Power Recovery** / **After Power Failure** = **Power On**.
+4. **Save & Exit** (biasanya F10).
+
+Docker dan semua container (`restart: unless-stopped`) otomatis jalan lagi, lalu `on-boot.sh` mengabari Telegram.
 
 ## Masalah yang sering muncul
 

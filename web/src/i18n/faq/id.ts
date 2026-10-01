@@ -82,9 +82,14 @@ export const faq: FaqCategory[] = [
         a: "Kamu bisa punya maksimal 3 permintaan yang sedang berjalan dan memasang sampai 20 per hari. Supaya papan tetap adil untuk semua.",
       },
       {
+        id: "held",
+        q: "Kenapa permintaanku menunggu pengecekan?",
+        a: "Papan permintaan bisa dilihat publik, jadi permintaan yang tampak menyebut barang terlarang, kata kasar, link, atau nomor telepon dicek dulu sebentar oleh UMOVE. Kalau aman, langsung muncul di papan, biasanya dalam beberapa menit. Bagikan nomormu lewat WhatsApp setelah runner mengambil, bukan di permintaan.",
+      },
+      {
         id: "nobody",
         q: "Bagaimana kalau tidak ada yang mengambil?",
-        a: "Permintaan tetap di papan sampai kamu membatalkannya. Kalau lama menunggu, menaikkan sedikit upah atau memperjelas lokasi ambil biasanya membantu.",
+        a: "Kalau tidak ada yang mengambil dalam 3 jam, permintaan ditutup otomatis supaya papan tetap segar. Selama menunggu, menaikkan sedikit upah atau memperjelas lokasi ambil biasanya membantu, dan kamu bisa memasangnya lagi kapan saja.",
       },
     ],
   },
@@ -156,12 +161,17 @@ export const faq: FaqCategory[] = [
       {
         id: "give-back",
         q: "Bisakah permintaan dikembalikan?",
-        a: "Bisa, sebelum kamu mengetuk Aku berangkat. Kabari pemesan lewat WhatsApp. Setelah berangkat, selesaikan pengantaran atau bicarakan dengan pemesan.",
+        a: "Bisa, sebelum kamu mengetuk Aku sedang di jalan. Kabari pemesan lewat WhatsApp. Setelah berangkat, selesaikan pengantaran atau bicarakan dengan pemesan.",
+      },
+      {
+        id: "no-show",
+        q: "Bagaimana kalau pemesan tidak muncul atau tidak mau bayar?",
+        a: "Selalu konfirmasi di WhatsApp sebelum membeli apa pun. Kalau pemesan tetap tidak membalas atau tidak mengambil pesanannya, tunggu minimal 5 menit setelah kamu mengambil permintaan, lalu ketuk Pemesan tidak muncul di halaman permintaan. Permintaan dibatalkan dan dicatat untuk pemesan. Kalau dua runner berbeda melaporkan orang yang sama, dia tidak bisa memasang permintaan sampai admin mengecek.",
       },
       {
         id: "runner-rules",
         q: "Apa aturan untuk runner?",
-        a: "Bertemu di tempat umum, pastikan harga sebelum membeli, simpan struk, patuhi aturan lalu lintas, dan bersikap sopan. Sering tidak datang atau banyak keluhan bisa membuat peran runner dicabut.",
+        a: "Bertemu di tempat umum, pastikan harga sebelum membeli, simpan struk, patuhi aturan lalu lintas, dan bersikap sopan. Tekan Aku sedang di jalan sebelum membeli apa pun. Kalau tiga pemesan berbeda harus mengganti kamu atau melaporkan kamu tidak datang, peran runner dijeda sampai admin mengecek.",
       },
     ],
   },

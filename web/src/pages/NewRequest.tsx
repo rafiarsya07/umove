@@ -49,15 +49,17 @@ export default function NewRequest() {
     } catch (err) {
       const code = err instanceof ApiError ? err.code : "";
       setError(
-        code === "need_whatsapp"
-          ? r.errNeedWhatsapp
-          : code === "too_many"
-            ? r.errTooMany
-            : code === "daily_limit"
-              ? r.errDaily
-              : code === "invalid"
-                ? r.errFields
-                : r.errGeneric,
+        code === "blocked"
+          ? r.errBlocked
+          : code === "need_whatsapp"
+            ? r.errNeedWhatsapp
+            : code === "too_many"
+              ? r.errTooMany
+              : code === "daily_limit"
+                ? r.errDaily
+                : code === "invalid"
+                  ? r.errFields
+                  : r.errGeneric,
       );
       setBusy(false);
     }

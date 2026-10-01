@@ -8,6 +8,25 @@ import { log } from "./log.js";
 import { startFilePurge } from "./repo/applications.js";
 import { setBot, setBotUsername, startUnclaimedWatch } from "./notify.js";
 import { startMaintenanceWatch } from "./repo/site.js";
+import { expireStale } from "./repo/requests.js";
+import { announceChange } from "./live.js";
+
+/** Every 5 minutes: close open requests nobody took in time, so the board stays fresh. */
+function startExpiryWatch() {
+  const run = async () => {
+    try {
+      const codes = await expireStale();
+      if (codes.length) {
+        announceChange();
+        log.info("requests expired", { count: codes.length });
+      }
+    } catch (err) {
+      log.warn("expiry watch failed", { err: String(err) });
+    }
+  };
+  setTimeout(() => void run(), 10_000).unref();
+  setInterval(() => void run(), 5 * 60_000).unref();
+}
 
 const app = createApp();
 
@@ -19,6 +38,7 @@ startSessionCleanup();
 startFilePurge();
 
 startMaintenanceWatch();
+startExpiryWatch();
 
 const bot = createBot();
 setBot(bot);

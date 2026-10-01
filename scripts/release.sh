@@ -32,7 +32,7 @@ say "1/3 Web: pushing (Cloudflare deploys it in about a minute)"
 git push origin main
 
 say "2/3 API: backing up the database, then updating the mini PC"
-ssh "$SSH_HOST" "cd ~/umove && bash scripts/backup.sh && bash scripts/update.sh"
+ssh "$SSH_HOST" "cd ~/umove && bash scripts/backup.sh --local && bash scripts/update.sh"
 
 say "3/3 Done. Open https://umove.rafiarsya.com in a private window and check it."
 echo "Something wrong? Admin → Maintenance on, then see the playbook (Server dan data)."

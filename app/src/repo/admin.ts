@@ -55,18 +55,63 @@ export async function listUsers(q: string) {
       joined: Date;
       requests: number;
       runs: number;
+      postBlocked: boolean;
+      noShows: number;
+      runnerPaused: boolean;
+      runnerFlags: number;
     }[]
   >`
     select u.id, u.name, u.username::text as username, u.email::text as email, u.phone_wa as whatsapp,
            u.college, u.status, r.status as runner, u.created_at as joined,
            (select count(*)::int from orders o where o.customer_id = u.id) as requests,
-           (select count(*)::int from orders o where o.runner_id = u.id and o.status = 'delivered') as runs
+           (select count(*)::int from orders o where o.runner_id = u.id and o.status = 'delivered') as runs,
+           u.post_blocked_at is not null as "postBlocked",
+           (select count(distinct o.runner_id)::int from orders o
+             where o.customer_id = u.id and o.no_show_at is not null
+               and o.no_show_at > coalesce(u.strikes_cleared_at, '-infinity'::timestamptz)) as "noShows",
+           u.runner_paused_at is not null as "runnerPaused",
+           (select count(distinct f.customer_id)::int from runner_flags f
+             where f.runner_id = u.id and f.created_at > now() - interval '30 days'
+               and f.created_at > coalesce(u.runner_flags_cleared_at, '-infinity'::timestamptz)) as "runnerFlags"
     from users u
     left join user_roles r on r.user_id = u.id and r.role = 'runner'
     where ${q === ""} or u.username ilike ${like} or u.email ilike ${like} or u.name ilike ${like}
     order by u.created_at desc
     limit 100
   `;
+}
+
+/** Let a member post requests again after no-show reports, and clear their count. */
+export async function unblockPosting(adminId: string, userId: string): Promise<boolean> {
+  return sql.begin(async (tx) => {
+    const rows = await tx`update users set post_blocked_at = null, strikes_cleared_at = now() where id = ${userId}`;
+    if (rows.count !== 1) return false;
+    await tx`insert into audit_log (actor_id, action, target) values (${adminId}, 'user.post_unblocked', ${userId})`;
+    return true;
+  });
+}
+
+/** Let a paused runner take requests again, and clear their flags. */
+export async function unpauseRunner(adminId: string, userId: string): Promise<boolean> {
+  return sql.begin(async (tx) => {
+    const rows =
+      await tx`update users set runner_paused_at = null, runner_flags_cleared_at = now() where id = ${userId}`;
+    if (rows.count !== 1) return false;
+    await tx`insert into audit_log (actor_id, action, target) values (${adminId}, 'runner.unpaused', ${userId})`;
+    return true;
+  });
+}
+
+/** A held request is fine after all: put it on the board. */
+export async function approveHeld(adminId: string, id: number): Promise<string | null> {
+  return sql.begin(async (tx) => {
+    const [o] = await tx<{ code: string }[]>`
+      update orders set held_at = null where id = ${id} and held_at is not null and status = 'open' returning code
+    `;
+    if (!o) return null;
+    await tx`insert into audit_log (actor_id, action, target) values (${adminId}, 'order.approve_held', ${o.code})`;
+    return o.code;
+  });
 }
 
 /** Suspend or restore a user. Suspending also signs them out everywhere. */
@@ -101,14 +146,21 @@ export async function listRequests(status: string | null) {
       createdAt: Date;
       customer: string;
       runner: string | null;
+      held: boolean;
+      holdReason: string | null;
+      expired: boolean;
     }[]
   >`
     select o.id::int as id, o.code, o.details, o.pickup, o.dropoff, o.tip_sen as "tipSen", o.status,
-           o.created_at as "createdAt", c.username::text as customer, r.username::text as runner
+           o.created_at as "createdAt", c.username::text as customer, r.username::text as runner,
+           o.held_at is not null and o.status = 'open' as held, o.hold_reason as "holdReason",
+           o.expired_at is not null as expired
     from orders o
     join users c on c.id = o.customer_id
     left join users r on r.id = o.runner_id
-    where ${status === null} or o.status = ${status ?? ""}
+    where ${status === null}
+       or (${status === "held"} and o.held_at is not null and o.status = 'open')
+       or o.status = ${status ?? ""}
     order by o.created_at desc
     limit 100
   `;

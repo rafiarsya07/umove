@@ -119,7 +119,7 @@ export function startUnclaimedWatch() {
     try {
       const rows = await sql<{ code: string; details: string; pickup: string; tipSen: number }[]>`
         select code, details, pickup, tip_sen as "tipSen" from orders
-        where status = 'open'
+        where status = 'open' and held_at is null
           and created_at < now() - make_interval(mins => ${UNCLAIMED_MIN})
           and created_at > now() - interval '3 hours'
       `;

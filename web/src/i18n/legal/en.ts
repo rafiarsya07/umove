@@ -87,6 +87,7 @@ export const legal: Legal = {
         p: [
           "Be specific about what you need, where to pick it up and where to deliver it. The delivery fee is at least RM1 and at most RM100, and it can only be raised, not lowered.",
           "You pay the runner the item price plus the delivery fee when you receive the order. Agree on the price on WhatsApp before the runner buys anything.",
+          "Only post what you really want. If two different runners report that you didn't turn up or wouldn't pay, you can't post new requests until an admin has looked into it.",
         ],
       },
       {

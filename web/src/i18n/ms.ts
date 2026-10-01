@@ -29,6 +29,11 @@ export const ms: Dict = {
     tabPost: "Minta",
   },
   hero: {
+    liveOne: "1 permintaan sedang menunggu",
+    liveMany: "{n} permintaan sedang menunggu",
+    liveNone: "Tiada permintaan menunggu sekarang",
+    boardEmpty: "Perlukan sesuatu? Buat sekarang, runner terus nampak.",
+    boardAsk: "Buat permintaan anda",
     examplesLabel: "Apa yang boleh anda minta",
     examples: ["Makanan dan minuman", "Cetakan", "Barang runcit", "Alat tulis", "Ambil bungkusan"],
     title: "Apa-apa di kampus, dihantar.",
@@ -315,7 +320,7 @@ export const ms: Dict = {
     found: { title: "Runner ditemui", body: "Chat di WhatsApp dan setuju harga sebelum runner membeli." },
     foundRunner: {
       title: "Anda mengambil permintaan ini",
-      body: "Hubungi pemesan, kemudian tekan Saya dalam perjalanan apabila bertolak.",
+      body: "Hubungi pemesan, kemudian tekan Saya dalam perjalanan sebelum membeli apa-apa.",
     },
     way: { title: "Dalam perjalanan", body: "Runner sedang menghantar pesanan anda." },
     wayRunner: { title: "Anda dalam perjalanan", body: "Tekan Tandakan sudah sampai selepas barang diserahkan." },
@@ -390,12 +395,12 @@ export const ms: Dict = {
       },
       take: {
         title: "Ambil permintaan ini?",
-        body: "Anda akan beli atau ambil barang dan hantar. Pelanggan terus dimaklumkan, dan anda dapat WhatsApp mereka.",
+        body: "Anda akan beli atau ambil barang dan hantar. Pelanggan terus dimaklumkan, dan anda dapat WhatsApp mereka. Tekan Saya dalam perjalanan sebelum membeli apa-apa.",
         ok: "Ya, ambil",
       },
       onTheWay: {
         title: "Bertolak sekarang?",
-        body: "Pelanggan nampak anda dalam perjalanan. Selepas ini permintaan tidak boleh dipulangkan.",
+        body: "Tekan ini sebelum membeli apa-apa: mulai sekarang pesanan terkunci untuk anda dan pemesan tidak boleh menukar runner. Selepas ini permintaan juga tidak boleh dipulangkan.",
         ok: "Saya bertolak",
       },
       delivered: {
@@ -407,6 +412,16 @@ export const ms: Dict = {
         title: "Pulangkan permintaan ini?",
         body: "Permintaan kembali ke papan untuk runner lain. Maklumkan pelanggan melalui WhatsApp.",
         ok: "Pulangkan",
+      },
+      runnerMissing: {
+        title: "Runner tidak datang?",
+        body: "Gunakan ini hanya jika runner sudah bertolak lebih sejam lalu dan berhenti membalas di WhatsApp. Permintaan dibatalkan dan runner direkodkan. Runner yang dilaporkan tiga orang berbeza dijeda sehingga admin menyemak.",
+        ok: "Ya, laporkan",
+      },
+      noShow: {
+        title: "Pemesan tidak muncul?",
+        body: "Gunakan ini hanya jika pemesan berhenti membalas atau enggan menerima dan membayar pesanan. Permintaan dibatalkan dan direkodkan terhadap pemesan. Jika dua runner melaporkan orang yang sama, dia tidak boleh membuat permintaan sehingga admin menyemak.",
+        ok: "Ya, laporkan",
       },
       cancel: {
         title: "Batalkan permintaan ini?",
@@ -429,6 +444,26 @@ export const ms: Dict = {
     raiseTitle: "Belum ada yang ambil?",
     raiseHint:
       "Upah hantar yang lebih tinggi lebih cepat menarik perhatian runner. Upah hanya boleh dinaikkan, bukan diturunkan.",
+    noShow: "Pemesan tidak muncul",
+    noShowRunner: "Anda melaporkan pemesan tidak muncul. Terima kasih, ini membantu UMOVE kekal adil untuk runner.",
+    noShowCustomer:
+      "Runner melaporkan anda tidak muncul atau tidak membayar. Jika itu tidak benar, maklumkan kami melalui Bantuan.",
+    errBlocked:
+      "Anda belum boleh membuat permintaan kerana ada runner melaporkan anda tidak muncul. Hubungi kami melalui Bantuan dan admin akan menyemaknya.",
+    heldTitle: "Menunggu semakan ringkas",
+    heldBody:
+      "Ada bahagian permintaan ini yang perlu disemak UMOVE sebelum dipaparkan di papan. Biasanya beberapa minit sahaja. Pautan, nombor telefon dan barang terlarang tidak dibenarkan.",
+    expiredNote:
+      "Tiada siapa mengambilnya dalam 3 jam, jadi ia ditutup secara automatik. Anda boleh membuatnya semula, mungkin dengan upah lebih tinggi.",
+    runnerMissing: "Runner tidak datang",
+    runnerMissingCustomer: "Anda melaporkan runner tidak datang. Maaf, anda boleh membuat permintaan semula.",
+    runnerMissingRunner: "Pemesan melaporkan anda tidak datang. Jika itu tidak benar, maklumkan kami melalui Bantuan.",
+    beforeBuyHint:
+      "Tekan Saya dalam perjalanan sebelum membeli apa-apa. Sebelum itu, pemesan masih boleh menukar runner.",
+    errPaused:
+      "Peranan runner anda dijeda kerana laporan daripada pemesan. Hubungi kami melalui Bantuan dan admin akan menyemaknya.",
+    errTooManyNew:
+      "Akaun baharu hanya boleh mempunyai satu permintaan menunggu. Selepas pesanan pertama anda sampai, anda boleh membuat sehingga 3.",
     raiseConfirmTitle: "Naikkan upah hantar?",
     raiseConfirmBody: "Daripada {from} kepada {to}. Selepas itu ia tidak boleh diturunkan semula.",
     raiseConfirmOk: "Ya, jadikan {fee}",

@@ -1,3 +1,5 @@
+import type postgres from "postgres";
+import { holdReason, type HoldReason } from "../moderation.js";
 import { sql } from "../db.js";
 import { statsOf } from "./users.js";
 
@@ -37,7 +39,8 @@ export async function openBoard(limit: number): Promise<BoardItem[]> {
     select o.code, o.details, o.pickup, o.place_id is not null as listed, o.dropoff, o.tip_sen as "tipSen", o.status,
            o.created_at as "createdAt", c.username::text as "cUsername", split_part(c.name, ' ', 1) as "cName"
     from orders o join users c on c.id = o.customer_id
-    where o.status = 'open' and c.status = 'active'
+    where o.status = 'open' and o.held_at is null and c.status = 'active'
+      and o.created_at > now() - make_interval(hours => ${EXPIRE_HOURS})
     order by o.created_at desc
     limit ${limit}
   `;
@@ -47,24 +50,30 @@ export async function openBoard(limit: number): Promise<BoardItem[]> {
 export async function createRequest(
   userId: string,
   r: { details: string; pickup: string; placeId: number | null; dropoff: string; tipSen: number },
-): Promise<{ code: string } | "need_whatsapp" | "too_many" | "daily_limit"> {
-  const [u] = await sql<{ phone: boolean; open: number; today: number }[]>`
-    select phone_wa is not null as phone,
+): Promise<
+  { code: string; held: HoldReason | null } | "need_whatsapp" | "too_many" | "daily_limit" | "blocked"
+> {
+  const [u] = await sql<{ phone: boolean; blocked: boolean; open: number; today: number }[]>`
+    select phone_wa is not null as phone, post_blocked_at is not null as blocked,
       (select count(*)::int from orders where customer_id = ${userId}
          and status in ('open','accepted','on_the_way')) as open,
       (select count(*)::int from orders where customer_id = ${userId}
          and created_at > now() - interval '1 day') as today
     from users where id = ${userId}
   `;
+  if (u?.blocked) return "blocked";
   if (!u?.phone) return "need_whatsapp";
   if (u.open >= MAX_OPEN_PER_CUSTOMER) return "too_many";
   if (u.today >= MAX_POSTS_PER_DAY) return "daily_limit";
+  // Text that looks wrong waits for an admin instead of going on the public board.
+  const hold = holdReason(r.details, r.placeId ? "" : r.pickup, r.dropoff);
   const [row] = await sql<{ code: string }[]>`
-    insert into orders (type, customer_id, pickup, place_id, dropoff, details, tip_sen)
-    values ('deliver', ${userId}, ${r.pickup}, ${r.placeId}, ${r.dropoff}, ${r.details}, ${r.tipSen})
+    insert into orders (type, customer_id, pickup, place_id, dropoff, details, tip_sen, held_at, hold_reason)
+    values ('deliver', ${userId}, ${r.pickup}, ${r.placeId}, ${r.dropoff}, ${r.details}, ${r.tipSen},
+            ${hold ? sql`now()` : null}, ${hold ? `${hold.reason}: ${hold.match}`.slice(0, 120) : null})
     returning code
   `;
-  return row;
+  return { code: row.code, held: hold?.reason ?? null };
 }
 
 /**
@@ -87,6 +96,10 @@ export async function requestForViewer(code: string, viewerId: string | null) {
       createdAt: Date;
       acceptedAt: Date | null;
       deliveredAt: Date | null;
+      noShow: boolean;
+      held: boolean;
+      expired: boolean;
+      runnerMissing: boolean;
       customerId: string;
       runnerId: string | null;
       cUsername: string;
@@ -100,6 +113,9 @@ export async function requestForViewer(code: string, viewerId: string | null) {
     select o.id::int as id, o.code, o.details, o.pickup, o.place_id is not null as listed, o.dropoff,
            o.tip_sen as "tipSen", o.status,
            o.created_at as "createdAt", o.accepted_at as "acceptedAt", o.delivered_at as "deliveredAt",
+           o.no_show_at is not null as "noShow",
+           o.held_at is not null as held, o.expired_at is not null as expired,
+           exists (select 1 from runner_flags f where f.order_id = o.id and f.kind = 'no_show') as "runnerMissing",
            o.customer_id as "customerId", o.runner_id as "runnerId",
            c.username::text as "cUsername", c.name as "cName", c.phone_wa as "cPhone",
            r.username::text as "rUsername", r.name as "rName", r.phone_wa as "rPhone"
@@ -112,6 +128,8 @@ export async function requestForViewer(code: string, viewerId: string | null) {
 
   const role = viewerId === o.customerId ? "customer" : viewerId && viewerId === o.runnerId ? "runner" : null;
   if (o.status !== "open" && !role) return null;
+  // A held request is only visible to the person who posted it until an admin approves it.
+  if (o.held && role !== "customer") return null;
 
   const matched = role !== null && ["accepted", "on_the_way", "delivered"].includes(o.status);
   let canAccept = false;
@@ -162,6 +180,26 @@ export async function requestForViewer(code: string, viewerId: string | null) {
     /** This runner was sent away by the requester and can't take it again. */
     skipped,
     canRate: role !== null && o.status === "delivered" && !rated,
+    /** The runner reported that the requester never turned up or wouldn't pay. */
+    noShow: role !== null && o.noShow,
+    /** Waiting for an admin to check the text before it goes on the board. */
+    held: role === "customer" && o.held,
+    /** Closed by itself: nobody took it in time. */
+    expired: o.expired,
+    /** The requester reported that the runner never came. */
+    runnerMissing: role !== null && o.runnerMissing,
+    /** The requester may report that the runner never came (long after they set off). */
+    canReportRunner:
+      role === "customer" &&
+      o.status === "on_the_way" &&
+      o.acceptedAt !== null &&
+      Date.now() - o.acceptedAt.getTime() >= RUNNER_MISSING_WAIT_MS,
+    /** The runner may report a no-show (a few minutes after taking it, before delivery). */
+    canReportNoShow:
+      role === "runner" &&
+      (o.status === "accepted" || o.status === "on_the_way") &&
+      o.acceptedAt !== null &&
+      Date.now() - o.acceptedAt.getTime() >= NO_SHOW_WAIT_MS,
     contact: matched ? (role === "customer" ? o.rPhone : o.cPhone) : null,
   };
 }
@@ -169,19 +207,22 @@ export async function requestForViewer(code: string, viewerId: string | null) {
 export async function acceptRequest(
   code: string,
   runnerId: string,
-): Promise<"ok" | "gone" | "not_runner" | "busy" | "need_photo"> {
-  const [r] = await sql<{ runner: boolean; active: number; photo: boolean }[]>`
+): Promise<"ok" | "gone" | "not_runner" | "busy" | "need_photo" | "paused"> {
+  const [r] = await sql<{ runner: boolean; active: number; photo: boolean; paused: boolean }[]>`
     select exists (select 1 from user_roles where user_id = ${runnerId} and role = 'runner' and status = 'active') as runner,
+           (select runner_paused_at is not null from users where id = ${runnerId}) as paused,
            (select count(*)::int from orders where runner_id = ${runnerId} and status in ('accepted','on_the_way')) as active,
            exists (select 1 from profile_photos where user_id = ${runnerId} and data is not null) as photo
   `;
   if (!r.runner) return "not_runner";
+  if (r.paused) return "paused";
   // Requesters see who is coming, so a runner needs an approved face photo first.
   if (!r.photo) return "need_photo";
   if (r.active >= MAX_ACTIVE_PER_RUNNER) return "busy";
   const rows = await sql`
     update orders set runner_id = ${runnerId}, status = 'accepted', accepted_at = now()
-    where code = ${code} and status = 'open' and customer_id <> ${runnerId}
+    where code = ${code} and status = 'open' and held_at is null and customer_id <> ${runnerId}
+      and created_at > now() - make_interval(hours => ${EXPIRE_HOURS})
       and not (${runnerId}::uuid = any(skipped_runners))
   `;
   return rows.count === 1 ? "ok" : "gone";
@@ -202,15 +243,90 @@ export async function advanceRequest(code: string, runnerId: string, to: "on_the
 /**
  * The requester sends the runner away (before they set off) and the request
  * goes back to the board. That runner can't take this request again.
+ * Swapping a runner who still hadn't set off 10 minutes after taking it
+ * counts as a flag on that runner.
  */
-export async function sendAwayRunner(code: string, customerId: string): Promise<boolean> {
-  const rows = await sql`
-    update orders
-    set skipped_runners = array_append(skipped_runners, runner_id),
-        runner_id = null, status = 'open', accepted_at = null
-    where code = ${code} and customer_id = ${customerId} and status = 'accepted'
+export async function sendAwayRunner(
+  code: string,
+  customerId: string,
+): Promise<{ ok: false } | { ok: true; flagged: RunnerFlagResult | null }> {
+  return sql.begin(async (tx) => {
+    const [o] = await tx<{ id: number; runnerId: string; late: boolean }[]>`
+      update orders o
+      set skipped_runners = array_append(o.skipped_runners, o.runner_id),
+          runner_id = null, status = 'open', accepted_at = null
+      from (select id, runner_id, accepted_at from orders where code = ${code} for update) old
+      where o.id = old.id and o.customer_id = ${customerId} and o.status = 'accepted'
+      returning o.id::int as id, old.runner_id as "runnerId",
+                old.accepted_at < now() - make_interval(mins => ${RUNNER_DROP_MIN}) as late
+    `;
+    if (!o) return { ok: false as const };
+    const flagged = o.late ? await flagRunner(tx, o.id, o.runnerId, customerId, "dropped") : null;
+    return { ok: true as const, flagged };
+  });
+}
+
+/** The requester reports that the runner set off long ago and never came. The order is cancelled. */
+export async function reportRunnerMissing(
+  code: string,
+  customerId: string,
+): Promise<{ ok: false; error: "too_soon" | "gone" } | { ok: true; flagged: RunnerFlagResult }> {
+  return sql.begin(async (tx) => {
+    const [o] = await tx<{ id: number; runnerId: string; acceptedAt: Date | null }[]>`
+      select id::int as id, runner_id as "runnerId", accepted_at as "acceptedAt" from orders
+      where code = ${code} and customer_id = ${customerId} and status = 'on_the_way'
+      for update
+    `;
+    if (!o) return { ok: false as const, error: "gone" as const };
+    if (!o.acceptedAt || Date.now() - o.acceptedAt.getTime() < RUNNER_MISSING_WAIT_MS) {
+      return { ok: false as const, error: "too_soon" as const };
+    }
+    await tx`update orders set status = 'cancelled', cancelled_at = now() where id = ${o.id}`;
+    await tx`insert into audit_log (actor_id, action, target) values (${customerId}, 'order.runner_missing', ${code})`;
+    const flagged = await flagRunner(tx, o.id, o.runnerId, customerId, "no_show");
+    return { ok: true as const, flagged };
+  });
+}
+
+export type RunnerFlagResult = { runner: string; flags: number; paused: boolean };
+
+/** Record a flag and pause the runner once RUNNER_FLAG_LIMIT different requesters flagged them (last 30 days). */
+async function flagRunner(
+  tx: postgres.TransactionSql,
+  orderId: number,
+  runnerId: string,
+  customerId: string,
+  kind: "dropped" | "no_show",
+): Promise<RunnerFlagResult> {
+  await tx`
+    insert into runner_flags (order_id, runner_id, customer_id, kind)
+    values (${orderId}, ${runnerId}, ${customerId}, ${kind})
+    on conflict (order_id, runner_id) do nothing
   `;
-  return rows.count === 1;
+  const [u] = await tx<{ username: string; paused: boolean; flags: number }[]>`
+    select u.username::text as username, u.runner_paused_at is not null as paused,
+           (select count(distinct f.customer_id)::int from runner_flags f
+             where f.runner_id = u.id and f.created_at > now() - interval '30 days'
+               and f.created_at > coalesce(u.runner_flags_cleared_at, '-infinity'::timestamptz)) as flags
+    from users u where u.id = ${runnerId} for update
+  `;
+  let paused = u.paused;
+  if (!paused && u.flags >= RUNNER_FLAG_LIMIT) {
+    await tx`update users set runner_paused_at = now() where id = ${runnerId}`;
+    await tx`insert into audit_log (actor_id, action, target) values (null, 'runner.paused', ${runnerId})`;
+    paused = true;
+  }
+  return { runner: u.username, flags: u.flags, paused };
+}
+
+/** Requests nobody took within EXPIRE_HOURS close by themselves, so the board stays fresh. */
+export async function expireStale(): Promise<string[]> {
+  const rows = await sql<{ code: string }[]>`
+    update orders set status = 'cancelled', cancelled_at = now(), expired_at = now()
+    where status = 'open' and created_at < now() - make_interval(hours => ${EXPIRE_HOURS})
+    returning code
+  `;
+  return rows.map((r) => r.code);
 }
 
 /**
@@ -232,6 +348,61 @@ export async function raiseTip(
     where code = ${code} and customer_id = ${customerId} and status = 'open' and tip_sen < ${tipSen}
   `;
   return rows.count === 1 ? "ok" : "gone";
+}
+
+/** A runner swapped out after this many minutes without setting off gets a flag. */
+export const RUNNER_DROP_MIN = 10;
+/** How long after taking it before the requester can say the runner never came. */
+export const RUNNER_MISSING_WAIT_MS = 60 * 60_000;
+/** Different requesters flagging a runner (in 30 days) before the runner is paused. */
+export const RUNNER_FLAG_LIMIT = 3;
+/** Open requests nobody took close after this long. */
+export const EXPIRE_HOURS = 3;
+
+/** How long a runner must wait after taking a request before reporting a no-show. */
+export const NO_SHOW_WAIT_MS = 5 * 60_000;
+/** Different runners reporting the same requester before they can't post any more. */
+export const NO_SHOW_LIMIT = 2;
+
+/**
+ * The runner reports that the requester never turned up or wouldn't pay.
+ * The order is cancelled and counted against the requester; reports from
+ * NO_SHOW_LIMIT different runners stop them posting until an admin checks.
+ */
+export async function reportNoShow(
+  code: string,
+  runnerId: string,
+): Promise<
+  | { ok: true; customerId: string; customer: string; strikes: number; blocked: boolean }
+  | { ok: false; error: "too_soon" | "gone" }
+> {
+  return sql.begin(async (tx) => {
+    const [o] = await tx<{ id: number; customerId: string; acceptedAt: Date | null }[]>`
+      select id::int as id, customer_id as "customerId", accepted_at as "acceptedAt" from orders
+      where code = ${code} and runner_id = ${runnerId} and status in ('accepted', 'on_the_way')
+      for update
+    `;
+    if (!o) return { ok: false as const, error: "gone" as const };
+    if (!o.acceptedAt || Date.now() - o.acceptedAt.getTime() < NO_SHOW_WAIT_MS) {
+      return { ok: false as const, error: "too_soon" as const };
+    }
+    await tx`update orders set status = 'cancelled', cancelled_at = now(), no_show_at = now() where id = ${o.id}`;
+    await tx`insert into audit_log (actor_id, action, target) values (${runnerId}, 'order.no_show', ${code})`;
+    const [u] = await tx<{ strikes: number; blocked: boolean; username: string }[]>`
+      select u.username::text as username, u.post_blocked_at is not null as blocked,
+             (select count(distinct x.runner_id)::int from orders x
+               where x.customer_id = u.id and x.no_show_at is not null
+                 and x.no_show_at > coalesce(u.strikes_cleared_at, '-infinity'::timestamptz)) as strikes
+      from users u where u.id = ${o.customerId} for update
+    `;
+    let blocked = u.blocked;
+    if (!blocked && u.strikes >= NO_SHOW_LIMIT) {
+      await tx`update users set post_blocked_at = now() where id = ${o.customerId}`;
+      await tx`insert into audit_log (actor_id, action, target) values (null, 'user.post_blocked', ${o.customerId})`;
+      blocked = true;
+    }
+    return { ok: true as const, customerId: o.customerId, customer: u.username, strikes: u.strikes, blocked };
+  });
 }
 
 /** The runner gives the request back to the board (before setting off). */

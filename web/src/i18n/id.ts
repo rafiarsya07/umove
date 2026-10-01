@@ -29,6 +29,11 @@ export const id: Dict = {
     tabPost: "Pasang",
   },
   hero: {
+    liveOne: "1 permintaan menunggu",
+    liveMany: "{n} permintaan menunggu",
+    liveNone: "Belum ada permintaan menunggu",
+    boardEmpty: "Butuh sesuatu? Pasang sekarang, runner langsung melihatnya.",
+    boardAsk: "Pasang permintaanmu",
     examplesLabel: "Yang bisa kamu titip",
     examples: ["Makanan dan minuman", "Print", "Belanja kebutuhan", "Alat tulis", "Ambil paket"],
     title: "Apa pun di kampus, diantar.",
@@ -309,7 +314,7 @@ export const id: Dict = {
     found: { title: "Runner ditemukan", body: "Chat di WhatsApp dan sepakati harga sebelum runner membeli." },
     foundRunner: {
       title: "Kamu mengambil permintaan ini",
-      body: "Kabari pemesan, lalu tekan Aku sedang di jalan saat berangkat.",
+      body: "Kabari pemesan, lalu tekan Aku sedang di jalan sebelum membeli apa pun.",
     },
     way: { title: "Di jalan", body: "Runner sedang mengantar pesananmu." },
     wayRunner: { title: "Kamu sedang di jalan", body: "Tekan Tandai sudah sampai setelah barang diserahkan." },
@@ -383,12 +388,12 @@ export const id: Dict = {
       },
       take: {
         title: "Ambil permintaan ini?",
-        body: "Kamu yang membeli atau mengambil barangnya lalu mengantar. Pemesan langsung diberi tahu, dan kamu dapat WhatsApp-nya.",
+        body: "Kamu yang membeli atau mengambil barangnya lalu mengantar. Pemesan langsung diberi tahu, dan kamu dapat WhatsApp-nya. Tekan Aku sedang di jalan sebelum membeli apa pun.",
         ok: "Ya, ambil",
       },
       onTheWay: {
         title: "Berangkat sekarang?",
-        body: "Pemesan melihat kamu sedang di jalan. Setelah ini permintaan tidak bisa dikembalikan.",
+        body: "Tekan ini sebelum membeli apa pun: mulai sekarang pesanan terkunci untukmu dan pemesan tidak bisa mengganti runner. Setelah ini permintaan juga tidak bisa dikembalikan.",
         ok: "Aku berangkat",
       },
       delivered: {
@@ -400,6 +405,16 @@ export const id: Dict = {
         title: "Kembalikan permintaan ini?",
         body: "Permintaan kembali ke papan untuk runner lain. Kabari pemesan lewat WhatsApp.",
         ok: "Kembalikan",
+      },
+      runnerMissing: {
+        title: "Runner tidak datang?",
+        body: "Pakai ini hanya kalau runner sudah berangkat lebih dari sejam lalu dan berhenti membalas di WhatsApp. Permintaan dibatalkan dan runner dicatat. Runner yang dilaporkan tiga orang berbeda dijeda sampai admin mengecek.",
+        ok: "Ya, laporkan",
+      },
+      noShow: {
+        title: "Pemesan tidak muncul?",
+        body: "Pakai ini hanya kalau pemesan berhenti membalas atau tidak mau menerima dan membayar pesanannya. Permintaan dibatalkan dan dicatat untuk pemesan. Kalau dua runner melaporkan orang yang sama, dia tidak bisa memasang permintaan sampai admin mengecek.",
+        ok: "Ya, laporkan",
       },
       cancel: {
         title: "Batalkan permintaan ini?",
@@ -422,6 +437,26 @@ export const id: Dict = {
     raiseTitle: "Belum ada yang ambil?",
     raiseHint:
       "Upah antar yang lebih tinggi lebih cepat dilirik runner. Upah hanya bisa dinaikkan, tidak bisa diturunkan.",
+    noShow: "Pemesan tidak muncul",
+    noShowRunner: "Kamu melaporkan pemesan tidak muncul. Makasih, ini membantu UMOVE tetap adil untuk runner.",
+    noShowCustomer:
+      "Runner melaporkan kamu tidak muncul atau tidak membayar. Kalau itu tidak benar, kabari kami lewat Bantuan.",
+    errBlocked:
+      "Kamu belum bisa memasang permintaan karena ada runner yang melaporkan kamu tidak muncul. Hubungi kami lewat Bantuan, nanti admin akan mengecek.",
+    heldTitle: "Menunggu pengecekan singkat",
+    heldBody:
+      "Ada bagian dari permintaan ini yang perlu dicek UMOVE sebelum muncul di papan. Biasanya hanya beberapa menit. Link, nomor telepon, dan barang terlarang tidak diizinkan.",
+    expiredNote:
+      "Tidak ada yang mengambil dalam 3 jam, jadi ditutup otomatis. Kamu bisa memasangnya lagi, mungkin dengan upah lebih tinggi.",
+    runnerMissing: "Runner tidak datang",
+    runnerMissingCustomer: "Kamu melaporkan runner tidak datang. Maaf ya, kamu bisa memasang permintaan lagi.",
+    runnerMissingRunner: "Pemesan melaporkan kamu tidak datang. Kalau itu tidak benar, kabari kami lewat Bantuan.",
+    beforeBuyHint:
+      "Tekan Aku sedang di jalan sebelum membeli apa pun. Sebelum itu, pemesan masih bisa mengganti runner.",
+    errPaused:
+      "Peran runner kamu dijeda karena laporan dari pemesan. Hubungi kami lewat Bantuan, nanti admin akan mengecek.",
+    errTooManyNew:
+      "Akun baru hanya bisa punya satu permintaan menunggu. Setelah pesanan pertamamu sampai, kamu bisa memasang hingga 3.",
     raiseConfirmTitle: "Naikkan upah antar?",
     raiseConfirmBody: "Dari {from} jadi {to}. Setelah itu tidak bisa diturunkan lagi.",
     raiseConfirmOk: "Ya, jadi {fee}",

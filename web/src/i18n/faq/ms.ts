@@ -82,9 +82,14 @@ export const faq: FaqCategory[] = [
         a: "Anda boleh ada sehingga 3 permintaan yang sedang berjalan dan memasang sehingga 20 sehari. Ini supaya papan adil untuk semua.",
       },
       {
+        id: "held",
+        q: "Kenapa permintaan saya menunggu semakan?",
+        a: "Papan permintaan boleh dilihat umum, jadi permintaan yang kelihatan menyebut barang terlarang, kata kesat, pautan atau nombor telefon disemak sebentar oleh UMOVE dahulu. Jika tiada masalah, ia terus dipaparkan, biasanya dalam beberapa minit. Kongsi nombor anda melalui WhatsApp selepas runner mengambilnya, bukan dalam permintaan.",
+      },
+      {
         id: "nobody",
         q: "Bagaimana jika tiada siapa mengambilnya?",
-        a: "Permintaan kekal di papan sehingga anda membatalkannya. Jika lama menunggu, menaikkan sedikit upah atau menjelaskan lokasi ambil biasanya membantu.",
+        a: "Jika tiada siapa mengambilnya dalam 3 jam, permintaan ditutup secara automatik supaya papan kekal segar. Semasa menunggu, menaikkan sedikit upah atau menjelaskan lokasi ambil biasanya membantu, dan anda boleh membuatnya semula bila-bila masa.",
       },
     ],
   },
@@ -156,12 +161,17 @@ export const faq: FaqCategory[] = [
       {
         id: "give-back",
         q: "Bolehkah permintaan dipulangkan?",
-        a: "Boleh, sebelum anda ketik Saya bertolak. Maklumkan pelanggan melalui WhatsApp. Selepas bertolak, selesaikan penghantaran atau bincang dengan pelanggan.",
+        a: "Boleh, sebelum anda ketik Saya dalam perjalanan. Maklumkan pelanggan melalui WhatsApp. Selepas bertolak, selesaikan penghantaran atau bincang dengan pelanggan.",
+      },
+      {
+        id: "no-show",
+        q: "Bagaimana jika pemesan tidak muncul atau enggan membayar?",
+        a: "Sentiasa sahkan di WhatsApp sebelum membeli apa-apa. Jika pemesan masih tidak membalas atau tidak mengambil pesanan, tunggu sekurang-kurangnya 5 minit selepas anda mengambil permintaan, kemudian ketik Pemesan tidak muncul di halaman permintaan. Permintaan dibatalkan dan direkodkan terhadap pemesan. Jika dua runner berbeza melaporkan orang yang sama, dia tidak boleh membuat permintaan sehingga admin menyemak.",
       },
       {
         id: "runner-rules",
         q: "Apakah peraturan untuk runner?",
-        a: "Berjumpa di tempat awam, sahkan harga sebelum membeli, simpan resit, patuhi peraturan jalan raya dan bersopan. Kerap tidak hadir atau banyak aduan boleh menyebabkan peranan runner ditarik balik.",
+        a: "Berjumpa di tempat awam, sahkan harga sebelum membeli, simpan resit, patuhi peraturan jalan raya dan bersopan. Tekan Saya dalam perjalanan sebelum membeli apa-apa. Jika tiga pemesan berbeza terpaksa menukar anda atau melaporkan anda tidak datang, peranan runner dijeda sehingga admin menyemak.",
       },
     ],
   },

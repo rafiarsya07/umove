@@ -24,7 +24,7 @@ import NotFound from "./NotFound";
 
 const STEPS: RequestStatus[] = ["open", "accepted", "on_the_way", "delivered"];
 
-type Action = "take" | "onTheWay" | "delivered" | "release" | "cancel" | "replace";
+type Action = "take" | "onTheWay" | "delivered" | "release" | "cancel" | "replace" | "noShow" | "runnerMissing";
 const ACTIONS: Record<Action, [string, unknown?]> = {
   take: ["accept"],
   onTheWay: ["status", { status: "on_the_way" }],
@@ -32,6 +32,8 @@ const ACTIONS: Record<Action, [string, unknown?]> = {
   release: ["release"],
   cancel: ["cancel"],
   replace: ["replace-runner"],
+  noShow: ["no-show"],
+  runnerMissing: ["runner-missing"],
 };
 
 /** One request: its route, progress, the WhatsApp hand-off, and actions for whoever is looking. */
@@ -81,7 +83,9 @@ export default function RequestDetail() {
               ? r.errNotRunner
               : code === "need_photo"
                 ? r.errNeedPhoto
-                : r.errGeneric,
+                : code === "paused"
+                  ? r.errPaused
+                  : r.errGeneric,
       );
       setAsking(null);
       load();
@@ -145,7 +149,12 @@ export default function RequestDetail() {
           </span>
         </div>
 
-        {data.status !== "cancelled" ? (
+        {data.held ? (
+          <p className="mt-6 rounded-(--radius-control) border border-primary-border bg-primary-soft px-3.5 py-2.5 text-[0.875rem] leading-snug">
+            <span className="block font-semibold">{r.heldTitle}</span>
+            <span className="text-foreground-secondary">{r.heldBody}</span>
+          </p>
+        ) : data.status !== "cancelled" ? (
           <div className="mt-6 border-t border-border pt-5">
             <StatusScene
               status={data.status}
@@ -159,6 +168,17 @@ export default function RequestDetail() {
         {data.status === "cancelled" ? (
           <p className="mt-6 rounded-(--radius-control) bg-muted px-3 py-2 text-[0.875rem] font-medium">
             {r.status.cancelled}
+            {data.noShow ? (
+              <span className="mt-0.5 block font-normal text-foreground-secondary">
+                {data.viewerRole === "customer" ? r.noShowCustomer : r.noShowRunner}
+              </span>
+            ) : data.runnerMissing ? (
+              <span className="mt-0.5 block font-normal text-foreground-secondary">
+                {data.viewerRole === "customer" ? r.runnerMissingCustomer : r.runnerMissingRunner}
+              </span>
+            ) : data.expired ? (
+              <span className="mt-0.5 block font-normal text-foreground-secondary">{r.expiredNote}</span>
+            ) : null}
           </p>
         ) : (
           <ol className="mt-5 grid grid-cols-4 gap-1.5" aria-label={r.status[data.status]}>
@@ -280,6 +300,9 @@ export default function RequestDetail() {
 
         {data.viewerRole === "runner" && data.status === "accepted" ? (
           <>
+            <p className="w-full rounded-(--radius-control) border border-warning/30 bg-warning-soft px-3.5 py-2.5 text-[0.8125rem] leading-snug text-foreground">
+              {r.beforeBuyHint}
+            </p>
             <button
               type="button"
               disabled={busy}
@@ -308,6 +331,28 @@ export default function RequestDetail() {
           >
             <CheckIcon className="size-4" />
             {r.markDelivered}
+          </button>
+        ) : null}
+
+        {data.canReportRunner ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => ask("runnerMissing")}
+            className={`${btn.small} h-11 border-transparent text-danger hover:bg-[#fef3f2] disabled:opacity-60`}
+          >
+            {r.runnerMissing}
+          </button>
+        ) : null}
+
+        {data.canReportNoShow ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => ask("noShow")}
+            className={`${btn.small} h-11 border-transparent text-danger hover:bg-[#fef3f2] disabled:opacity-60`}
+          >
+            {r.noShow}
           </button>
         ) : null}
       </div>
@@ -344,7 +389,11 @@ export default function RequestDetail() {
           }
           confirm={busy ? r.working : r.confirm[asking].ok}
           cancel={r.confirm.back}
-          tone={asking === "cancel" || asking === "release" || asking === "replace" ? "danger" : "primary"}
+          tone={
+            asking === "cancel" || asking === "release" || asking === "replace" || asking === "noShow"
+              ? "danger"
+              : "primary"
+          }
           busy={busy}
           onConfirm={() => act(asking)}
           onClose={() => !busy && setAsking(null)}

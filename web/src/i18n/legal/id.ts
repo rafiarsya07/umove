@@ -87,6 +87,7 @@ export const legal: Legal = {
         p: [
           "Tulis dengan jelas apa yang kamu butuhkan, tempat ambil, dan tempat antar. Upah antar minimal RM1 dan maksimal RM100, dan hanya bisa dinaikkan, tidak bisa diturunkan.",
           "Kamu membayar runner harga barang ditambah upah antar saat pesanan diterima. Sepakati harga di WhatsApp sebelum runner membeli.",
+          "Pasang hanya yang benar-benar kamu butuhkan. Kalau dua runner berbeda melaporkan kamu tidak muncul atau tidak membayar, kamu tidak bisa memasang permintaan baru sampai admin mengeceknya.",
         ],
       },
       {

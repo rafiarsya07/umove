@@ -87,6 +87,7 @@ export const legal: Legal = {
         p: [
           "Nyatakan dengan jelas apa yang diperlukan, tempat ambil dan tempat hantar. Upah hantar sekurang-kurangnya RM1 dan paling tinggi RM100, dan hanya boleh dinaikkan, bukan diturunkan.",
           "Anda membayar runner harga barang serta upah hantar semasa menerima pesanan. Persetujui harga di WhatsApp sebelum runner membeli.",
+          "Buat hanya permintaan yang anda benar-benar perlukan. Jika dua runner berbeza melaporkan anda tidak muncul atau tidak membayar, anda tidak boleh membuat permintaan baharu sehingga admin menyemaknya.",
         ],
       },
       {

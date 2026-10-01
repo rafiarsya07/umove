@@ -32,6 +32,11 @@ export const en = {
     tabPost: "Post",
   },
   hero: {
+    liveOne: "1 request waiting now",
+    liveMany: "{n} requests waiting now",
+    liveNone: "No requests waiting right now",
+    boardEmpty: "Need something? Post it and runners see it straight away.",
+    boardAsk: "Post your request",
     examplesLabel: "What you can ask for",
     examples: ["Food and drinks", "Printing", "Groceries", "Stationery", "Parcel pick-ups"],
     title: "Anything on campus, delivered.",
@@ -315,7 +320,7 @@ export const en = {
     found: { title: "Runner found", body: "Chat on WhatsApp and agree on the price before they buy." },
     foundRunner: {
       title: "You took this request",
-      body: "Message the requester, then tap I'm on my way when you set off.",
+      body: "Message the requester, then tap I'm on my way before you buy anything.",
     },
     way: { title: "On the way", body: "Your runner is bringing it to you." },
     wayRunner: { title: "You're on the way", body: "Tap Mark as delivered once you've handed it over." },
@@ -389,12 +394,12 @@ export const en = {
       },
       take: {
         title: "Take this request?",
-        body: "You'll buy or collect it and deliver it. The customer is told right away, and you get their WhatsApp.",
+        body: "You'll buy or collect it and deliver it. The customer is told right away, and you get their WhatsApp. Tap I'm on my way before you buy anything.",
         ok: "Yes, take it",
       },
       onTheWay: {
         title: "Heading out now?",
-        body: "The customer sees that you're on your way. After this you can't give the request back.",
+        body: "Tap this before you buy anything: from now on the order is locked to you and the customer can't swap you out. You also can't give it back after this.",
         ok: "I'm on my way",
       },
       delivered: {
@@ -406,6 +411,16 @@ export const en = {
         title: "Give this request back?",
         body: "It goes back on the board for other runners. Let the customer know on WhatsApp.",
         ok: "Give it back",
+      },
+      runnerMissing: {
+        title: "Runner never came?",
+        body: "Use this only if they set off over an hour ago and stopped replying on WhatsApp. The request is cancelled and the runner gets a flag. Runners flagged by three different people are paused until an admin checks.",
+        ok: "Yes, report it",
+      },
+      noShow: {
+        title: "Requester didn't show up?",
+        body: "Use this only if they stopped replying or wouldn't take and pay for the order. The request is cancelled and it counts against them. If two runners report the same person, they can't post until an admin checks.",
+        ok: "Yes, report no-show",
       },
       cancel: {
         title: "Cancel this request?",
@@ -427,6 +442,25 @@ export const en = {
     errNotRunner: "Only approved runners can take requests.",
     raiseTitle: "Nobody has taken it yet?",
     raiseHint: "A higher delivery fee gets noticed faster. You can only raise it, not lower it.",
+    noShow: "Requester didn't show up",
+    noShowRunner: "You reported that the requester didn't show up. Thanks, this helps keep UMOVE fair for runners.",
+    noShowCustomer: "Your runner reported that you didn't show up or pay. If that's not right, tell us through Help.",
+    errBlocked:
+      "You can't post requests right now because runners reported that you didn't show up. Contact us through Help and an admin will look at it.",
+    heldTitle: "Waiting for a quick check",
+    heldBody:
+      "Something in this request needs a look from UMOVE before it appears on the board. It's usually a few minutes. Links, phone numbers and banned items aren't allowed.",
+    expiredNote:
+      "Nobody took it within 3 hours, so it closed by itself. You can post it again, maybe with a higher fee.",
+    runnerMissing: "Runner never came",
+    runnerMissingCustomer: "You reported that the runner never came. Sorry about that, you can post it again.",
+    runnerMissingRunner: "The requester reported that you never came. If that's not right, tell us through Help.",
+    beforeBuyHint:
+      "Tap I'm on my way before you buy anything. Until then the requester can still swap you for another runner.",
+    errPaused:
+      "Your runner role is paused after reports from requesters. Contact us through Help and an admin will look at it.",
+    errTooManyNew:
+      "New accounts can have one request waiting at a time. Once your first order is delivered, you can post up to 3.",
     raiseConfirmTitle: "Raise the delivery fee?",
     raiseConfirmBody: "From {from} to {to}. You can't lower it again afterwards.",
     raiseConfirmOk: "Yes, make it {fee}",

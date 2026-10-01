@@ -17,9 +17,14 @@ type Row = {
   createdAt: string;
   customer: string;
   runner: string | null;
+  /** Waiting for an admin: the text looked like a banned item, bad word, link or phone number. */
+  held: boolean;
+  holdReason: string | null;
+  /** Closed by itself after 3 hours with no runner. */
+  expired: boolean;
 };
 
-const FILTERS = ["all", "open", "accepted", "on_the_way", "delivered", "cancelled"];
+const FILTERS = ["all", "held", "open", "accepted", "on_the_way", "delivered", "cancelled"];
 const TONE: Record<string, BadgeTone> = {
   open: "live",
   accepted: "warning",
@@ -52,9 +57,21 @@ export default function Requests() {
     }
   };
 
+  const approve = async (r: Row) => {
+    try {
+      await api(`/admin/requests/${r.id}/approve`, { method: "POST" });
+      load();
+    } catch {
+      setError("That request is no longer waiting.");
+    }
+  };
+
   return (
     <div>
-      <PageTitle title="Requests" lead="Every request on UMOVE. Cancel anything that breaks the rules." />
+      <PageTitle
+        title="Requests"
+        lead="Every request on UMOVE. Held ones wait for you before they reach the board: approve them if they're fine, cancel them if not."
+      />
       <div className="mb-4 flex flex-wrap gap-1.5">
         {FILTERS.map((f) => (
           <button
@@ -85,13 +102,31 @@ export default function Requests() {
                   <span className="mr-2 font-mono text-[0.8125rem] text-muted-foreground">{r.code}</span>
                   {r.details}
                 </p>
-                <p className="t-meta truncate">
-                  {r.pickup} → {r.dropoff} · @{r.customer}
-                  {r.runner ? ` → @${r.runner}` : ""} · {new Date(r.createdAt).toLocaleString("en-MY")}
+                <p className="t-meta flex flex-wrap gap-x-3">
+                  <span className="truncate">
+                    {r.pickup} → {r.dropoff}
+                  </span>
+                  <span>
+                    @{r.customer}
+                    {r.runner ? ` → @${r.runner}` : ""}
+                  </span>
+                  <span>{new Date(r.createdAt).toLocaleString("en-MY")}</span>
                 </p>
+                {r.held && r.holdReason ? (
+                  <p className="mt-1 text-[0.8125rem] font-medium text-warning">Flagged for {r.holdReason}</p>
+                ) : null}
               </div>
               <span className="font-semibold tabular-nums">{ringgit(r.tipSen)}</span>
-              <Badge tone={TONE[r.status] ?? "muted"}>{r.status.replace(/_/g, " ")}</Badge>
+              {r.held ? (
+                <Badge tone="warning">held</Badge>
+              ) : (
+                <Badge tone={TONE[r.status] ?? "muted"}>{r.expired ? "expired" : r.status.replace(/_/g, " ")}</Badge>
+              )}
+              {r.held ? (
+                <button type="button" className={`${btn.small} border-primary text-primary`} onClick={() => approve(r)}>
+                  Approve
+                </button>
+              ) : null}
               {["open", "accepted", "on_the_way"].includes(r.status) ? (
                 <button type="button" className={btn.small} onClick={() => cancel(r)}>
                   Cancel

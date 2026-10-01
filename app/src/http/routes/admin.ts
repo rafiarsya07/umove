@@ -2,7 +2,17 @@ import { type Context, Hono } from "hono";
 import { z } from "zod";
 import { config } from "../../config.js";
 import { announceChange } from "../../live.js";
-import { adminCancelRequest, adminStats, auditLog, listRequests, listUsers, setUserStatus } from "../../repo/admin.js";
+import {
+  adminCancelRequest,
+  adminStats,
+  auditLog,
+  listRequests,
+  listUsers,
+  setUserStatus,
+  approveHeld,
+  unblockPosting,
+  unpauseRunner,
+} from "../../repo/admin.js";
 import { announceSite, announceSupport, announceSupportTo } from "../../live.js";
 import { allPlaces, savePlace } from "../../repo/places.js";
 import { adminRename } from "../../repo/users.js";
@@ -90,7 +100,7 @@ admin.post("/users/:id/status", async (c) => {
   return c.json({ error: result }, result === "not_found" ? 404 : 409);
 });
 
-const STATUSES = ["open", "accepted", "on_the_way", "delivered", "cancelled"] as const;
+const STATUSES = ["held", "open", "accepted", "on_the_way", "delivered", "cancelled"] as const;
 
 admin.get("/requests", async (c) => {
   const status = z
@@ -108,6 +118,16 @@ admin.post("/requests/:id/cancel", async (c) => {
   if (!ok) return c.json({ error: "not_allowed" }, 409);
   announceChange();
   return c.json({ ok: true });
+});
+
+/** A held request is fine: put it on the board. */
+admin.post("/requests/:id/approve", async (c) => {
+  const id = idParam.safeParse(c.req.param("id"));
+  if (!id.success) return c.json({ error: "not_found" }, 404);
+  const code = await approveHeld(c.get("user")!.id, id.data);
+  if (!code) return c.json({ error: "not_allowed" }, 409);
+  announceChange();
+  return c.json({ ok: true, code });
 });
 
 admin.get("/audit", async (c) => c.json(await auditLog()));
@@ -200,6 +220,22 @@ admin.post("/broadcasts/:id/end", async (c) => {
   if (!ok) return c.json({ error: "not_live" }, 409);
   announceSite();
   return c.json({ ok: true });
+});
+
+/** Let a paused runner take requests again. */
+admin.post("/users/:id/unpause-runner", async (c) => {
+  const id = z.uuid().safeParse(c.req.param("id"));
+  if (!id.success) return c.json({ error: "not_found" }, 404);
+  const ok = await unpauseRunner(c.get("user")!.id, id.data);
+  return ok ? c.json({ ok: true }) : c.json({ error: "not_found" }, 404);
+});
+
+/** Let a member post again after no-show reports. */
+admin.post("/users/:id/unblock", async (c) => {
+  const id = z.uuid().safeParse(c.req.param("id"));
+  if (!id.success) return c.json({ error: "not_found" }, 404);
+  const ok = await unblockPosting(c.get("user")!.id, id.data);
+  return ok ? c.json({ ok: true }) : c.json({ error: "not_found" }, 404);
 });
 
 /** Rename a member (approved runners can't rename themselves). */

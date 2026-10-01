@@ -16,6 +16,13 @@ type Row = {
   joined: string;
   requests: number;
   runs: number;
+  /** Can't post requests after no-show reports from different runners. */
+  postBlocked: boolean;
+  /** Different runners who reported this member as a no-show (since the last unblock). */
+  noShows: number;
+  /** Runner role paused after flags from three different requesters. */
+  runnerPaused: boolean;
+  runnerFlags: number;
 };
 
 export default function Users() {
@@ -51,6 +58,30 @@ export default function Users() {
     }
   };
 
+  /** After no-show reports: let them post again (clears the count). */
+  const unblock = async (u: Row) => {
+    if (!window.confirm(`Let @${u.username} post requests again? Their no-show count goes back to 0.`)) return;
+    setError(null);
+    try {
+      await api(`/admin/users/${u.id}/unblock`, { method: "POST" });
+      load(q);
+    } catch {
+      setError("That action failed.");
+    }
+  };
+
+  /** Paused runner: let them take requests again (clears their flags). */
+  const unpause = async (u: Row) => {
+    if (!window.confirm(`Let @${u.username} take requests again? Their runner flags go back to 0.`)) return;
+    setError(null);
+    try {
+      await api(`/admin/users/${u.id}/unpause-runner`, { method: "POST" });
+      load(q);
+    } catch {
+      setError("That action failed.");
+    }
+  };
+
   /** Runners can't rename themselves; they ask in Help chat and an admin does it here. */
   const rename = async (u: Row) => {
     const name = window.prompt(`New name for @${u.username}`, u.name)?.trim();
@@ -66,7 +97,10 @@ export default function Users() {
 
   return (
     <div>
-      <PageTitle title="Users" lead="Search by name, username or email. Suspending signs the person out everywhere." />
+      <PageTitle
+        title="Users"
+        lead="Search by name, username or email. Suspending signs the person out everywhere. Members reported as a no-show by two different runners can't post until you unblock them. Runners flagged by three different requesters are paused until you unpause them."
+      />
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
@@ -99,9 +133,9 @@ export default function Users() {
                     <Link to={`/u/${u.username}`} className="font-semibold hover:underline">
                       {u.name}
                     </Link>
-                    <p className="t-meta text-[0.75rem]">
-                      @{u.username}
-                      {u.college ? ` · ${u.college}` : ""}
+                    <p className="t-meta flex gap-2 text-[0.75rem]">
+                      <span>@{u.username}</span>
+                      {u.college ? <span>{u.college}</span> : null}
                     </p>
                   </td>
                   <td className="px-4 py-3">
@@ -109,7 +143,9 @@ export default function Users() {
                     <p className="t-meta text-[0.75rem]">{u.whatsapp ?? "–"}</p>
                   </td>
                   <td className="px-4 py-3">
-                    {u.runner === "active" ? (
+                    {u.runner === "active" && u.runnerPaused ? (
+                      <Badge tone="danger">Paused</Badge>
+                    ) : u.runner === "active" ? (
                       <Badge tone="success">Runner</Badge>
                     ) : u.runner === "pending" ? (
                       <Badge tone="warning">Pending</Badge>
@@ -121,9 +157,32 @@ export default function Users() {
                     {u.requests} / {u.runs}
                   </td>
                   <td className="px-4 py-3">
-                    <Badge tone={u.status === "active" ? "muted" : "danger"}>{u.status}</Badge>
+                    <span className="flex flex-wrap gap-1">
+                      <Badge tone={u.status === "active" ? "muted" : "danger"}>{u.status}</Badge>
+                      {u.postBlocked ? <Badge tone="danger">Can't post</Badge> : null}
+                      {u.runnerFlags > 0 ? (
+                        <Badge tone="warning">
+                          {u.runnerFlags} runner flag{u.runnerFlags > 1 ? "s" : ""}
+                        </Badge>
+                      ) : null}
+                      {u.noShows > 0 ? (
+                        <Badge tone="warning">
+                          {u.noShows} no-show{u.noShows > 1 ? "s" : ""}
+                        </Badge>
+                      ) : null}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
+                    {u.runnerPaused || u.runnerFlags > 0 ? (
+                      <button type="button" className={`${btn.small} mr-1.5`} onClick={() => unpause(u)}>
+                        {u.runnerPaused ? "Unpause runner" : "Clear flags"}
+                      </button>
+                    ) : null}
+                    {u.postBlocked || u.noShows > 0 ? (
+                      <button type="button" className={`${btn.small} mr-1.5`} onClick={() => unblock(u)}>
+                        {u.postBlocked ? "Unblock" : "Clear no-shows"}
+                      </button>
+                    ) : null}
                     <button type="button" className={`${btn.small} mr-1.5`} onClick={() => rename(u)}>
                       Rename
                     </button>
