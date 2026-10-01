@@ -190,8 +190,10 @@ export const ms: Dict = {
     mockTake: "Ambil permintaan ini",
   },
   login: {
+    notAdmin: "Anda log masuk sebagai {name}, yang bukan akaun admin.",
+    switchAccount: "Log keluar dan guna akaun lain",
     title: "Log masuk ke UMOVE",
-    lead: "Satu akaun untuk minta, hantar dan jual.",
+    lead: "Satu akaun untuk membuat permintaan dan menghantar.",
     google: "Teruskan dengan Google",
     agree: "Dengan meneruskan, kau bersetuju guna UMOVE dengan sopan dan jujur.",
     errors: {

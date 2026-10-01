@@ -112,9 +112,15 @@ export function MaintenanceScreen() {
           })}
         </p>
       ) : null}
-      <Link to="/login?next=/admin" className="mt-10 text-[0.75rem] text-muted-foreground hover:text-foreground">
-        {t.site.adminSignIn}
-      </Link>
+      {/* When the server can't be reached nobody can sign in, so the link would only lead nowhere. */}
+      {offline ? null : (
+        <Link
+          to="/login?next=/admin"
+          className="mt-10 rounded-full px-3 py-1.5 text-[0.8125rem] font-medium text-muted-foreground hover:bg-surface hover:text-foreground"
+        >
+          {t.site.adminSignIn}
+        </Link>
+      )}
     </div>
   );
 }

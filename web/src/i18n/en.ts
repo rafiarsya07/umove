@@ -193,8 +193,10 @@ export const en = {
     mockTake: "Take this request",
   },
   login: {
+    notAdmin: "You're signed in as {name}, which isn't an admin account.",
+    switchAccount: "Sign out and use another account",
     title: "Sign in to UMOVE",
-    lead: "One account for requesting, running and selling.",
+    lead: "One account for posting requests and delivering them.",
     google: "Continue with Google",
     agree: "By continuing you agree to use UMOVE respectfully and honestly.",
     errors: {

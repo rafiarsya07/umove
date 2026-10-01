@@ -78,8 +78,16 @@ export default function App() {
 
   // Maintenance (or server unreachable): everyone but admins sees one calm screen.
   // Sign-in stays reachable so an admin can get in.
-  if (status.maintenance.on && !loading && !user?.isAdmin && pathname !== "/login") {
-    return <MaintenanceScreen />;
+  if (status.maintenance.on && !loading && !user?.isAdmin) {
+    if (pathname !== "/login") return <MaintenanceScreen />;
+    // Only the sign-in card while UMOVE is closed: the rest of the site isn't reachable anyway.
+    return (
+      <div className="flex min-h-dvh items-center bg-background text-foreground">
+        <Suspense fallback={<PageLoading />}>
+          <Login />
+        </Suspense>
+      </div>
+    );
   }
 
   // The whole app sits on its own white surface. The page background is set

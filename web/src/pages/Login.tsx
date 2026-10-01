@@ -1,18 +1,24 @@
+import { useState } from "react";
 import { Navigate, useSearchParams } from "react-router";
 import { Container } from "../components/Container";
 import { Logo } from "../components/Logo";
 import { GoogleMark } from "../components/ui";
-import { useI18n } from "../i18n";
+import { fmt, useI18n } from "../i18n";
 import { useSession } from "../lib/session";
 
 /** Google sign-in, and nothing else. The whole flow runs on the server. */
 export default function Login() {
   const { t } = useI18n();
-  const { user, loading } = useSession();
+  const { user, loading, signOut } = useSession();
   const [params] = useSearchParams();
+  const [leaving, setLeaving] = useState(false);
   const l = t.login;
+  // "Admin sign in" (e.g. from the maintenance screen) while signed in with a
+  // member account: offer to switch instead of bouncing back to the same screen.
+  const wantsAdmin = params.get("next") === "/admin";
+  const wrongAccount = !loading && user && !user.isAdmin && wantsAdmin;
 
-  if (!loading && user) return <Navigate to={user.isAdmin ? "/admin" : "/dashboard"} replace />;
+  if (!loading && user && !wrongAccount) return <Navigate to={user.isAdmin ? "/admin" : "/dashboard"} replace />;
 
   const errorKey = params.get("error") as keyof typeof l.errors | null;
   const error = errorKey && errorKey in l.errors ? l.errors[errorKey] : null;
@@ -33,6 +39,24 @@ export default function Login() {
           >
             {error}
           </p>
+        ) : null}
+
+        {wrongAccount ? (
+          <div className="mt-5 rounded-(--radius-control) border border-border bg-surface px-3 py-3 text-[0.875rem]">
+            <p>{fmt(l.notAdmin, { name: user.name })}</p>
+            <button
+              type="button"
+              disabled={leaving}
+              onClick={async () => {
+                setLeaving(true);
+                await signOut();
+                setLeaving(false);
+              }}
+              className="mt-2 font-semibold text-primary-strong hover:underline disabled:opacity-60"
+            >
+              {l.switchAccount}
+            </button>
+          </div>
         ) : null}
 
         <a
