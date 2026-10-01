@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { api } from "../../lib/api";
 import { useLive } from "../../lib/live";
+import { TelegramAlerts } from "../../components/TelegramAlerts";
 import { PageTitle, panel, type Stats } from "./AdminLayout";
 
 export default function Overview() {
@@ -38,6 +39,7 @@ export default function Overview() {
           </Link>
         ))}
       </div>
+      <TelegramAlerts className="mt-6 max-w-2xl" />
     </div>
   );
 }

@@ -95,6 +95,14 @@ export function Footer() {
           <p className="text-foreground-secondary">
             © {year} <span className="font-semibold text-foreground">UMOVE</span> · {f.rights}
           </p>
+          <p className="flex gap-4 text-foreground-secondary">
+            <Link to="/privacy" className="hover:text-foreground">
+              {t.nav.privacy}
+            </Link>
+            <Link to="/terms" className="hover:text-foreground">
+              {t.nav.terms}
+            </Link>
+          </p>
           <p className="text-foreground-secondary">
             {f.builtBy} <span className="font-semibold text-foreground">{AUTHOR}</span>
           </p>

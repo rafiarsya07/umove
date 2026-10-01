@@ -3,6 +3,7 @@ import { limit } from "@grammyjs/ratelimiter";
 import { apiThrottler } from "@grammyjs/transformer-throttler";
 import { config } from "../config.js";
 import { log } from "../log.js";
+import { claimLink } from "../notify.js";
 
 /**
  * The UMove Telegram bot.
@@ -28,13 +29,20 @@ export function createBot(): Bot | null {
     await next();
   });
 
-  bot.command("start", (ctx) =>
-    ctx.reply(
-      "Hi! This is the UMove bot.\n\nRunners get new delivery requests here once UMove launches.\n" +
-        `Open UMove: ${config.publicOrigin}`,
-    ),
-  );
-  bot.command("help", (ctx) => ctx.reply(`Questions? ${config.publicOrigin}/#faq`));
+  bot.command("start", async (ctx) => {
+    // "/start <token>": the one-time link from Admin → Telegram alerts.
+    const token = ctx.match?.trim();
+    if (token && ctx.chat) {
+      const ok = await claimLink(token, ctx.chat.id).catch(() => false);
+      return ctx.reply(
+        ok
+          ? "Terhubung! Notifikasi admin UMOVE akan masuk ke chat ini."
+          : "Link ini sudah kedaluwarsa atau sudah dipakai. Buat link baru di Admin → Overview → Telegram alerts.",
+      );
+    }
+    return ctx.reply(`Hi! This is the UMOVE bot.\n\nOpen UMOVE: ${config.publicOrigin}`);
+  });
+  bot.command("help", (ctx) => ctx.reply(`Questions? ${config.publicOrigin}/faq`));
 
   bot.catch((err) => {
     const e = err.error;

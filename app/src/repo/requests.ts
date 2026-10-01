@@ -213,6 +213,23 @@ export async function sendAwayRunner(code: string, customerId: string): Promise<
   return rows.count === 1;
 }
 
+/**
+ * The requester raises the delivery fee while nobody has taken the request
+ * (it can only go up, so runners never see a fee drop under them).
+ */
+export async function raiseTip(code: string, customerId: string, tipSen: number): Promise<"ok" | "not_higher" | "gone"> {
+  const [o] = await sql<{ tipSen: number }[]>`
+    select tip_sen as "tipSen" from orders where code = ${code} and customer_id = ${customerId} and status = 'open'
+  `;
+  if (!o) return "gone";
+  if (tipSen <= o.tipSen) return "not_higher";
+  const rows = await sql`
+    update orders set tip_sen = ${tipSen}
+    where code = ${code} and customer_id = ${customerId} and status = 'open' and tip_sen < ${tipSen}
+  `;
+  return rows.count === 1 ? "ok" : "gone";
+}
+
 /** The runner gives the request back to the board (before setting off). */
 export async function releaseRequest(code: string, runnerId: string): Promise<boolean> {
   const rows = await sql`

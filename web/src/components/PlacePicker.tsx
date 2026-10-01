@@ -6,13 +6,7 @@ import { CheckIcon } from "./Icon";
 export type Place = { id: number; name: string; area: string; kind: "food" | "shop" | "print" | "other" };
 export const placeLabel = (p: Place) => `${p.name}, ${p.area}`;
 
-const norm = (s: string) =>
-  s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
 
 /**
  * Pickup place: a search box over the admin's list of places inside UM,
@@ -128,32 +122,32 @@ export function PlacePicker({
           className="absolute inset-x-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-(--radius-control) border border-border bg-card py-1 shadow-lg"
         >
           {groups.map(([area, items]) => (
-              <div key={area} role="group" aria-label={area}>
-                <p className="px-3 pt-2 pb-1 text-[0.6875rem] font-semibold tracking-wide text-muted-foreground uppercase">
-                  {area}
-                </p>
-                {items.map((p) => {
-                  const i = matches.indexOf(p);
-                  return (
-                    <button
-                      key={p.id}
-                      id={`${listId}-${p.id}`}
-                      type="button"
-                      role="option"
-                      aria-selected={p.id === placeId}
-                      onMouseEnter={() => setActive(i)}
-                      onClick={() => pick(p)}
-                      className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-[0.875rem] ${
-                        i === active ? "bg-surface" : ""
-                      }`}
-                    >
-                      <span className="truncate font-medium">{p.name}</span>
-                      <span className="shrink-0 text-[0.75rem] text-muted-foreground">{r.placeKinds[p.kind]}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            ))}
+            <div key={area} role="group" aria-label={area}>
+              <p className="px-3 pt-2 pb-1 text-[0.6875rem] font-semibold tracking-wide text-muted-foreground uppercase">
+                {area}
+              </p>
+              {items.map((p) => {
+                const i = matches.indexOf(p);
+                return (
+                  <button
+                    key={p.id}
+                    id={`${listId}-${p.id}`}
+                    type="button"
+                    role="option"
+                    aria-selected={p.id === placeId}
+                    onMouseEnter={() => setActive(i)}
+                    onClick={() => pick(p)}
+                    className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-[0.875rem] ${
+                      i === active ? "bg-surface" : ""
+                    }`}
+                  >
+                    <span className="truncate font-medium">{p.name}</span>
+                    <span className="shrink-0 text-[0.75rem] text-muted-foreground">{r.placeKinds[p.kind]}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </div>
       ) : null}
 

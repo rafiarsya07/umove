@@ -238,6 +238,10 @@ export default function RequestDetail() {
         ) : null}
 
         {data.viewerRole === "customer" && data.status === "open" ? (
+          <RaiseFee code={data.code} tipSen={data.tipSen} onDone={load} />
+        ) : null}
+
+        {data.viewerRole === "customer" && data.status === "open" ? (
           <button
             type="button"
             disabled={busy}
@@ -442,6 +446,49 @@ function RunnerCard({ code, runner }: { code: string; runner: NonNullable<Detail
         </div>
         <p className="t-meta mt-2 text-[0.75rem]">{r.runnerCheck}</p>
       </div>
+    </div>
+  );
+}
+
+/** Nobody has taken it yet: the requester can add to the delivery fee (it never goes down). */
+function RaiseFee({ code, tipSen, onDone }: { code: string; tipSen: number; onDone: () => void }) {
+  const { t } = useI18n();
+  const r = t.requests;
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const raise = async (add: number) => {
+    setBusy(true);
+    setNote(null);
+    try {
+      await api(`/requests/${code}/tip`, { method: "POST", body: { tip: (tipSen + add * 100) / 100 } });
+      setNote(fmt(r.raised, { fee: ringgit(tipSen + add * 100) }));
+      onDone();
+    } catch {
+      setNote(r.errGeneric);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="w-full rounded-(--radius-surface) border border-border p-4">
+      <p className="text-[0.9375rem] font-semibold">{r.raiseTitle}</p>
+      <p className="t-meta mt-0.5">{r.raiseHint}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {[1, 2, 3].map((add) =>
+          tipSen + add * 100 <= 10000 ? (
+            <button
+              key={add}
+              type="button"
+              disabled={busy}
+              onClick={() => raise(add)}
+              className={`${btn.small} tabular-nums`}
+            >
+              +RM{add}
+            </button>
+          ) : null,
+        )}
+      </div>
+      {note ? <p className="mt-2 text-[0.8125rem] font-medium text-success">{note}</p> : null}
     </div>
   );
 }

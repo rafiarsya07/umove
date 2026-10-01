@@ -36,6 +36,9 @@ export const profileSchema = z
   })
   .strict();
 
+/** The requester raises the delivery fee (ringgit). */
+export const raiseTipSchema = z.object({ tip: z.number().min(1).max(100) }).strict();
+
 /** Admin: a member's new display name. */
 export const renameSchema = z.object({ name: text(40).pipe(z.string().min(1)) }).strict();
 
@@ -210,5 +213,7 @@ export const maintenanceSchema = z
     on: z.boolean(),
     message: text(300).optional(),
     until: z.iso.datetime({ offset: true }).optional().nullable().or(z.literal("")),
+    /** Posted as a broadcast when UMOVE reopens by itself at `until`. */
+    reopenMessage: text(300).optional(),
   })
   .strict();

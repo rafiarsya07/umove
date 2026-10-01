@@ -16,6 +16,7 @@ import {
   supportStartSchema,
 } from "../../validation.js";
 import { requireUser } from "../guards.js";
+import { notifyAdmins, notifyAdminsThrottled, short } from "../../notify.js";
 import { SANDBOX_HEADER } from "../security.js";
 import { myPhotoStatus, ownPhoto, submitPhoto } from "../../repo/photos.js";
 
@@ -116,6 +117,7 @@ me.post("/roles/:role", async (c) => {
     return c.json({ error: result.error, until: result.until ?? null }, status);
   }
   mailNewApplication(role.data, result.name, result.username);
+  notifyAdmins(`Pendaftar ${role.data} baru: ${result.name} (@${result.username}). Tinjau dalam 24 jam.`, "/admin/applications");
   return c.json({ ok: true, id: result.id });
 });
 
@@ -157,6 +159,7 @@ me.post("/photo", async (c) => {
   const r = await submitPhoto(c.get("user")!.id, mime, data);
   if (!r.ok) return c.json({ error: r.error }, r.error === "too_many" ? 429 : 403);
   mailNewPhoto();
+  notifyAdmins("Foto wajah runner baru menunggu dicek.", "/admin/applications?tab=photos");
   return c.json(await myPhotoStatus(c.get("user")!.id), 201);
 });
 
@@ -178,7 +181,10 @@ me.post("/support/threads", async (c) => {
   if (!r.ok) return c.json({ error: r.error }, r.error === "too_many" ? 429 : 409);
   announceSupport(user.id);
   const me = await getMe(user.id);
-  if (me) mailSupportToAdmins(me.name, me.username, topic, body);
+  if (me) {
+    mailSupportToAdmins(me.name, me.username, topic, body);
+    notifyAdmins(`Help chat baru dari ${me.name} (@${me.username}), topik ${topic}:\n${short(body, 140)}`, "/admin/support");
+  }
   return c.json(r.thread, 201);
 });
 
@@ -198,5 +204,7 @@ me.post("/support", async (c) => {
   const r = await postMessage({ member: user.id }, parsed.data.body);
   if (!r.ok) return c.json({ error: r.error }, r.error === "too_fast" ? 429 : 409);
   announceSupport(user.id);
+  // One alert per member per 10 minutes, so a lively chat doesn't flood the admin's phone.
+  notifyAdminsThrottled(`chat:${user.id}`, 10 * 60_000, `Pesan baru di help chat: ${short(parsed.data.body, 140)}`, "/admin/support?tab=open");
   return c.json(r.message, 201);
 });

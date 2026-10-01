@@ -58,7 +58,8 @@ export default function Places() {
     } catch (err) {
       const code = err instanceof ApiError ? err.code : "";
       if (code === "invalid" && err instanceof ApiError) setErrors(err.fields ?? []);
-      else setMessage(code === "duplicate" ? "That place already exists in this area." : "That didn't work. Try again.");
+      else
+        setMessage(code === "duplicate" ? "That place already exists in this area." : "That didn't work. Try again.");
     } finally {
       setBusy(false);
     }
@@ -66,10 +67,7 @@ export default function Places() {
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    const errs = [
-      ...(form.name.trim().length < 2 ? ["name"] : []),
-      ...(form.area.trim().length < 2 ? ["area"] : []),
-    ];
+    const errs = [...(form.name.trim().length < 2 ? ["name"] : []), ...(form.area.trim().length < 2 ? ["area"] : [])];
     setErrors(errs);
     if (!errs.length) save(form);
   };
@@ -142,7 +140,9 @@ export default function Places() {
 
       <div className="mb-3 flex items-center justify-between gap-3">
         <p className="t-meta">
-          {rows ? `${rows.filter((r) => r.active).length} shown to members, ${rows.filter((r) => !r.active).length} hidden` : ""}
+          {rows
+            ? `${rows.filter((r) => r.active).length} shown to members, ${rows.filter((r) => !r.active).length} hidden`
+            : ""}
         </p>
         <input
           type="search"

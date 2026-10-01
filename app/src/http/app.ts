@@ -103,7 +103,9 @@ export function createApp() {
   api.get("/status", async (c) => {
     const user = c.get("user");
     const [m, broadcasts] = await Promise.all([maintenance(), liveBroadcasts(user ? { id: user.id } : null)]);
-    return c.json({ maintenance: m, broadcasts });
+    // The reopening broadcast stays private until it is posted.
+    const { reopenMessage: _r, ...publicM } = m;
+    return c.json({ maintenance: publicM, broadcasts });
   });
 
   api.get("/health", async (c) => {

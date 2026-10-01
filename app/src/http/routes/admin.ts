@@ -6,6 +6,7 @@ import { adminCancelRequest, adminStats, auditLog, listRequests, listUsers, setU
 import { announceSite, announceSupport, announceSupportTo } from "../../live.js";
 import { allPlaces, savePlace } from "../../repo/places.js";
 import { adminRename } from "../../repo/users.js";
+import { isLinked, makeLink, sendTest, telegramReady, unlink } from "../../notify.js";
 import { adminPhoto, decidePhoto, pendingPhotos } from "../../repo/photos.js";
 import { allBroadcasts, createBroadcast, endBroadcast, maintenance, setMaintenance } from "../../repo/site.js";
 import { mailDecision, mailSupportDecision, mailSupportReply } from "../../mail.js";
@@ -211,6 +212,27 @@ admin.post("/users/:id/name", async (c) => {
   return ok ? c.json({ ok: true }) : c.json({ error: "not_found" }, 404);
 });
 
+/* ---- Telegram alerts ---------------------------------------------------------- */
+
+admin.get("/telegram", async (c) => {
+  const { enabled, username } = telegramReady();
+  return c.json({ enabled, username, linked: await isLinked(c.get("user")!.id) });
+});
+
+admin.post("/telegram/link", (c) => {
+  const url = makeLink(c.get("user")!.id);
+  return url ? c.json({ url }) : c.json({ error: "bot_off" }, 409);
+});
+
+admin.post("/telegram/unlink", async (c) => {
+  await unlink(c.get("user")!.id);
+  return c.json({ ok: true });
+});
+
+admin.post("/telegram/test", async (c) =>
+  (await sendTest(c.get("user")!.id)) ? c.json({ ok: true }) : c.json({ error: "not_linked" }, 409),
+);
+
 /* ---- Runner face photos ------------------------------------------------------ */
 
 admin.get("/photos", async (c) => c.json(await pendingPhotos()));
@@ -267,11 +289,13 @@ admin.get("/maintenance", async (c) => c.json(await maintenance()));
 admin.post("/maintenance", async (c) => {
   const parsed = maintenanceSchema.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ error: "invalid", fields: ["message"] }, 400);
-  const { on, message, until } = parsed.data;
+  const { on, message, until, reopenMessage } = parsed.data;
+  if (on && until && Date.parse(until) <= Date.now()) return c.json({ error: "invalid", fields: ["until"] }, 400);
   const m = await setMaintenance(c.get("user")!.id, {
     on,
     message: on ? message || null : null,
     until: on && until ? new Date(until).toISOString() : null,
+    reopenMessage: on && until ? reopenMessage || null : null,
   });
   announceSite();
   return c.json(m);

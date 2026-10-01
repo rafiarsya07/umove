@@ -73,6 +73,31 @@ check("sent-away runner accept refused", (await call(`/requests/${code}/accept`,
 check("another runner can take it", (await call(`/requests/${code}/accept`, S, "POST")).status === 200);
 check("cannot send away after setting off", (await call(`/requests/${code}/status`, S, "POST", { status: "on_the_way" })).status === 200 && (await call(`/requests/${code}/replace-runner`, Q, "POST")).status === 409);
 
+// --- requester raises the fee while nobody has taken it
+r = await call("/requests", Q, "POST", { details: "Teh tarik 2", pickup: "Kafe KK12", dropoff: "KK8 C 2-14", tip: 2 });
+const c2 = r.body.code;
+check("raise fee", (await call(`/requests/${c2}/tip`, Q, "POST", { tip: 3.5 })).status === 200);
+check("fee shows new amount", (await call(`/requests/${c2}`, Q)).body.tipSen === 350);
+check("cannot lower fee", (await call(`/requests/${c2}/tip`, Q, "POST", { tip: 3 })).body?.error === "not_higher");
+check("fee capped at RM100", (await call(`/requests/${c2}/tip`, Q, "POST", { tip: 101 })).status === 400);
+check("others cannot change the fee", (await call(`/requests/${c2}/tip`, P, "POST", { tip: 5 })).status === 409);
+await call(`/requests/${c2}/accept`, R, "POST");
+check("cannot raise once taken", (await call(`/requests/${c2}/tip`, Q, "POST", { tip: 5 })).body?.error === "gone");
+
+// --- maintenance reopens by itself at the set time, with a broadcast
+const soon = new Date(Date.now() + 3000).toISOString();
+check("past reopening time refused", (await call("/admin/maintenance", A, "POST", { on: true, message: "x", until: new Date(Date.now() - 60000).toISOString() })).status === 400);
+r = await call("/admin/maintenance", A, "POST", { on: true, message: "Upgrade", until: soon, reopenMessage: "UMOVE is back with faster chat" });
+check("maintenance on with reopen time", r.status === 200 && r.body.on === true);
+check("reopen message hidden from public status", !JSON.stringify((await call("/status", null)).body).includes("faster chat"));
+check("members blocked during maintenance", (await call("/requests/mine", Q)).status === 503);
+await new Promise((res) => setTimeout(res, 3500));
+check("open again right after the time", (await call("/requests/mine", Q)).status === 200);
+await new Promise((res) => setTimeout(res, 21000));
+const st = (await call("/status", null)).body;
+check("reopen broadcast posted", st.maintenance.on === false && st.broadcasts.some((b) => b.title === "UMOVE is back with faster chat"), JSON.stringify(st));
+check("auto reopen audited", JSON.stringify((await call("/admin/audit", A)).body).includes("maintenance.auto_off"));
+
 await db.end();
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

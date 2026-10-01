@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useSearchParams } from "react-router";
+import { Link, Navigate, useSearchParams } from "react-router";
 import { Container } from "../components/Container";
 import { Logo } from "../components/Logo";
 import { GoogleMark } from "../components/ui";
@@ -67,7 +67,16 @@ export default function Login() {
           {l.google}
         </a>
 
-        <p className="t-meta mt-6 border-t border-border pt-4 text-[0.75rem]">{l.agree}</p>
+        <p className="t-meta mt-6 border-t border-border pt-4 text-[0.75rem]">
+          {l.agree}{" "}
+          <Link to="/terms" className="font-medium underline-offset-2 hover:underline">
+            {t.nav.terms}
+          </Link>
+          {" / "}
+          <Link to="/privacy" className="font-medium underline-offset-2 hover:underline">
+            {t.nav.privacy}
+          </Link>
+        </p>
       </div>
     </Container>
   );

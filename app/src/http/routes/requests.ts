@@ -8,13 +8,15 @@ import {
   myRequests,
   openBoard,
   rateRequest,
+  raiseTip,
   releaseRequest,
   sendAwayRunner,
   requestForViewer,
 } from "../../repo/requests.js";
 import type { AppEnv } from "../../types.js";
-import { codeParam, rateSchema, requestSchema, statusSchema } from "../../validation.js";
+import { codeParam, raiseTipSchema, rateSchema, requestSchema, statusSchema } from "../../validation.js";
 import { requireUser } from "../guards.js";
+import { notifyAdmins, short } from "../../notify.js";
 import { SANDBOX_HEADER } from "../security.js";
 import { runnerPhotoForCustomer } from "../../repo/photos.js";
 import { activePlace, placeLabel } from "../../repo/places.js";
@@ -43,6 +45,11 @@ requests.post("/", requireUser, async (c) => {
   });
   if (typeof result === "string") return c.json({ error: result }, 409);
   announceChange();
+  const from = place ? placeLabel(place) : pickup!;
+  notifyAdmins(
+    `Permintaan baru ${result.code}\n${short(rest.details)}\n${short(from, 40)} ke ${short(rest.dropoff, 40)}, upah RM${tip}`,
+    `/requests/${result.code}`,
+  );
   return c.json(result, 201);
 });
 
@@ -75,6 +82,18 @@ async function change(ok: boolean | string) {
   }
   return { status: 409 as const, body: { error: typeof ok === "string" ? ok : "not_allowed" } };
 }
+
+/** The requester raises the delivery fee while the request is still open. */
+requests.post("/:code/tip", requireUser, async (c) => {
+  const id = codeParam.safeParse(c.req.param("code"));
+  const body = raiseTipSchema.safeParse(await c.req.json().catch(() => null));
+  if (!id.success) return c.json({ error: "not_found" }, 404);
+  if (!body.success) return c.json(invalid(["tip"]), 400);
+  const r = await raiseTip(id.data, c.get("user")!.id, Math.round(body.data.tip * 100));
+  if (r !== "ok") return c.json({ error: r }, 409);
+  announceChange();
+  return c.json({ ok: true });
+});
 
 /** The requester asks for a different runner (only before the runner sets off). */
 requests.post("/:code/replace-runner", requireUser, async (c) => {

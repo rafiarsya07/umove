@@ -1,4 +1,7 @@
 import { sql } from "../db.js";
+import { announceSite } from "../live.js";
+import { log } from "../log.js";
+import { notifyAdmins } from "../notify.js";
 
 /**
  * Broadcasts (site-wide announcements) and maintenance mode.
@@ -8,16 +11,28 @@ import { sql } from "../db.js";
  * and re-read every 15 seconds as a safety net.
  */
 
-export type Maintenance = { on: boolean; message: string | null; until: string | null };
-const OFF: Maintenance = { on: false, message: null, until: null };
+/**
+ * `until`: when UMOVE opens again by itself. `reopenMessage`: posted as a
+ * broadcast at that moment (e.g. "We're back, with photo check for runners").
+ */
+export type Maintenance = { on: boolean; message: string | null; until: string | null; reopenMessage?: string | null };
+const OFF: Maintenance = { on: false, message: null, until: null, reopenMessage: null };
+const isOver = (m: Maintenance) => m.on && m.until !== null && Date.parse(m.until) <= Date.now();
 let cached: { value: Maintenance; at: number } | null = null;
 
 export async function maintenance(): Promise<Maintenance> {
-  if (cached && Date.now() - cached.at < 15_000) return cached.value;
+  if (cached && Date.now() - cached.at < 15_000) return isOver(cached.value) ? OFF : cached.value;
   try {
     const [row] = await sql<{ value: Partial<Maintenance> }[]>`select value from site_settings where key = 'maintenance'`;
     const v = row?.value ?? {};
-    cached = { value: { on: v.on === true, message: v.message ?? null, until: v.until ?? null }, at: Date.now() };
+    const value: Maintenance = {
+      on: v.on === true,
+      message: v.message ?? null,
+      until: v.until ?? null,
+      reopenMessage: v.reopenMessage ?? null,
+    };
+    // Past the reopening time: open now; the watch below records it within seconds.
+    cached = { value: isOver(value) ? OFF : value, at: Date.now() };
   } catch {
     // Table missing (migration not run yet) or DB hiccup: never block the site because of it.
     cached = { value: cached?.value ?? OFF, at: Date.now() };
@@ -39,6 +54,41 @@ export async function setMaintenance(adminId: string, m: Maintenance): Promise<M
   });
   cached = { value: m, at: Date.now() };
   return m;
+}
+
+/**
+ * Every 20 seconds: if maintenance has a reopening time that has passed, turn
+ * it off, post the reopening broadcast (if any) and tell the admins.
+ */
+export function startMaintenanceWatch() {
+  const run = async () => {
+    try {
+      const [row] = await sql<{ value: Partial<Maintenance> }[]>`select value from site_settings where key = 'maintenance'`;
+      const v = row?.value;
+      if (!v?.on || !v.until || Date.parse(v.until) > Date.now()) return;
+      const msg = (v.reopenMessage ?? "").trim();
+      await sql.begin(async (tx) => {
+        const done = await tx`
+          update site_settings set value = ${tx.json(OFF as never)}, updated_at = now()
+          where key = 'maintenance' and (value->>'on')::boolean
+        `;
+        if (done.count !== 1) return;
+        await tx`insert into audit_log (actor_id, action, target) values (null, 'maintenance.auto_off', null)`;
+        if (msg) {
+          await tx`
+            insert into broadcasts (title, body, tone, audience, starts_at, ends_at)
+            values (${msg.slice(0, 80)}, ${msg.length > 80 ? msg : ""}, 'success', 'all', now(), now() + interval '24 hours')
+          `;
+        }
+      });
+      cached = { value: OFF, at: Date.now() };
+      announceSite();
+      notifyAdmins("UMOVE dibuka lagi otomatis (maintenance selesai sesuai jadwal).", "/admin/maintenance");
+    } catch (err) {
+      log.warn("maintenance watch failed", { err: String(err) });
+    }
+  };
+  setInterval(() => void run(), 20_000).unref();
 }
 
 export type Tone = "info" | "warning" | "success";

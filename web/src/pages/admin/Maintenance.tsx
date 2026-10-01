@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Badge, btn } from "../../components/ui";
-import { api } from "../../lib/api";
+import { ApiError, api } from "../../lib/api";
 import { useStatus } from "../../lib/status";
 import { PageTitle, panel } from "./AdminLayout";
 
-type M = { on: boolean; message: string | null; until: string | null };
+type M = { on: boolean; message: string | null; until: string | null; reopenMessage?: string | null };
 
 const field =
   "w-full rounded-(--radius-control) border border-border-input bg-card px-3 text-[0.9375rem] focus:border-foreground focus:outline-none";
@@ -25,6 +25,7 @@ export default function Maintenance() {
   const [m, setM] = useState<M | null>(null);
   const [message, setMessage] = useState("");
   const [until, setUntil] = useState("");
+  const [reopen, setReopen] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,24 +35,40 @@ export default function Maintenance() {
         setM(v);
         setMessage(v.message ?? "");
         setUntil(toLocal(v.until));
+        setReopen(v.reopenMessage ?? "");
       })
       .catch(() => setError("Could not load the current state."));
   }, []);
 
   const save = async (on: boolean) => {
-    if (on && !window.confirm("Turn on maintenance? Everyone except admins will be locked out until you turn it off."))
-      return;
+    const confirmText = until
+      ? `Turn on maintenance until ${new Date(until).toLocaleString()}? UMOVE opens again by itself at that time.`
+      : "Turn on maintenance? Everyone except admins will be locked out until you turn it off.";
+    if (on && !m?.on && !window.confirm(confirmText)) return;
     setBusy(true);
     setError(null);
     try {
       const v = await api<M>("/admin/maintenance", {
         method: "POST",
-        body: { on, message: message.trim(), until: until ? new Date(until).toISOString() : "" },
+        body: {
+          on,
+          message: message.trim(),
+          until: until ? new Date(until).toISOString() : "",
+          reopenMessage: until ? reopen.trim() : "",
+        },
       });
       setM(v);
+      if (!on) {
+        setUntil("");
+        setReopen("");
+      }
       reload();
-    } catch {
-      setError("That didn't work. Try again.");
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.fields.includes("until")
+          ? "That time has already passed. Pick a time in the future."
+          : "That didn't work. Try again.",
+      );
     } finally {
       setBusy(false);
     }
@@ -82,14 +99,34 @@ export default function Maintenance() {
             />
           </label>
           <label className="block max-w-xs">
-            <span className="t-label">Expected back (optional)</span>
+            <span className="t-label">Open again automatically at (optional)</span>
             <input
               type="datetime-local"
               className={`${field} mt-1.5 h-11`}
               value={until}
               onChange={(e) => setUntil(e.target.value)}
             />
+            <span className="t-meta mt-1 block text-[0.75rem]">
+              {until
+                ? "UMOVE turns maintenance off by itself at this time (within half a minute)."
+                : "Leave empty to stay closed until you turn it off."}
+            </span>
           </label>
+          {until ? (
+            <label className="block">
+              <span className="t-label">Message when it opens again (optional)</span>
+              <input
+                className={`${field} mt-1.5 h-11`}
+                value={reopen}
+                onChange={(e) => setReopen(e.target.value)}
+                maxLength={300}
+                placeholder="UMOVE is back! Chat is faster now."
+              />
+              <span className="t-meta mt-1 block text-[0.75rem]">
+                Shown to everyone as a broadcast for 24 hours after reopening.
+              </span>
+            </label>
+          ) : null}
           <div className="flex flex-wrap gap-2">
             {m.on ? (
               <>

@@ -145,6 +145,19 @@ Mulai sekarang: **`git push` = web otomatis ter-deploy dalam ±1 menit**, dan AP
 
 ---
 
+## Notifikasi admin lewat Telegram
+
+1. Di Telegram, chat **@BotFather** → `/newbot` → nama `UMOVE` → username misalnya `umove_um_bot`. Salin **token**-nya.
+2. Di mini PC: `nano ~/umove/.env`, tambahkan (atau isi) baris `TELEGRAM_BOT_TOKEN=token-tadi`, simpan (Ctrl+O, Enter, Ctrl+X).
+3. `cd ~/umove && bash scripts/update.sh`
+4. Buka UMOVE → Admin → Overview → **Connect Telegram** → **Open Telegram and tap Start**.
+
+Yang dikirim: permintaan baru, help chat baru (pesan chat maksimal 1 notifikasi per member per 10 menit), pendaftar runner, foto runner baru, permintaan yang 15 menit belum diambil, dan saat maintenance dibuka otomatis.
+
+## Maintenance terjadwal
+
+Admin → Maintenance → isi **Open again automatically at** → UMOVE dibuka sendiri pada jam itu (maksimal ±30 detik). Opsional isi **Message when it opens again**: tampil sebagai broadcast selama 24 jam.
+
 ## Rilis perubahan (satu perintah)
 
 Setelah commit di `E:\UMOVE` (branch `main`), jalankan di Git Bash:

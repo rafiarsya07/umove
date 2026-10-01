@@ -6,6 +6,8 @@ import { sql } from "./db.js";
 import { createApp } from "./http/app.js";
 import { log } from "./log.js";
 import { startFilePurge } from "./repo/applications.js";
+import { setBot, setBotUsername, startUnclaimedWatch } from "./notify.js";
+import { startMaintenanceWatch } from "./repo/site.js";
 
 const app = createApp();
 
@@ -16,12 +18,19 @@ const server = serve({ fetch: app.fetch, port: config.port, hostname: "0.0.0.0" 
 startSessionCleanup();
 startFilePurge();
 
+startMaintenanceWatch();
+
 const bot = createBot();
+setBot(bot);
+startUnclaimedWatch();
 bot
   ?.start({
     drop_pending_updates: true,
     allowed_updates: ["message"],
-    onStart: (me) => log.info("bot polling", { username: me.username }),
+    onStart: (me) => {
+      setBotUsername(me.username);
+      log.info("bot polling", { username: me.username });
+    },
   })
   .catch((err: unknown) => log.error("bot stopped", { err }));
 

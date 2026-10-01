@@ -23,6 +23,7 @@ const AdminRequests = lazy(() => import("./pages/admin/Requests"));
 const AdminUsers = lazy(() => import("./pages/admin/Users"));
 const AdminSupport = lazy(() => import("./pages/admin/Support"));
 const Faq = lazy(() => import("./pages/Faq"));
+const Legal = lazy(() => import("./pages/Legal"));
 const Help = lazy(() => import("./pages/Help"));
 const Login = lazy(() => import("./pages/Login"));
 const NewRequest = lazy(() => import("./pages/NewRequest"));
@@ -105,6 +106,8 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/runner" element={<Runner />} />
             <Route path="/faq" element={<Faq />} />
+            <Route path="/privacy" element={<Legal kind="privacy" />} />
+            <Route path="/terms" element={<Legal kind="terms" />} />
             <Route path="/requests" element={<Requests />} />
             <Route path="/requests/:code" element={<RequestDetail />} />
             <Route path="/login" element={<Login />} />
